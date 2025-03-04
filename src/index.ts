@@ -6,25 +6,30 @@ import { OpenAIProvider } from "./providers/openai";
 import { AnthropicProvider } from "./providers/anthropic";
 import { GeminiProvider } from "./providers/gemini";
 import { ChatOptions } from "./providers/_base";
+import { DeepSeekProvider } from "./providers/deepseek";
 
 type ProviderModel =
   | `openai/${ChatModel}`
   | `anthropic/${IsLiteral<Model>}`
-  | `gemini/${"gemini-pro" | "gemini-1.5-pro" | "gemini-1.5-flash"}`;
+  | `gemini/${"gemini-pro" | "gemini-1.5-pro" | "gemini-1.5-flash"}`
+  | `deepseek/${"deepseek-chat" | "deepseek-coder" | "deepseek-coder-plus"}`;
 
 export class AISuite {
   private openaiKey: string;
   private anthropicKey: string;
   private geminiKey: string;
+  private deepseekKey: string;
 
   constructor(keys: {
     openaiKey?: string;
     anthropicKey?: string;
     geminiKey?: string;
+    deepseekKey?: string;
   }) {
     this.openaiKey = keys.openaiKey || "";
     this.anthropicKey = keys.anthropicKey || "";
     this.geminiKey = keys.geminiKey || "";
+    this.deepseekKey = keys.deepseekKey || "";
   }
 
   /**
@@ -106,6 +111,8 @@ export class AISuite {
       return new AnthropicProvider(this.anthropicKey, model);
     } else if (providerName === "gemini") {
       return new GeminiProvider(this.geminiKey, model);
+    } else if (providerName === "deepseek") {
+      return new DeepSeekProvider(this.deepseekKey, model);
     }
     throw new Error(`Unsupported provider: ${providerName}`);
   }
