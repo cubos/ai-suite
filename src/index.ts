@@ -144,33 +144,3 @@ export class AISuite {
     throw new Error(`Unsupported provider: ${providerName}`);
   }
 }
-
-// export const aiSuiteClient = new AISuite(
-//   {
-//     openaiKey: process.env.OPENAI_API_KEY!,
-//     anthropicKey: process.env.ANTHROPIC_API_KEY!,
-//     geminiKey: process.env.GEMINI_API_KEY!,
-//     deepseekKey: process.env.DEEPSEEK_API_KEY!,
-//   },
-//   {
-//     langFuse: new Langfuse({
-//       sampleRate: 1,
-//       baseUrl: process.env.LANGFUSE_BASE_URL!,
-//       publicKey: process.env.LANGFUSE_PUBLIC_KEY!,
-//       secretKey: process.env.LANGFUSE_SECRET_KEY!,
-//     }),
-//   }
-// );
-
-// async function main() {
-//   const result = await aiSuiteClient.createChatCompletion("openai/gpt-4o", [
-//     {
-//       role: "user",
-//       content: "Hello, world!",
-//     },
-//   ]);
-
-//   console.log(result);
-// }
-
-// main();

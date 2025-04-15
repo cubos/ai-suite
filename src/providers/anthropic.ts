@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { Anthropic } from "@anthropic-ai/sdk";
 import { MessageModel, ResultChatCompletion } from "../types/chat.js";
 import { ChatOptions, ProviderBase } from "./_base.js";
 
