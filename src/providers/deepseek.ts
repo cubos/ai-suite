@@ -1,6 +1,12 @@
 import OpenAI from "openai";
-import { MessageModel, ResultChatCompletion } from "../types/chat";
-import { ChatOptions, ProviderBase } from "./_base";
+import { MessageModel, ResultChatCompletion } from "../types/chat.js";
+import { ChatOptions, ProviderBase } from "./_base.js";
+
+export type DeepSeekModels =
+  | "deepseek-chat"
+  | "deepseek-coder"
+  | "deepseek-coder-plus";
+
 
 export class DeepSeekProvider implements ProviderBase {
   private client: OpenAI;

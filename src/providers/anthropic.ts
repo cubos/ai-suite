@@ -1,7 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { Readable } from "stream";
-import { MessageModel, ResultChatCompletion } from "../types/chat";
-import { ChatOptions, ProviderBase } from "./_base";
+import { MessageModel, ResultChatCompletion } from "../types/chat.js";
+import { ChatOptions, ProviderBase } from "./_base.js";
 
 export class AnthropicProvider implements ProviderBase {
   private client: Anthropic;

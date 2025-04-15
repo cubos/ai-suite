@@ -1,5 +1,5 @@
 import { Readable } from "stream";
-import { MessageModel, ResultChatCompletion } from "../types/chat";
+import { MessageModel, ResultChatCompletion } from "../types/chat.js";
 
 export interface ChatOptions {
   /**

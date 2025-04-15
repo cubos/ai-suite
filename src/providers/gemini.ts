@@ -1,7 +1,15 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Readable } from "stream";
-import { MessageModel, ResultChatCompletion } from "../types/chat";
-import { ChatOptions, ProviderBase } from "./_base";
+import { MessageModel, ResultChatCompletion } from "../types/chat.js";
+import { ChatOptions, ProviderBase } from "./_base.js";
+
+
+export type GeminiModels =
+  | "gemini-2.5-pro-preview-03-25"
+  | "gemini-2.0-flash"
+  | "gemini-2.0-flash-lite"
+  | "gemini-1.5-flash"
+  | "gemini-1.5-flash-8b"
+  | "gemini-1.5-pro";
 
 export class GeminiProvider implements ProviderBase {
   private client: GoogleGenerativeAI;

@@ -1,7 +1,6 @@
 import OpenAI from "openai";
-import { Readable } from "stream";
-import { MessageModel, ResultChatCompletion } from "../types/chat";
-import { ChatOptions, ProviderBase } from "./_base";
+import { MessageModel, ResultChatCompletion } from "../types/chat.js";
+import { ChatOptions, ProviderBase } from "./_base.js";
 
 export class OpenAIProvider implements ProviderBase {
   private client: OpenAI;

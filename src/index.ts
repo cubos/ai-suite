@@ -1,35 +1,47 @@
 import { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
-import { ChatModel } from "openai/resources/index.mjs";
+import { ChatModel as OpenAIModels } from "openai/resources/index.mjs";
 import { MessageModel, ResultChatCompletion } from "./types/chat";
 import { IsLiteral } from "./types/utils";
 import { OpenAIProvider } from "./providers/openai";
 import { AnthropicProvider } from "./providers/anthropic";
-import { GeminiProvider } from "./providers/gemini";
+import { GeminiModels, GeminiProvider } from "./providers/gemini";
 import { ChatOptions } from "./providers/_base";
-import { DeepSeekProvider } from "./providers/deepseek";
+import { DeepSeekModels, DeepSeekProvider } from "./providers/deepseek";
+import { Langfuse } from "langfuse";
+import dotenv from "dotenv";
 
-type ProviderModel =
-  | `openai/${ChatModel}`
+dotenv.config();
+
+export type ProviderModel =
+  | `openai/${OpenAIModels}`
   | `anthropic/${IsLiteral<Model>}`
-  | `gemini/${"gemini-pro" | "gemini-1.5-pro" | "gemini-1.5-flash"}`
-  | `deepseek/${"deepseek-chat" | "deepseek-coder" | "deepseek-coder-plus"}`;
+  | `gemini/${GeminiModels}`
+  | `deepseek/${DeepSeekModels}`;
 
 export class AISuite {
   private openaiKey: string;
   private anthropicKey: string;
   private geminiKey: string;
   private deepseekKey: string;
+  private langFuse?: Langfuse;
+  private applicationName = "ai-suite";
 
-  constructor(keys: {
-    openaiKey?: string;
-    anthropicKey?: string;
-    geminiKey?: string;
-    deepseekKey?: string;
-  }) {
+  constructor(
+    keys: {
+      openaiKey?: string;
+      anthropicKey?: string;
+      geminiKey?: string;
+      deepseekKey?: string;
+    },
+    options?: {
+      langFuse?: Langfuse;
+    }
+  ) {
     this.openaiKey = keys.openaiKey || "";
     this.anthropicKey = keys.anthropicKey || "";
     this.geminiKey = keys.geminiKey || "";
     this.deepseekKey = keys.deepseekKey || "";
+    this.langFuse = options?.langFuse;
   }
 
   /**
@@ -93,10 +105,25 @@ export class AISuite {
       throw new Error("Streaming is not supported");
     }
 
+    const trace = this.langFuse?.trace({
+      name: `${this.applicationName}`,
+    });
+
+    const generation = trace?.generation({
+      name: "create-chat-completion",
+      model: provider.split("/")[1],
+      input: messages,
+    });
+
     const p = this.getProvider(provider);
     const start = Date.now();
     const result = await p.createChatCompletion(messages, opts);
     const end = Date.now();
+
+    generation?.end({
+      output: result,
+    });
+
     return {
       ...result,
       execution_time: end - start,
@@ -118,36 +145,32 @@ export class AISuite {
   }
 }
 
-(async () => {
-  const client = new AISuite({});
+// export const aiSuiteClient = new AISuite(
+//   {
+//     openaiKey: process.env.OPENAI_API_KEY!,
+//     anthropicKey: process.env.ANTHROPIC_API_KEY!,
+//     geminiKey: process.env.GEMINI_API_KEY!,
+//     deepseekKey: process.env.DEEPSEEK_API_KEY!,
+//   },
+//   {
+//     langFuse: new Langfuse({
+//       sampleRate: 1,
+//       baseUrl: process.env.LANGFUSE_BASE_URL!,
+//       publicKey: process.env.LANGFUSE_PUBLIC_KEY!,
+//       secretKey: process.env.LANGFUSE_SECRET_KEY!,
+//     }),
+//   }
+// );
 
-  const example = await client.createChatCompletion(
-    "anthropic/claude-2.0",
-    [{ role: "user", content: "Hello, how are you?" }],
-    {
-      stream: false,
-    }
-  );
+// async function main() {
+//   const result = await aiSuiteClient.createChatCompletion("openai/gpt-4o", [
+//     {
+//       role: "user",
+//       content: "Hello, world!",
+//     },
+//   ]);
 
-  console.log({ example });
+//   console.log(result);
+// }
 
-  const example2 = await client.createChatCompletion(
-    "openai/gpt-4o-mini",
-    [{ role: "user", content: "Hello, how are you?" }],
-    {
-      stream: false,
-    }
-  );
-
-  console.log({ example2 });
-
-  const example3 = await client.createChatCompletion(
-    "gemini/gemini-1.5-flash",
-    [{ role: "user", content: "Hello, how are you?" }],
-    {
-      stream: false,
-    }
-  );
-
-  console.log({ example3 });
-})();
+// main();

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "npx ts-node src/index.ts"
+    "dev": "npx ts-node src/index.ts"
   },
   "keywords": [],
   "license": "MIT",
@@ -13,15 +13,17 @@
   "packageManager": "pnpm@10.4.1",
   "devDependencies": {
     "@cubos/eslint-config": "^2.2.0",
-    "eslint": "9.19.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "typescript": "^5.7.3"
+    "eslint": "9.24.0",
+    "eslint-config-prettier": "^10.1.2",
+    "eslint-plugin-prettier": "^5.2.6",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.36.3",
-    "@google/generative-ai": "^0.22.0",
-    "@types/node": "^22.13.4",
-    "openai": "^4.85.2"
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@google/generative-ai": "^0.24.0",
+    "@types/node": "^22.14.1",
+    "dotenv": "^16.5.0",
+    "langfuse": "^3.37.1",
+    "openai": "^4.94.0"
   }
 }
