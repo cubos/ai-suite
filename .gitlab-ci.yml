@@ -47,4 +47,4 @@ NPM Package (DEV):
     - echo -e "registry=https:${NEXUS_PATH}\nalways-auth=true\n${NEXUS_PATH}:_auth=$(echo -n ${NXRM_PUBLISH_USERNAME}':'${NXRM_PUBLISH_PASSWORD} | openssl base64)" > .npmrc
     - pnpm version 1.0.$CI_PIPELINE_ID.dev || true
     - pnpm run build
-    - pnpm publish --tag dev
+    - pnpm publish --no-git-checks --tag dev
