@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ChatOptions, ProviderBase } from "../../providers/_base";
 import { MessageModel, ResultChatCompletion } from "../../types/chat";
 

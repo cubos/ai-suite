@@ -135,7 +135,7 @@ describe("OpenAIProvider", () => {
 
     it("should throw error for unsupported role", async () => {
       const invalidMessages: MessageModel[] = [
-        { role: "invalid" as any, content: "Invalid message" },
+        { role: "invalid" as never, content: "Invalid message" },
       ];
 
       await expect(

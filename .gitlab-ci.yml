@@ -1,0 +1,50 @@
+image: node:22
+before_script:
+  - npm install -g pnpm
+
+stages:
+  - check
+  - publish
+
+TypeCheck:
+  stage: check
+  script:
+    - pnpm i --frozen-lockfile
+    - npx tsc --noEmit
+
+Lint:
+  stage: check
+  script:
+    - pnpm i --frozen-lockfile
+    - pnpm run lint:check
+
+NPM Audit:
+  stage: check
+  allow_failure: true
+  script:
+    - pnpm audit --production
+
+Check TODOs:
+  stage: check
+  allow_failure: true
+  script:
+    - pnpm dlx leasot 'src/**/*.ts'
+
+Test:
+  stage: check
+  script:
+    - pnpm i --frozen-lockfile
+    - pnpm test
+
+NPM Package (DEV):
+  image: node
+  stage: publish
+  only:
+    - main
+  script:
+    - pnpm i --frozen-lockfile
+    - export NEXUS_PATH=//nexus.cubos.io/repository/${NXRM_PUBLISH_REPOSITORY}/
+    - echo -e "registry=https:${NEXUS_PATH}\nalways-auth=true\n${NEXUS_PATH}:_auth=$(echo -n ${NXRM_PUBLISH_USERNAME}':'${NXRM_PUBLISH_PASSWORD} | openssl base64)" > .npmrc
+    - pnpm version 1.0.$CI_PIPELINE_ID.dev || true
+    - pnpm run build
+    - pnpm publish --tag dev
