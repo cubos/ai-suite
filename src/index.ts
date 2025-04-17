@@ -1,12 +1,12 @@
 import { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
 import { ChatModel as OpenAIModels } from "openai/resources/index.mjs";
-import { MessageModel, ResultChatCompletion } from "./types/chat";
-import { IsLiteral } from "./types/utils";
-import { OpenAIProvider } from "./providers/openai";
-import { AnthropicProvider } from "./providers/anthropic";
-import { GeminiModels, GeminiProvider } from "./providers/gemini";
-import { ChatOptions } from "./providers/_base";
-import { DeepSeekModels, DeepSeekProvider } from "./providers/deepseek";
+import { MessageModel, ResultChatCompletion } from "./types/chat.js";
+import { IsLiteral } from "./types/utils.js";
+import { OpenAIProvider } from "./providers/openai.js";
+import { AnthropicProvider } from "./providers/anthropic.js";
+import { GeminiModels, GeminiProvider } from "./providers/gemini.js";
+import { ChatOptions } from "./providers/_base.js";
+import { DeepSeekModels, DeepSeekProvider } from "./providers/deepseek.js";
 import { Langfuse } from "langfuse";
 import dotenv from "dotenv";
 

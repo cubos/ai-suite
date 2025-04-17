@@ -5,9 +5,6 @@
   "scripts": {
     "build": "tsc",
     "dev": "npx ts-node src/index.ts",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:check": "eslint . --ext .ts"
@@ -28,13 +25,10 @@
   "devDependencies": {
     "@cubos/eslint-config": "^2.2.0",
     "@eslint/js": "^9.24.0",
-    "@types/jest": "^29.5.14",
     "eslint": "9.24.0",
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-prettier": "^5.2.6",
     "globals": "^16.0.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.3.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.30.1"
   },
