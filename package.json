@@ -1,5 +1,5 @@
 {
-  "name": "ai-suite",
+  "name": "@cubos/ai-suite",
   "author": "Joshua Passos",
   "version": "1.0.0",
   "main": "index.js",
