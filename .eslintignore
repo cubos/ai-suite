@@ -1,0 +1,10 @@
+build/
+dist/
+ormconfig.js
+src/generated
+migrations
+tests/
+deploy/
+*/**/*.d.ts
+.next/
+*.config.*

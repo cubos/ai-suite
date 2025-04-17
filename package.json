@@ -2,7 +2,6 @@
   "name": "@cubos/ai-suite",
   "author": "Joshua Passos",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
     "build": "tsc",
     "dev": "npx ts-node src/index.ts",
@@ -13,6 +12,9 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:check": "eslint . --ext .ts"
   },
+  "module": "./dist/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "keywords": [],
   "license": "MIT",
   "description": "All ai providers in one place",
