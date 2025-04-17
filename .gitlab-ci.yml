@@ -28,8 +28,7 @@ Check TODOs:
   stage: check
   allow_failure: true
   script:
-    - pnpm install --global leasot
-    - leasot 'src/**/*.ts'
+    - pnpm dlx leasot 'src/**/*.ts'
 
 Test:
   stage: check
