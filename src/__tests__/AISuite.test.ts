@@ -29,7 +29,7 @@ jest.mock("../providers/anthropic", () => ({
     createChatCompletion: jest.fn().mockResolvedValue({
       id: "mock-anthropic-id",
       created: Date.now(),
-      model: "claude-3-opus",
+      model: "claude-3-opus-latest",
       object: "chat.completion",
       content: "Mock Anthropic response",
       usage: {
@@ -47,7 +47,7 @@ jest.mock("../providers/gemini", () => ({
     createChatCompletion: jest.fn().mockResolvedValue({
       id: "mock-gemini-id",
       created: Date.now(),
-      model: "gemini-pro",
+      model: "gemini-1.5-pro",
       object: "chat.completion",
       content: "Mock Gemini response",
       usage: {
@@ -58,7 +58,7 @@ jest.mock("../providers/gemini", () => ({
       execution_time: 120,
     }),
   })),
-  GeminiModels: ["gemini-pro"],
+  GeminiModels: ["gemini-1.5-pro"],
 }));
 
 jest.mock("../providers/deepseek", () => ({
@@ -104,7 +104,7 @@ describe("AISuite", () => {
         trace: jest.fn(),
       };
       const suiteWithLangfuse = new AISuite(mockKeys, {
-        langFuse: langfuse as any,
+        langFuse: langfuse as never,
       });
       expect(suiteWithLangfuse).toBeInstanceOf(AISuite);
     });
@@ -112,31 +112,33 @@ describe("AISuite", () => {
 
   describe("getProvider", () => {
     it("should return OpenAI provider for openai models", () => {
-      const provider = aiSuite["getProvider"]("openai/gpt-4" as any);
+      const provider = aiSuite["getProvider"]("openai/gpt-4" as const);
       expect(provider).toBeDefined();
       expect(OpenAIProvider).toHaveBeenCalledWith(mockKeys.openaiKey, "gpt-4");
     });
 
     it("should return Anthropic provider for anthropic models", () => {
-      const provider = aiSuite["getProvider"]("anthropic/claude-3-opus" as any);
+      const provider = aiSuite["getProvider"](
+        "anthropic/claude-3-opus-latest" as const
+      );
       expect(provider).toBeDefined();
       expect(AnthropicProvider).toHaveBeenCalledWith(
         mockKeys.anthropicKey,
-        "claude-3-opus"
+        "claude-3-opus-latest"
       );
     });
 
     it("should return Gemini provider for gemini models", () => {
-      const provider = aiSuite["getProvider"]("gemini/gemini-pro" as any);
+      const provider = aiSuite["getProvider"]("gemini/gemini-1.5-pro");
       expect(provider).toBeDefined();
       expect(GeminiProvider).toHaveBeenCalledWith(
         mockKeys.geminiKey,
-        "gemini-pro"
+        "gemini-1.5-pro"
       );
     });
 
     it("should return DeepSeek provider for deepseek models", () => {
-      const provider = aiSuite["getProvider"]("deepseek/deepseek-chat" as any);
+      const provider = aiSuite["getProvider"]("deepseek/deepseek-chat");
       expect(provider).toBeDefined();
       expect(DeepSeekProvider).toHaveBeenCalledWith(
         mockKeys.deepseekKey,
@@ -146,7 +148,7 @@ describe("AISuite", () => {
 
     it("should throw error for unsupported provider", () => {
       expect(() => {
-        aiSuite["getProvider"]("unsupported/model" as any);
+        aiSuite["getProvider"]("unsupported/model" as never);
       }).toThrow("Unsupported provider: unsupported");
     });
   });
@@ -161,15 +163,15 @@ describe("AISuite", () => {
 
     it("should throw error for streaming option", async () => {
       await expect(
-        aiSuite.createChatCompletion("openai/gpt-4" as any, mockMessages, {
+        aiSuite.createChatCompletion("openai/gpt-4" as const, mockMessages, {
           stream: true,
-        } as any)
+        } as never)
       ).rejects.toThrow("Streaming is not supported");
     });
 
     it("should return chat completion with execution time", async () => {
       const result = await aiSuite.createChatCompletion(
-        "openai/gpt-4" as any,
+        "openai/gpt-4" as const,
         mockMessages
       );
       expect(result).toHaveProperty("execution_time");
@@ -188,13 +190,13 @@ describe("AISuite", () => {
     it("should return results for multiple providers", async () => {
       const providers = [
         "openai/gpt-4",
-        "anthropic/claude-3-opus",
-        "gemini/gemini-pro",
+        "anthropic/claude-3-opus-latest",
+        "gemini/gemini-1.5-pro",
         "deepseek/deepseek-chat",
       ] as const;
 
       const results = await aiSuite.createChatCompletionMultiResult(
-        providers as any,
+        providers as never,
         mockMessages
       );
 

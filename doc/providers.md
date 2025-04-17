@@ -64,15 +64,18 @@ Google Gemini integration supports Gemini models. The provider maps between AI-S
 
 #### Supported Models
 
-- `gemini-pro`
-- `gemini-ultra`
-- And other Gemini models
+- `gemini-2.5-pro-preview-03-25`
+- `gemini-2.0-flash`
+- `gemini-2.0-flash-lite`
+- `gemini-1.5-flash`
+- `gemini-1.5-flash-8b`
+- `gemini-1.5-pro`
 
 #### Usage Example
 
 ```typescript
 const response = await aiSuite.createChatCompletion(
-  'gemini/gemini-pro',
+  'gemini/gemini-1.5-pro',
   [{ role: 'user', content: 'Hello, world!' }]
 );
 ```
@@ -85,7 +88,9 @@ DeepSeek integration supports DeepSeek AI models. The provider handles mapping b
 
 #### Supported Models
 
-- Various DeepSeek models
+- `deepseek-chat`
+- `deepseek-coder`
+- `deepseek-coder-plus`
 
 #### Usage Example
 

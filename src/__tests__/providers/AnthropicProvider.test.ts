@@ -31,7 +31,7 @@ jest.mock("@anthropic-ai/sdk", () => {
 describe("AnthropicProvider", () => {
   let provider: AnthropicProvider;
   const mockApiKey = "test-api-key";
-  const mockModel = "claude-3-opus";
+  const mockModel = "claude-3-opus-latest";
   const mockMessages: MessageModel[] = [
     {
       role: "user",
@@ -129,7 +129,7 @@ describe("AnthropicProvider", () => {
 
     it("should throw error for unsupported role", async () => {
       const invalidMessages: MessageModel[] = [
-        { role: "invalid" as any, content: "Invalid message" },
+        { role: "invalid" as never, content: "Invalid message" },
       ];
 
       await expect(
