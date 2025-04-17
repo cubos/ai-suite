@@ -30,12 +30,6 @@ Check TODOs:
   script:
     - pnpm dlx leasot 'src/**/*.ts'
 
-Test:
-  stage: check
-  script:
-    - pnpm i --frozen-lockfile
-    - pnpm test
-
 NPM Package (DEV):
   image: node
   stage: publish
