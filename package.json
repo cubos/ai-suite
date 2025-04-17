@@ -12,6 +12,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:check": "eslint . --ext .ts"
   },
+  "type": "module",
   "module": "./dist/index.js",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
