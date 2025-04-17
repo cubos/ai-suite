@@ -15,6 +15,11 @@
   "module": "./dist/index.js",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "package.json"
+  ],
   "keywords": [],
   "license": "MIT",
   "description": "All ai providers in one place",
