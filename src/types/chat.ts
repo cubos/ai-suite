@@ -47,7 +47,15 @@ export interface ResultChatCompletion {
     total_tokens: number;
   };
 
-  content: string;
+  content: string | null;
+
+  tools?: {
+    id: string;
+    type: "function";
+    name: string;
+    content: Record<string, unknown>;
+    rawContent: string;
+  }[];
 
   /**
    * The execution time of the completion request. In milliseconds.

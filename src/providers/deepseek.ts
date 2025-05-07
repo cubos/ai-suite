@@ -56,6 +56,7 @@ export class DeepSeekProvider implements ProviderBase {
       response_format: options.responseFormat
         ? { type: options.responseFormat }
         : undefined,
+      tools: options.tools,
     });
 
     const completion = response as OpenAI.Chat.Completions.ChatCompletion;
@@ -64,6 +65,13 @@ export class DeepSeekProvider implements ProviderBase {
       created: Math.floor(Date.now() / 1000),
       model: completion.model,
       object: "chat.completion",
+      tools: completion.choices[0].message.tool_calls?.map((tool) => ({
+        id: tool.id,
+        type: "function",
+        name: tool.function.name,
+        content: JSON.parse(tool.function.arguments),
+        rawContent: tool.function.arguments,
+      })),
       content: completion.choices[0].message.content || "",
       usage: {
         input_tokens: completion.usage?.prompt_tokens || 0,

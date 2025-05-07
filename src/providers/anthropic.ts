@@ -1,6 +1,6 @@
 import { Anthropic } from "@anthropic-ai/sdk";
 import { MessageModel, ResultChatCompletion } from "../types/chat.js";
-import { ChatOptions, ProviderBase } from "./_base.js";
+import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
 
 export class AnthropicProvider implements ProviderBase {
   private client: Anthropic;
@@ -50,6 +50,7 @@ export class AnthropicProvider implements ProviderBase {
       messages: mappedMessages,
       max_tokens: 4096,
       stream: options.stream || false,
+      tools: convertToAnthropicFunctions(options.tools),
     };
 
     // Add temperature if provided
@@ -74,6 +75,18 @@ export class AnthropicProvider implements ProviderBase {
       object: "chat.completion",
       content:
         response.content[0].type === "text" ? response.content[0].text : "",
+      tools: response.content
+        .filter(
+          (block): block is Anthropic.Messages.ToolUseBlock =>
+            block.type === "tool_use"
+        )
+        .map((tool) => ({
+          id: tool.id,
+          type: "function",
+          name: tool.name,
+          content: tool.input as Record<string, unknown>,
+          rawContent: JSON.stringify(tool.input),
+        })),
       usage: {
         input_tokens: response.usage.input_tokens || 0,
         output_tokens: response.usage.output_tokens || 0,
@@ -84,4 +97,24 @@ export class AnthropicProvider implements ProviderBase {
 
     return result;
   }
+}
+
+function convertToAnthropicFunctions(
+  tools?: ToolModel[]
+): Anthropic.Messages.ToolUnion[] | undefined {
+  if (!tools) {
+    return undefined;
+  }
+
+  return tools.map((tool): Anthropic.Messages.ToolUnion => {
+    return {
+      name: tool.function.name,
+      description: tool.function.description,
+      input_schema: {
+        type: "object",
+        properties: tool.function.parameters.properties,
+        required: tool.function.parameters.required,
+      },
+    };
+  });
 }

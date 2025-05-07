@@ -1,7 +1,11 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  FunctionDeclarationsTool,
+  GoogleGenerativeAI,
+  SchemaType,
+  Schema,
+} from "@google/generative-ai";
 import { MessageModel, ResultChatCompletion } from "../types/chat.js";
-import { ChatOptions, ProviderBase } from "./_base.js";
-
+import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
 
 export type GeminiModels =
   | "gemini-2.5-pro-preview-03-25"
@@ -28,8 +32,7 @@ export class GeminiProvider implements ProviderBase {
       model: this.model,
     });
 
-    // Map our message format to Gemini's format
-    const mappedMessages = messages.map((msg) => {
+    const mappedMessages = messages.slice(0, messages.length - 1).map((msg) => {
       if (msg.role === "user" || msg.role === "developer") {
         return {
           role: "user",
@@ -58,29 +61,31 @@ export class GeminiProvider implements ProviderBase {
       throw new Error(`Unsupported role: ${msg.role}`);
     });
 
-    // Create chat session
     const chat = generativeModel.startChat({
+      history: mappedMessages,
+      tools: convertToGeminiFunctions(options.tools),
       generationConfig: {
-        temperature: options.temperature,
+        temperature: options.temperature ?? 0.7,
       },
     });
 
-    // Non-streaming implementation
-    // Process all messages in the chat
-    let lastResponse;
-    for (const msg of mappedMessages) {
-      if (msg.role === "user") {
-        lastResponse = await chat.sendMessage(msg.parts[0].text);
-      }
-    }
+    const lastResponse = await chat.sendMessage(
+      messages[messages.length - 1].content
+    );
 
-    // Create a response in the expected format
     const result: ResultChatCompletion = {
       id: `gemini-${Date.now()}`,
       created: Math.floor(Date.now() / 1000),
       model: this.model,
       object: "chat.completion",
       content: lastResponse?.response.text() || "",
+      tools: lastResponse?.response.functionCalls()?.map((tool) => ({
+        id: tool.name,
+        type: "function",
+        name: tool.name,
+        content: tool.args as Record<string, unknown>,
+        rawContent: JSON.stringify(tool.args),
+      })),
       usage: {
         input_tokens:
           lastResponse?.response.usageMetadata?.promptTokenCount || 0,
@@ -94,4 +99,54 @@ export class GeminiProvider implements ProviderBase {
 
     return result;
   }
+}
+
+function convertToGeminiFunctions(
+  tools?: ToolModel[]
+): FunctionDeclarationsTool[] | undefined {
+  return tools?.map((tool) => ({
+    functionDeclarations: [
+      {
+        name: tool.function.name,
+        description: tool.function.description,
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: Object.fromEntries(
+            Object.entries(tool.function.parameters.properties).map(
+              ([key, value]) => [
+                key,
+                {
+                  type:
+                    value.type === "string"
+                      ? SchemaType.STRING
+                      : value.type === "number"
+                      ? SchemaType.NUMBER
+                      : value.type === "boolean"
+                      ? SchemaType.BOOLEAN
+                      : value.type === "array"
+                      ? SchemaType.ARRAY
+                      : SchemaType.OBJECT,
+                  description: value.description,
+                  ...(value.type === "array"
+                    ? {
+                        items: {
+                          type: SchemaType.STRING,
+                        },
+                      }
+                    : {}),
+                  ...(value.type === "object"
+                    ? {
+                        properties: {},
+                        required: [],
+                      }
+                    : {}),
+                } as Schema,
+              ]
+            )
+          ),
+          required: tool.function.parameters.required,
+        },
+      },
+    ],
+  }));
 }
