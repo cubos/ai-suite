@@ -1,6 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk";
 import { MessageModel, ResultChatCompletion } from "../types/chat.js";
 import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
+import { tryCatch } from "../types/utils.js";
 
 export class AnthropicProvider implements ProviderBase {
   private client: Anthropic;
@@ -35,9 +36,8 @@ export class AnthropicProvider implements ProviderBase {
           // Anthropic doesn't have direct tool/function support, so we'll format it as user message
           return {
             role: "user",
-            content: `Tool Response (${msg.name || "default_tool"}): ${
-              msg.content
-            }`,
+            content: `Tool Response (${msg.name || "default_tool"}): ${msg.content
+              }`,
           };
         }
         throw new Error(`Unsupported role: ${msg.role}`);
@@ -68,13 +68,18 @@ export class AnthropicProvider implements ProviderBase {
       stream: false,
     });
 
+
+    const content = response.content[0].type === "text" ? response.content[0].text : "";
+
     const result: ResultChatCompletion = {
       id: response.id,
       created: Math.floor(Date.now() / 1000),
       model: this.model,
       object: "chat.completion",
-      content:
-        response.content[0].type === "text" ? response.content[0].text : "",
+      content,
+      content_object:
+        response.content[0].type === "text" ? tryCatch(() => JSON.parse(content))
+          : undefined,
       tools: response.content
         .filter(
           (block): block is Anthropic.Messages.ToolUseBlock =>

@@ -1,6 +1,8 @@
 import { OpenAI } from "openai";
 import { MessageModel, ResultChatCompletion } from "../types/chat.js";
 import { ChatOptions, ProviderBase } from "./_base.js";
+import { zodResponseFormat } from "openai/helpers/zod.mjs";
+import { tryCatch } from "../types/utils.js";
 
 export class OpenAIProvider implements ProviderBase {
   private client: OpenAI;
@@ -46,9 +48,10 @@ export class OpenAIProvider implements ProviderBase {
       messages: mappedMessages,
       stream: options.stream || false,
       temperature: options.temperature,
-      response_format: options.responseFormat
-        ? { type: options.responseFormat }
-        : undefined,
+      response_format:
+        options.responseFormat === "json_schema"
+          ? zodResponseFormat(options.zodSchema, "default")
+          : { type: options.responseFormat },
       tools: options.tools,
     });
 
@@ -59,6 +62,10 @@ export class OpenAIProvider implements ProviderBase {
       model: completion.model,
       object: "chat.completion",
       content: completion.choices[0].message.content,
+      content_object:
+        options.responseFormat !== "text" ?
+          tryCatch(() => JSON.parse(completion.choices[0].message.content!))
+          : undefined,
       tools: completion.choices[0].message.tool_calls?.map((tool) => ({
         id: tool.id,
         type: "function",

@@ -49,6 +49,8 @@ export interface ResultChatCompletion {
 
   content: string | null;
 
+  content_object: Record<string, unknown>;
+
   tools?: {
     id: string;
     type: "function";

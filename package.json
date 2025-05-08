@@ -38,9 +38,11 @@
     "@google/generative-ai": "^0.24.0",
     "@types/node": "^22.14.1",
     "dotenv": "^16.5.0",
+    "gemini-zod": "^0.1.2",
     "langfuse": "^3.37.1",
     "openai": "^4.94.0",
     "zod": "^3.24.3",
+    "zod-openapi": "^4.2.4",
     "zod-to-json-schema": "^3.24.5"
   }
 }

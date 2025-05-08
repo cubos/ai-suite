@@ -1,6 +1,8 @@
 import { OpenAI } from "openai";
 import { MessageModel, ResultChatCompletion } from "../types/chat.js";
 import { ChatOptions, ProviderBase } from "./_base.js";
+import { zodResponseFormat } from "openai/helpers/zod.mjs";
+import { tryCatch } from "../types/utils.js";
 
 export type DeepSeekModels =
   | "deepseek-chat"
@@ -53,9 +55,9 @@ export class DeepSeekProvider implements ProviderBase {
       messages: mappedMessages,
       stream: options.stream || false,
       temperature: options.temperature,
-      response_format: options.responseFormat
-        ? { type: options.responseFormat }
-        : undefined,
+      response_format: options.responseFormat === "json_schema"
+        ? zodResponseFormat(options.zodSchema, "default")
+        : { type: options.responseFormat },
       tools: options.tools,
     });
 
@@ -73,6 +75,10 @@ export class DeepSeekProvider implements ProviderBase {
         rawContent: tool.function.arguments,
       })),
       content: completion.choices[0].message.content || "",
+      content_object:
+        options.responseFormat !== "text" ?
+          tryCatch(() => JSON.parse(completion.choices[0].message.content!))
+          : undefined,
       usage: {
         input_tokens: completion.usage?.prompt_tokens || 0,
         output_tokens: completion.usage?.completion_tokens || 0,

@@ -6,6 +6,12 @@ import {
 } from "@google/generative-ai";
 import { MessageModel, ResultChatCompletion } from "../types/chat.js";
 import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
+import { extendZodWithOpenApi } from "zod-openapi";
+import { z } from "zod";
+import { toGeminiSchema } from "gemini-zod";
+import { tryCatch } from "../types/utils.js";
+
+extendZodWithOpenApi(z);
 
 export type GeminiModels =
   | "gemini-2.5-pro-preview-03-25"
@@ -51,9 +57,8 @@ export class GeminiProvider implements ProviderBase {
           role: "user",
           parts: [
             {
-              text: `Tool Response (${msg.name || "default_tool"}): ${
-                msg.content
-              }`,
+              text: `Tool Response (${msg.name || "default_tool"}): ${msg.content
+                }`,
             },
           ],
         };
@@ -65,6 +70,13 @@ export class GeminiProvider implements ProviderBase {
       history: mappedMessages,
       tools: convertToGeminiFunctions(options.tools),
       generationConfig: {
+        responseMimeType:
+          options.responseFormat !== "text" ? "application/json" : undefined,
+        ...(options.responseFormat === "json_schema"
+          ? {
+            responseSchema: toGeminiSchema(options.zodSchema),
+          }
+          : {}),
         temperature: options.temperature ?? 0.7,
       },
     });
@@ -79,6 +91,10 @@ export class GeminiProvider implements ProviderBase {
       model: this.model,
       object: "chat.completion",
       content: lastResponse?.response.text() || "",
+      content_object:
+        options.responseFormat !== "text" && lastResponse?.response.text()
+          ? tryCatch(() => JSON.parse(lastResponse?.response.text()))
+          : undefined,
       tools: lastResponse?.response.functionCalls()?.map((tool) => ({
         id: tool.name,
         type: "function",
@@ -120,25 +136,25 @@ function convertToGeminiFunctions(
                     value.type === "string"
                       ? SchemaType.STRING
                       : value.type === "number"
-                      ? SchemaType.NUMBER
-                      : value.type === "boolean"
-                      ? SchemaType.BOOLEAN
-                      : value.type === "array"
-                      ? SchemaType.ARRAY
-                      : SchemaType.OBJECT,
+                        ? SchemaType.NUMBER
+                        : value.type === "boolean"
+                          ? SchemaType.BOOLEAN
+                          : value.type === "array"
+                            ? SchemaType.ARRAY
+                            : SchemaType.OBJECT,
                   description: value.description,
                   ...(value.type === "array"
                     ? {
-                        items: {
-                          type: SchemaType.STRING,
-                        },
-                      }
+                      items: {
+                        type: SchemaType.STRING,
+                      },
+                    }
                     : {}),
                   ...(value.type === "object"
                     ? {
-                        properties: {},
-                        required: [],
-                      }
+                      properties: {},
+                      required: [],
+                    }
                     : {}),
                 } as Schema,
               ]

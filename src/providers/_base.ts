@@ -1,6 +1,10 @@
 import { Readable } from "stream";
 import { MessageModel, ResultChatCompletion } from "../types/chat.js";
+import { ZodObject, ZodRawShape, ZodType } from "zod";
 
+/**
+ * The JSON schema to use for the response and tool parameters
+ */
 type IJsonSchema = {
   type: "object";
   properties: Record<
@@ -14,6 +18,9 @@ type IJsonSchema = {
   required: string[];
 };
 
+/**
+ * The tool model
+ */
 export interface ToolModel {
   type: "function";
   function: {
@@ -25,15 +32,11 @@ export interface ToolModel {
   };
 }
 
-export interface ChatOptions {
+export interface ChatOptionsBase {
   /**
    * Whether to stream the response
    */
   stream?: boolean;
-  /**
-   * The response format
-   */
-  responseFormat?: "json_object" | "text";
   /**
    * The temperature
    */
@@ -44,6 +47,33 @@ export interface ChatOptions {
    */
   tools?: ToolModel[];
 }
+
+export interface JSONSchema<T = unknown> extends ChatOptionsBase {
+  /**
+   * The response format
+   */
+  responseFormat: "json_schema";
+  /**
+   * The Zod schema to use for the response
+   */
+  zodSchema: ZodType<T>;
+}
+
+export interface JSONObject extends ChatOptionsBase {
+  /**
+   * The response format
+   */
+  responseFormat: "json_object";
+}
+
+export interface Text extends ChatOptionsBase {
+  /**
+   * The response format
+   */
+  responseFormat: "text";
+}
+
+export type ChatOptions = JSONSchema | JSONObject | Text;
 
 export interface ProviderBase {
   createChatCompletion(
