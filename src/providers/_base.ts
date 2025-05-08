@@ -1,6 +1,6 @@
 import { Readable } from "stream";
 import { MessageModel, ResultChatCompletion } from "../types/chat.js";
-import { ZodObject, ZodRawShape, ZodType } from "zod";
+import { ZodType } from "zod";
 
 /**
  * The JSON schema to use for the response and tool parameters

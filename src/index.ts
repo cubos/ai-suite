@@ -9,7 +9,6 @@ import { ChatOptions } from "./providers/_base.js";
 import { DeepSeekModels, DeepSeekProvider } from "./providers/deepseek.js";
 import { Langfuse } from "langfuse";
 import dotenv from "dotenv";
-import { z } from "zod";
 
 dotenv.config();
 
