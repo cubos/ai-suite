@@ -110,6 +110,8 @@ export class GeminiProvider implements ProviderBase {
         total_tokens:
           (lastResponse?.response.usageMetadata?.promptTokenCount || 0) +
           (lastResponse?.response.usageMetadata?.candidatesTokenCount || 0),
+        cached_tokens:
+          lastResponse?.response.usageMetadata?.cachedContentTokenCount || 0,
       },
     };
 

@@ -97,6 +97,7 @@ export class AnthropicProvider implements ProviderBase {
         output_tokens: response.usage.output_tokens || 0,
         total_tokens:
           response.usage.input_tokens + response.usage.output_tokens,
+        cached_tokens: response.usage.cache_read_input_tokens || 0,
       },
     };
 
