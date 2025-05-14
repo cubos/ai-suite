@@ -1,5 +1,5 @@
 import { OpenAI } from "openai";
-import { MessageModel, ResultChatCompletion, SuccessChatCompletion } from "../types/chat.js";
+import { MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import { ChatOptions, ProviderBase } from "./_base.js";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import { tryCatch } from "../types/utils.js";
