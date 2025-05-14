@@ -1,5 +1,4 @@
-import { Readable } from "stream";
-import { MessageModel, ResultChatCompletion, SuccessChatCompletion } from "../types/chat.js";
+import { MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import { ZodType } from "zod";
 
 /**
