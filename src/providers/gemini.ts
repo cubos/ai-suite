@@ -1,10 +1,10 @@
 import {
-  FunctionDeclarationsTool,
-  GoogleGenerativeAI,
-  SchemaType,
-  Schema,
-} from "@google/generative-ai";
-import { MessageModel, ResultChatCompletion } from "../types/chat.js";
+  GoogleGenAI,
+  Type as SchemaType,
+  Tool,
+  FunctionCall,
+} from "@google/genai";
+import { MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
 import { extendZodWithOpenApi } from "zod-openapi";
 import { z } from "zod";
@@ -22,97 +22,106 @@ export type GeminiModels =
   | "gemini-1.5-flash-8b"
   | "gemini-1.5-pro";
 
+const notUseThinkingConfig = [
+  "gemini-2.0-flash"
+  ,"gemini-2.0-flash-lite"
+  ,"gemini-1.5-flash"
+  ,"gemini-1.5-flash-8b"
+  ,"gemini-1.5-pro"
+]
+
 export class GeminiProvider implements ProviderBase {
-  private client: GoogleGenerativeAI;
+  private client: GoogleGenAI;
   private model: string;
 
   constructor(apiKey: string, model: string) {
-    this.client = new GoogleGenerativeAI(apiKey);
+    this.client = new GoogleGenAI({ apiKey });
     this.model = model;
   }
 
   async createChatCompletion(
     messages: MessageModel[],
     options: ChatOptions
-  ): Promise<ResultChatCompletion> {
-    const generativeModel = this.client.getGenerativeModel({
+  ): Promise<SuccessChatCompletion> {
+    const chat = this.client.chats.create({
       model: this.model,
-    });
-
-    const mappedMessages = messages.slice(0, messages.length - 1).map((msg) => {
-      if (msg.role === "user" || msg.role === "developer") {
-        return {
-          role: "user",
-          parts: [{ text: msg.content }],
-        };
-      }
-      if (msg.role === "assistant") {
-        return {
-          role: "model",
-          parts: [{ text: msg.content }],
-        };
-      }
-      if (msg.role === "tool") {
-        // Gemini doesn't directly support tools/functions, so format as user message
-        return {
-          role: "user",
-          parts: [
-            {
-              text: `Tool Response (${msg.name || "default_tool"}): ${msg.content
+      history: messages.slice(0, messages.length - 1).map((msg) => {
+        if (msg.role === "user" || msg.role === "developer") {
+          return {
+            role: "user",
+            parts: [{ text: msg.content }],
+          };
+        }
+        if (msg.role === "assistant") {
+          return {
+            role: "model",
+            parts: [{ text: msg.content }],
+          };
+        }
+        if (msg.role === "tool") {
+          // Gemini doesn't directly support tools/functions, so format as user message
+          return {
+            role: "user",
+            parts: [
+              {
+                text: `Tool Response (${msg.name || "default_tool"}): ${
+                  msg.content
                 }`,
-            },
-          ],
-        };
-      }
-      throw new Error(`Unsupported role: ${msg.role}`);
-    });
-
-    const chat = generativeModel.startChat({
-      history: mappedMessages,
-      tools: convertToGeminiFunctions(options.tools),
-      generationConfig: {
+              },
+            ],
+          };
+        }
+        throw new Error(`Unsupported role: ${msg.role}`);
+      }),
+      config: {
+        tools: options.tools
+          ? convertToGeminiFunctions(options.tools)
+          : undefined,
+        temperature: options.temperature ?? 0.7,
+        ...(!notUseThinkingConfig.includes(this.model) && {
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
+        }),
         responseMimeType:
           options.responseFormat !== "text" ? "application/json" : undefined,
         ...(options.responseFormat === "json_schema"
           ? {
-            responseSchema: toGeminiSchema(options.zodSchema),
-          }
+              responseSchema: toGeminiSchema(options.zodSchema),
+            }
           : {}),
-        temperature: options.temperature ?? 0.7,
       },
     });
 
-    const lastResponse = await chat.sendMessage(
-      messages[messages.length - 1].content
-    );
+    const lastResponse = await chat.sendMessage({
+      message: messages[messages.length - 1].content,
+    });
 
-    const result: ResultChatCompletion = {
+    const result: SuccessChatCompletion = {
+      success: true,
       id: `gemini-${Date.now()}`,
       created: Math.floor(Date.now() / 1000),
       model: this.model,
       object: "chat.completion",
-      content: lastResponse?.response.text() || "",
+      content: lastResponse.text ?? null,
       content_object:
-        options.responseFormat !== "text" && lastResponse?.response.text()
-          ? tryCatch(() => JSON.parse(lastResponse?.response.text()))
+        options.responseFormat !== "text" && (lastResponse.text ?? null)
+          ? tryCatch(() => JSON.parse(lastResponse.text ?? ""))
           : undefined,
-      tools: lastResponse?.response.functionCalls()?.map((tool) => ({
-        id: tool.name,
+      tools: lastResponse.functionCalls?.map((tool: FunctionCall) => ({
+        id: tool.name ?? "",
         type: "function",
-        name: tool.name,
+        name: tool.name ?? "",
         content: tool.args as Record<string, unknown>,
         rawContent: JSON.stringify(tool.args),
       })),
       usage: {
-        input_tokens:
-          lastResponse?.response.usageMetadata?.promptTokenCount || 0,
-        output_tokens:
-          lastResponse?.response.usageMetadata?.candidatesTokenCount || 0,
+        input_tokens: lastResponse.usageMetadata?.promptTokenCount || 0,
+        output_tokens: lastResponse.usageMetadata?.candidatesTokenCount || 0,
         total_tokens:
-          (lastResponse?.response.usageMetadata?.promptTokenCount || 0) +
-          (lastResponse?.response.usageMetadata?.candidatesTokenCount || 0),
-        cached_tokens:
-          lastResponse?.response.usageMetadata?.cachedContentTokenCount || 0,
+          (lastResponse.usageMetadata?.promptTokenCount || 0) +
+          (lastResponse.usageMetadata?.candidatesTokenCount || 0),
+        cached_tokens: lastResponse.usageMetadata?.cachedContentTokenCount || 0,
       },
     };
 
@@ -120,12 +129,14 @@ export class GeminiProvider implements ProviderBase {
   }
 }
 
-function convertToGeminiFunctions(
+export function convertToGeminiFunctions(
   tools?: ToolModel[]
-): FunctionDeclarationsTool[] | undefined {
-  return tools?.map((tool) => ({
-    functionDeclarations: [
-      {
+): Tool[] | undefined {
+  if (!tools) return undefined;
+
+  return [
+    {
+      functionDeclarations: tools.map((tool) => ({
         name: tool.function.name,
         description: tool.function.description,
         parameters: {
@@ -139,33 +150,33 @@ function convertToGeminiFunctions(
                     value.type === "string"
                       ? SchemaType.STRING
                       : value.type === "number"
-                        ? SchemaType.NUMBER
-                        : value.type === "boolean"
-                          ? SchemaType.BOOLEAN
-                          : value.type === "array"
-                            ? SchemaType.ARRAY
-                            : SchemaType.OBJECT,
+                      ? SchemaType.NUMBER
+                      : value.type === "boolean"
+                      ? SchemaType.BOOLEAN
+                      : value.type === "array"
+                      ? SchemaType.ARRAY
+                      : SchemaType.OBJECT,
                   description: value.description,
                   ...(value.type === "array"
                     ? {
-                      items: {
-                        type: SchemaType.STRING,
-                      },
-                    }
+                        items: {
+                          type: SchemaType.STRING,
+                        },
+                      }
                     : {}),
                   ...(value.type === "object"
                     ? {
-                      properties: {},
-                      required: [],
-                    }
+                        properties: {},
+                        required: [],
+                      }
                     : {}),
-                } as Schema,
+                },
               ]
             )
           ),
           required: tool.function.parameters.required,
         },
-      },
-    ],
-  }));
+      })),
+    },
+  ];
 }

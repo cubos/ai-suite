@@ -1,5 +1,5 @@
 import { Readable } from "stream";
-import { MessageModel, ResultChatCompletion } from "../types/chat.js";
+import { MessageModel, ResultChatCompletion, SuccessChatCompletion } from "../types/chat.js";
 import { ZodType } from "zod";
 
 /**
@@ -79,5 +79,5 @@ export interface ProviderBase {
   createChatCompletion(
     messages: MessageModel[],
     options: ChatOptions
-  ): Promise<Readable | ResultChatCompletion>;
+  ): Promise<SuccessChatCompletion>;
 }

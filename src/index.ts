@@ -1,9 +1,6 @@
-import { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
-import { ChatModel as OpenAIModels } from "openai/resources/index.mjs";
 import { MessageModel, ResultChatCompletion } from "./types/chat.js";
-import { IsLiteral } from "./types/utils.js";
-import { OpenAIProvider } from "./providers/openai.js";
-import { AnthropicProvider } from "./providers/anthropic.js";
+import { OpenAIModels, OpenAIProvider } from "./providers/openai.js";
+import { AnthropicModels, AnthropicProvider } from "./providers/anthropic.js";
 import { GeminiModels, GeminiProvider } from "./providers/gemini.js";
 import { ChatOptions } from "./providers/_base.js";
 import { DeepSeekModels, DeepSeekProvider } from "./providers/deepseek.js";
@@ -14,7 +11,7 @@ dotenv.config();
 
 export type ProviderModel =
   | `openai/${OpenAIModels}`
-  | `anthropic/${IsLiteral<Model>}`
+  | `anthropic/${AnthropicModels}`
   | `gemini/${GeminiModels}`
   | `deepseek/${DeepSeekModels}`;
 
@@ -51,15 +48,15 @@ export class AISuite {
    * @param options - The options to use
    * @returns The chat completion
    */
-  async createChatCompletionMultiResult(
-    providers: ProviderModel[],
+  async createChatCompletionMultiResult<T extends ProviderModel>(
+    providers: T[],
     messages: MessageModel[],
     options: { stream: false } & ChatOptions = {
       stream: false,
       responseFormat: "text" as const,
       temperature: 0.7,
     }
-  ): Promise<{ [key in ProviderModel]: ResultChatCompletion }[]> {
+  ): Promise<{ [key in T]: ResultChatCompletion }[]> {
     // handle possible errors from the providers
     const results = await Promise.all(
       providers.map(async (p) => {
@@ -110,8 +107,18 @@ export class AISuite {
       ...options,
     };
 
+    const start = Date.now();
+
     if (opts.stream) {
-      throw new Error("Streaming is not supported");
+      return {
+        success: false,
+        error: "Streaming is not supported",
+        raw: new Error("Streaming is not supported"),
+        tag: "InvalidRequest",
+        created: start,
+        model: provider.split("/")[1],
+        execution_time: Date.now() - start,
+      }
     }
 
     const trace = this.langFuse?.trace({
@@ -125,18 +132,35 @@ export class AISuite {
     });
 
     const p = this.getProvider(provider);
-    const start = Date.now();
-    const result = await p.createChatCompletion(messages, opts);
-    const end = Date.now();
 
-    generation?.end({
-      output: result,
-    });
+    try {
+      const result = await p.createChatCompletion(messages, opts);
+      const end = Date.now();
 
-    return {
-      ...result,
-      execution_time: end - start,
-    };
+      generation?.end({
+        output: result,
+      });
+
+      return {
+        ...result,
+        execution_time: end - start,
+      }
+    } catch (error) {
+      const end = Date.now();
+      generation?.end({
+        output: error,
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+        raw: error as Error,
+        tag: "Unknown",
+        created: start,
+        model: provider.split("/")[1],
+        execution_time: end - start,
+      }
+    }
   }
 
   private getProvider(provider: ProviderModel) {

@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.50.4",
+    "@google/genai": "^0.14.0",
     "@google/generative-ai": "^0.24.1",
     "@types/node": "^22.15.18",
     "dotenv": "^16.5.0",

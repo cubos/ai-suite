@@ -1,5 +1,5 @@
 import { OpenAI } from "openai";
-import { MessageModel, ResultChatCompletion } from "../types/chat.js";
+import { MessageModel, ResultChatCompletion, SuccessChatCompletion } from "../types/chat.js";
 import { ChatOptions, ProviderBase } from "./_base.js";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import { tryCatch } from "../types/utils.js";
@@ -24,7 +24,7 @@ export class DeepSeekProvider implements ProviderBase {
   async createChatCompletion(
     messages: MessageModel[],
     options: ChatOptions
-  ): Promise<ResultChatCompletion> {
+  ): Promise<SuccessChatCompletion> {
     const mappedMessages = messages.map(
       (msg): OpenAI.ChatCompletionMessageParam => {
         if (msg.role === "developer") {
@@ -62,7 +62,8 @@ export class DeepSeekProvider implements ProviderBase {
     });
 
     const completion = response as OpenAI.Chat.Completions.ChatCompletion;
-    const result: ResultChatCompletion = {
+    const result: SuccessChatCompletion = {
+      success: true,
       id: completion.id,
       created: Math.floor(Date.now() / 1000),
       model: completion.model,

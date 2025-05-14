@@ -1,7 +1,10 @@
 import { Anthropic } from "@anthropic-ai/sdk";
-import { MessageModel, ResultChatCompletion } from "../types/chat.js";
+import { MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
-import { tryCatch } from "../types/utils.js";
+import { IsLiteral, tryCatch } from "../types/utils.js";
+import { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
+
+export type AnthropicModels = IsLiteral<Model>
 
 export class AnthropicProvider implements ProviderBase {
   private client: Anthropic;
@@ -17,7 +20,7 @@ export class AnthropicProvider implements ProviderBase {
   async createChatCompletion(
     messages: MessageModel[],
     options: ChatOptions
-  ): Promise<ResultChatCompletion> {
+  ): Promise<SuccessChatCompletion> {
     const mappedMessages = messages.map(
       (msg): { role: "user" | "assistant"; content: string } => {
         if (msg.role === "developer" || msg.role === "user") {
@@ -71,7 +74,8 @@ export class AnthropicProvider implements ProviderBase {
 
     const content = response.content[0].type === "text" ? response.content[0].text : "";
 
-    const result: ResultChatCompletion = {
+    const result: SuccessChatCompletion = {
+      success: true,
       id: response.id,
       created: Math.floor(Date.now() / 1000),
       model: this.model,
