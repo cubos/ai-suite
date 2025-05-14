@@ -34,14 +34,14 @@
     "typescript-eslint": "^8.30.1"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
-    "@google/generative-ai": "^0.24.0",
-    "@types/node": "^22.14.1",
+    "@anthropic-ai/sdk": "^0.50.4",
+    "@google/generative-ai": "^0.24.1",
+    "@types/node": "^22.15.18",
     "dotenv": "^16.5.0",
     "gemini-zod": "^0.1.2",
-    "langfuse": "^3.37.1",
-    "openai": "^4.94.0",
-    "zod": "^3.24.3",
+    "langfuse": "^3.37.2",
+    "openai": "^4.98.0",
+    "zod": "^3.24.4",
     "zod-openapi": "^4.2.4",
     "zod-to-json-schema": "^3.24.5"
   }

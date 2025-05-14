@@ -9,14 +9,14 @@ importers:
   .:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: ^0.39.0
-        version: 0.39.0
+        specifier: ^0.50.4
+        version: 0.50.4
       '@google/generative-ai':
-        specifier: ^0.24.0
-        version: 0.24.0
+        specifier: ^0.24.1
+        version: 0.24.1
       '@types/node':
-        specifier: ^22.14.1
-        version: 22.14.1
+        specifier: ^22.15.18
+        version: 22.15.18
       dotenv:
         specifier: ^16.5.0
         version: 16.5.0
@@ -24,20 +24,20 @@ importers:
         specifier: ^0.1.2
         version: 0.1.2
       langfuse:
-        specifier: ^3.37.1
-        version: 3.37.1
+        specifier: ^3.37.2
+        version: 3.37.2
       openai:
-        specifier: ^4.94.0
-        version: 4.94.0(zod@3.24.3)
+        specifier: ^4.98.0
+        version: 4.98.0(zod@3.24.4)
       zod:
-        specifier: ^3.24.3
-        version: 3.24.3
+        specifier: ^3.24.4
+        version: 3.24.4
       zod-openapi:
         specifier: ^4.2.4
-        version: 4.2.4(zod@3.24.3)
+        version: 4.2.4(zod@3.24.4)
       zod-to-json-schema:
         specifier: ^3.24.5
-        version: 3.24.5(zod@3.24.3)
+        version: 3.24.5(zod@3.24.4)
     devDependencies:
       '@cubos/eslint-config':
         specifier: ^2.2.0
@@ -69,8 +69,10 @@ importers:
 
 packages:
 
-  '@anthropic-ai/sdk@0.39.0':
-    resolution: {integrity: sha512-eMyDIPRZbt1CCLErRCi3exlAvNkBtRe+kW5vvJyef93PmNr/clstYgHhtvmkxN82nlKgzyGPCyGxrm0JQ1ZIdg==}
+  '@anthropic-ai/sdk@0.50.4':
+    resolution: {integrity: sha512-zZOWyIuznx2uqiRcCNuidkAsLC8IBHgS9lTwSVEB29sUCwEcqL95MWpWP1nccHSKfiZga+hbZaI0btR2zjuMmw==}
+    engines: {node: '>= 20'}
+    hasBin: true
 
   '@cubos/eslint-config@2.2.0':
     resolution: {integrity: sha512-LKGByK17CGWtcVt24yFz74QFZfH+3srFJ9BKoQEUlJu+tGqUJs4KzITPut0mgNdhv9fcYki7AVCcASbttPiY5A==}
@@ -275,8 +277,8 @@ packages:
     resolution: {integrity: sha512-ZAoA40rNMPwSm+AeHpCq8STiNAwzWLJuP8Xv4CHIc9wv/PSuExjMrmjfYNj682vW0OOiZ1HKxzvjQr9XZIisQA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@google/generative-ai@0.24.0':
-    resolution: {integrity: sha512-fnEITCGEB7NdX0BhoYZ/cq/7WPZ1QS5IzJJfC3Tg/OwkvBetMiVJciyaan297OvE4B9Jg1xvo0zIazX/9sGu1Q==}
+  '@google/generative-ai@0.24.1':
+    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
     engines: {node: '>=18.0.0'}
 
   '@humanfs/core@0.19.1':
@@ -342,8 +344,8 @@ packages:
   '@types/node@18.19.76':
     resolution: {integrity: sha512-yvR7Q9LdPz2vGpmpJX5LolrgRdWvB67MJKDPSgIIzpFbaf9a1j/f5DnLp5VDyHGMR0QZHlTr1afsD87QCXFHKw==}
 
-  '@types/node@22.14.1':
-    resolution: {integrity: sha512-u0HuPQwe/dHrItgHHpmw3N2fYCR6x4ivMNbPHRkBVP4CvN+kiRrKHWk3i8tXiO/joPwXLMYvF9TTF0eqgHIuOw==}
+  '@types/node@22.15.18':
+    resolution: {integrity: sha512-v1DKRfUdyW+jJhZNEI1PYy29S2YRxMV5AOO/x/SjKmW0acCIOqmbj6Haf9eHAhsPmrhlHSxEhv/1WszcLWV4cg==}
 
   '@types/semver@7.5.8':
     resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
@@ -1204,12 +1206,12 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  langfuse-core@3.37.1:
-    resolution: {integrity: sha512-YfCegzOmy8Ex1SQg2eCO5a77YwVAJZ7hVUUbfIx+ncREEM9Smk4FrveNG0bOKS3n9C4TJZpX12DfQ+819gmHtw==}
+  langfuse-core@3.37.2:
+    resolution: {integrity: sha512-3iFz1UZzKDi9GEjIRRSSqcKbusmB17uR9qYxMR1BHQYuBkQv2wIV+HI793hWh3tmc6q2pmqPMjtJdoFVBhucDA==}
     engines: {node: '>=18'}
 
-  langfuse@3.37.1:
-    resolution: {integrity: sha512-U+Jbbpeqaqb10k/xuEkXWvK0Jsh/vVRGOl5j3jIOl0K71V1oeDGRym2PI1kF7dJyIARyGUxBVSbeSIQFM32cxQ==}
+  langfuse@3.37.2:
+    resolution: {integrity: sha512-C4P56hJDNk8vWNJR102JhgyCYXbt3HG19PY0brurlrU4dh5pq91JPt44jyiT5RzUs+NFew//gCkgFEcQd3RogA==}
     engines: {node: '>=18'}
 
   language-subtag-registry@0.3.23:
@@ -1281,6 +1283,7 @@ packages:
   node-domexception@1.0.0:
     resolution: {integrity: sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==}
     engines: {node: '>=10.5.0'}
+    deprecated: Use your platform's native DOMException instead
 
   node-fetch@2.7.0:
     resolution: {integrity: sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==}
@@ -1326,8 +1329,8 @@ packages:
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
 
-  openai@4.94.0:
-    resolution: {integrity: sha512-WVmr9HWcwfouLJ7R3UHd2A93ClezTPuJljQxkCYQAL15Sjyt+FBNoqEz5MHSdH/ebQrVyvRhFyn/bvdqtSPyIA==}
+  openai@4.98.0:
+    resolution: {integrity: sha512-TmDKur1WjxxMPQAtLG5sgBSCJmX7ynTsGmewKzoDwl1fRxtbLOsiR0FA/AOAAtYUmP6azal+MYQuOENfdU+7yg==}
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
@@ -1690,22 +1693,12 @@ packages:
     peerDependencies:
       zod: ^3.24.1
 
-  zod@3.24.3:
-    resolution: {integrity: sha512-HhY1oqzWCQWuUqvBFnsyrtZRhyPeR7SUGv+C4+MsisMuVfSPx8HpwWqH8tRahSlt6M3PiFAcoeFhZAqIXTxoSg==}
+  zod@3.24.4:
+    resolution: {integrity: sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==}
 
 snapshots:
 
-  '@anthropic-ai/sdk@0.39.0':
-    dependencies:
-      '@types/node': 18.19.76
-      '@types/node-fetch': 2.6.12
-      abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0
-    transitivePeerDependencies:
-      - encoding
+  '@anthropic-ai/sdk@0.50.4': {}
 
   '@cubos/eslint-config@2.2.0':
     dependencies:
@@ -1875,7 +1868,7 @@ snapshots:
       '@eslint/core': 0.13.0
       levn: 0.4.1
 
-  '@google/generative-ai@0.24.0': {}
+  '@google/generative-ai@0.24.1': {}
 
   '@humanfs/core@0.19.1': {}
 
@@ -1924,14 +1917,14 @@ snapshots:
 
   '@types/node-fetch@2.6.12':
     dependencies:
-      '@types/node': 22.14.1
+      '@types/node': 22.15.18
       form-data: 4.0.2
 
   '@types/node@18.19.76':
     dependencies:
       undici-types: 5.26.5
 
-  '@types/node@22.14.1':
+  '@types/node@22.15.18':
     dependencies:
       undici-types: 6.21.0
 
@@ -3078,13 +3071,13 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  langfuse-core@3.37.1:
+  langfuse-core@3.37.2:
     dependencies:
       mustache: 4.2.0
 
-  langfuse@3.37.1:
+  langfuse@3.37.2:
     dependencies:
-      langfuse-core: 3.37.1
+      langfuse-core: 3.37.2
 
   language-subtag-registry@0.3.23: {}
 
@@ -3193,7 +3186,7 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
-  openai@4.94.0(zod@3.24.3):
+  openai@4.98.0(zod@3.24.4):
     dependencies:
       '@types/node': 18.19.76
       '@types/node-fetch': 2.6.12
@@ -3203,7 +3196,7 @@ snapshots:
       formdata-node: 4.4.1
       node-fetch: 2.7.0
     optionalDependencies:
-      zod: 3.24.3
+      zod: 3.24.4
     transitivePeerDependencies:
       - encoding
 
@@ -3621,12 +3614,12 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-openapi@4.2.4(zod@3.24.3):
+  zod-openapi@4.2.4(zod@3.24.4):
     dependencies:
-      zod: 3.24.3
+      zod: 3.24.4
 
-  zod-to-json-schema@3.24.5(zod@3.24.3):
+  zod-to-json-schema@3.24.5(zod@3.24.4):
     dependencies:
-      zod: 3.24.3
+      zod: 3.24.4
 
-  zod@3.24.3: {}
+  zod@3.24.4: {}
