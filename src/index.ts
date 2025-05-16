@@ -118,7 +118,7 @@ export class AISuite {
         created: start,
         model: provider.split("/")[1],
         execution_time: Date.now() - start,
-      }
+      };
     }
 
     const trace = this.langFuse?.trace({
@@ -144,8 +144,9 @@ export class AISuite {
       return {
         ...result,
         execution_time: end - start,
-      }
+      };
     } catch (error) {
+      const result = p.handleError(error as Error);
       const end = Date.now();
       generation?.end({
         output: error,
@@ -153,13 +154,11 @@ export class AISuite {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        raw: error as Error,
-        tag: "Unknown",
+        ...result,
         created: start,
         model: provider.split("/")[1],
         execution_time: end - start,
-      }
+      };
     }
   }
 
