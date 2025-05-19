@@ -50,7 +50,7 @@ export class GeminiProvider implements ProviderBase {
       model: this.model,
       history: (systemPrompt
         ? messages.slice(1, messages.length - 1)
-        : messages
+        : messages.slice(0, messages.length - 1)
       ).map((msg) => {
         if (msg.role === "user" || msg.role === "developer") {
           return {
