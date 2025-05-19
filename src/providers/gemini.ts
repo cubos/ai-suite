@@ -23,12 +23,12 @@ export type GeminiModels =
   | "gemini-1.5-pro";
 
 const notUseThinkingConfig = [
-  "gemini-2.0-flash"
-  ,"gemini-2.0-flash-lite"
-  ,"gemini-1.5-flash"
-  ,"gemini-1.5-flash-8b"
-  ,"gemini-1.5-pro"
-]
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b",
+  "gemini-1.5-pro",
+];
 
 export class GeminiProvider implements ProviderBase {
   private client: GoogleGenAI;
@@ -43,9 +43,15 @@ export class GeminiProvider implements ProviderBase {
     messages: MessageModel[],
     options: ChatOptions
   ): Promise<SuccessChatCompletion> {
+    const systemPrompt =
+      messages[0].role !== "user" ? messages[0].content : null;
+
     const chat = this.client.chats.create({
       model: this.model,
-      history: messages.slice(0, messages.length - 1).map((msg) => {
+      history: (systemPrompt
+        ? messages.slice(1, messages.length - 1)
+        : messages
+      ).map((msg) => {
         if (msg.role === "user" || msg.role === "developer") {
           return {
             role: "user",
@@ -83,6 +89,7 @@ export class GeminiProvider implements ProviderBase {
             thinkingBudget: 0,
           },
         }),
+        ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
         responseMimeType:
           options.responseFormat !== "text" ? "application/json" : undefined,
         ...(options.responseFormat === "json_schema"
