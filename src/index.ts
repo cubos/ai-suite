@@ -194,8 +194,18 @@ export class AISuite {
       }
       return new CustomLLMProvider("not-needed", model, this.customURL);
     } else if (providerName === "grok") {
-      return new GrokProvider(this.grokKey, model, "https://api.grok.com/v1");
+      return new GrokProvider(this.grokKey, model, "https://api.x.ai/v1");
     }
     throw new Error(`Unsupported provider: ${providerName}`);
   }
 }
+
+const ai = new AISuite({
+  grokKey: process.env.GROK_API_KEY,
+});
+
+const result = await ai.createChatCompletion("grok/grok-3-mini", [
+  { role: "user", content: "Hello, how are you?" },
+]);
+
+console.log(result);
