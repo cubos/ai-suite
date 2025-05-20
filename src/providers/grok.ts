@@ -1,11 +1,12 @@
 import { OpenAIProvider } from "./openai.js";
 
-export type DeepSeekModels =
-  | "deepseek-chat"
-  | "deepseek-coder"
-  | "deepseek-coder-plus";
+export type GrokModels =
+  | "grok-3"
+  | "grok-3-mini"
+  | "grok-3-fast"
+  | "grok-3-mini-fast";
 
-export class DeepSeekProvider extends OpenAIProvider {
+export class GrokProvider extends OpenAIProvider {
   constructor(apiKey: string, model: string, customURL?: string) {
     super(apiKey, model, customURL);
   }

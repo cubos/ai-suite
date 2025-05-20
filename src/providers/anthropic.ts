@@ -59,6 +59,10 @@ export class AnthropicProvider implements ProviderBase {
       max_tokens: 4096,
       stream: options.stream || false,
       tools: convertToAnthropicFunctions(options.tools),
+      thinking: {
+        budget_tokens: options.thinking?.budget ?? 0,
+        type: (options.thinking?.budget ?? 0) > 0 ? "enabled" : "disabled",
+      },
     };
 
     // Add temperature if provided
@@ -108,6 +112,8 @@ export class AnthropicProvider implements ProviderBase {
         total_tokens:
           response.usage.input_tokens + response.usage.output_tokens,
         cached_tokens: response.usage.cache_read_input_tokens || 0,
+        reasoning_tokens: 0,
+        thoughts_tokens: 0,
       },
     };
 

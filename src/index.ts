@@ -6,6 +6,8 @@ import { ChatOptions } from "./providers/_base.js";
 import { DeepSeekModels, DeepSeekProvider } from "./providers/deepseek.js";
 import { Langfuse } from "langfuse";
 import dotenv from "dotenv";
+import { CustomLLMModels, CustomLLMProvider } from "./providers/customLLM.js";
+import { GrokModels, GrokProvider } from "./providers/grok.js";
 
 dotenv.config();
 
@@ -13,14 +15,18 @@ export type ProviderModel =
   | `openai/${OpenAIModels}`
   | `anthropic/${AnthropicModels}`
   | `gemini/${GeminiModels}`
-  | `deepseek/${DeepSeekModels}`;
+  | `deepseek/${DeepSeekModels}`
+  | `custom-llm/${CustomLLMModels}`
+  | `grok/${GrokModels}`;
 
 export class AISuite {
   private openaiKey: string;
   private anthropicKey: string;
   private geminiKey: string;
   private deepseekKey: string;
+  private grokKey: string;
   private langFuse?: Langfuse;
+  private customURL?: string;
   private applicationName = "ai-suite";
 
   constructor(
@@ -29,6 +35,8 @@ export class AISuite {
       anthropicKey?: string;
       geminiKey?: string;
       deepseekKey?: string;
+      grokKey?: string;
+      customURL?: string;
     },
     options?: {
       langFuse?: Langfuse;
@@ -38,6 +46,8 @@ export class AISuite {
     this.anthropicKey = keys.anthropicKey || "";
     this.geminiKey = keys.geminiKey || "";
     this.deepseekKey = keys.deepseekKey || "";
+    this.grokKey = keys.grokKey || "";
+    this.customURL = keys.customURL || "";
     this.langFuse = options?.langFuse;
   }
 
@@ -171,7 +181,20 @@ export class AISuite {
     } else if (providerName === "gemini") {
       return new GeminiProvider(this.geminiKey, model);
     } else if (providerName === "deepseek") {
-      return new DeepSeekProvider(this.deepseekKey, model);
+      return new DeepSeekProvider(
+        this.deepseekKey,
+        model,
+        "https://api.deepseek.com/v1"
+      );
+    } else if (providerName === "custom-llm") {
+      if (!this.customURL) {
+        throw new Error(
+          `Need to provide a custom URL for the custom-llm provider`
+        );
+      }
+      return new CustomLLMProvider("not-needed", model, this.customURL);
+    } else if (providerName === "grok") {
+      return new GrokProvider(this.grokKey, model, "https://api.x.ai/v1");
     }
     throw new Error(`Unsupported provider: ${providerName}`);
   }
