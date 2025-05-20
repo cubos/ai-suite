@@ -14,9 +14,10 @@ export type OpenAIModels = ChatModel;
 export class OpenAIProvider implements ProviderBase {
   private client: OpenAI;
   private model: string;
-  constructor(apiKey: string, model: string) {
+  constructor(apiKey: string, model: string, customURL?: string) {
     this.client = new OpenAI({
       apiKey: apiKey,
+      ...(customURL ? { baseURL: customURL } : {}),
     });
     this.model = model;
   }
@@ -50,15 +51,22 @@ export class OpenAIProvider implements ProviderBase {
       }
     );
 
+    let response_format: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming["response_format"];
+
+    if (options.responseFormat === "text") {
+      response_format = undefined;
+    } else if (options.responseFormat === "json_schema") {
+      response_format = zodResponseFormat(options.zodSchema, "default");
+    } else {
+      response_format = { type: options.responseFormat };
+    }
+
     const response = await this.client.chat.completions.create({
       model: this.model,
       messages: mappedMessages,
       stream: options.stream || false,
       temperature: options.temperature,
-      response_format:
-        options.responseFormat === "json_schema"
-          ? zodResponseFormat(options.zodSchema, "default")
-          : { type: options.responseFormat },
+      response_format,
       tools: options.tools,
     });
 
