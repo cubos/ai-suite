@@ -95,6 +95,9 @@ export class OpenAIProvider implements ProviderBase {
         total_tokens: completion.usage?.total_tokens || 0,
         cached_tokens:
           completion.usage?.prompt_tokens_details?.cached_tokens || 0,
+        reasoning_tokens:
+          completion.usage?.completion_tokens_details?.reasoning_tokens || 0,
+        thoughts_tokens: 0,
       },
     };
 

@@ -35,7 +35,26 @@ export interface ToolModel {
   };
 }
 
-export interface ChatOptionsBase {
+export interface ThinkingConfig {
+  /**
+   * The thinking to use (only for Gemini) default is 0 and output is false
+   */
+  thinking?: {
+    budget: number;
+    output: boolean;
+  };
+}
+
+export interface ReasoningConfig {
+  /**
+   * The reasoning to use (only for OpenAI and Grok)
+   */
+  reasoning?: {
+    effort: "low" | "medium" | "high";
+  };
+}
+
+export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig {
   /**
    * Whether to stream the response
    */

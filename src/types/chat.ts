@@ -18,8 +18,15 @@ interface ResultErrorChatCompletion {
    * The error tag.
    * e.g. "InvalidAuth" | "InvalidRequest" | "InvalidModel" | "RateLimitExceeded" | "ServerError" | "ServerOverloaded" | "Unknown";
    *
-  */
-  tag: "InvalidAuth" | "InvalidRequest" | "InvalidModel" | "RateLimitExceeded" | "ServerError" | "ServerOverloaded" | "Unknown";
+   */
+  tag:
+    | "InvalidAuth"
+    | "InvalidRequest"
+    | "InvalidModel"
+    | "RateLimitExceeded"
+    | "ServerError"
+    | "ServerOverloaded"
+    | "Unknown";
   /**
    *
    * The raw error from the API.
@@ -80,6 +87,8 @@ interface ResultSuccessChatCompletion {
     output_tokens: number;
     total_tokens: number;
     cached_tokens: number;
+    reasoning_tokens: number;
+    thoughts_tokens: number;
   };
 
   /**
@@ -108,14 +117,13 @@ interface ResultSuccessChatCompletion {
 
 export type SuccessChatCompletion = ResultSuccessChatCompletion & {
   success: true;
-}
+};
 
 export type ErrorChatCompletion = ResultErrorChatCompletion & {
   success: false;
-}
+};
 
 export type ResultChatCompletion = SuccessChatCompletion | ErrorChatCompletion;
-
 
 export type MessageModel = {
   role: "user" | "developer" | "assistant" | "tool";

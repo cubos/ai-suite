@@ -90,7 +90,8 @@ export class GeminiProvider implements ProviderBase {
         temperature: options.temperature ?? 0.7,
         ...(!notUseThinkingConfig.includes(this.model) && {
           thinkingConfig: {
-            thinkingBudget: 0,
+            thinkingBudget: options.thinking?.budget ?? 0,
+            includeThoughts: options.thinking?.output ?? false,
           },
         }),
         ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
@@ -131,8 +132,11 @@ export class GeminiProvider implements ProviderBase {
         output_tokens: lastResponse.usageMetadata?.candidatesTokenCount || 0,
         total_tokens:
           (lastResponse.usageMetadata?.promptTokenCount || 0) +
-          (lastResponse.usageMetadata?.candidatesTokenCount || 0),
+          (lastResponse.usageMetadata?.candidatesTokenCount || 0) +
+          (lastResponse.usageMetadata?.thoughtsTokenCount || 0),
         cached_tokens: lastResponse.usageMetadata?.cachedContentTokenCount || 0,
+        thoughts_tokens: lastResponse.usageMetadata?.thoughtsTokenCount || 0,
+        reasoning_tokens: 0,
       },
     };
 

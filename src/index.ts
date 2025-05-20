@@ -199,13 +199,3 @@ export class AISuite {
     throw new Error(`Unsupported provider: ${providerName}`);
   }
 }
-
-const ai = new AISuite({
-  grokKey: process.env.GROK_API_KEY,
-});
-
-const result = await ai.createChatCompletion("grok/grok-3-mini", [
-  { role: "user", content: "Hello, how are you?" },
-]);
-
-console.log(result);
