@@ -1,10 +1,14 @@
 import { Anthropic } from "@anthropic-ai/sdk";
-import { MessageModel, SuccessChatCompletion } from "../types/chat.js";
+import {
+  ErrorChatCompletion,
+  MessageModel,
+  SuccessChatCompletion,
+} from "../types/chat.js";
 import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
 import { IsLiteral, tryCatch } from "../types/utils.js";
 import { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
 
-export type AnthropicModels = IsLiteral<Model>
+export type AnthropicModels = IsLiteral<Model>;
 
 export class AnthropicProvider implements ProviderBase {
   private client: Anthropic;
@@ -39,8 +43,9 @@ export class AnthropicProvider implements ProviderBase {
           // Anthropic doesn't have direct tool/function support, so we'll format it as user message
           return {
             role: "user",
-            content: `Tool Response (${msg.name || "default_tool"}): ${msg.content
-              }`,
+            content: `Tool Response (${msg.name || "default_tool"}): ${
+              msg.content
+            }`,
           };
         }
         throw new Error(`Unsupported role: ${msg.role}`);
@@ -71,8 +76,8 @@ export class AnthropicProvider implements ProviderBase {
       stream: false,
     });
 
-
-    const content = response.content[0].type === "text" ? response.content[0].text : "";
+    const content =
+      response.content[0].type === "text" ? response.content[0].text : "";
 
     const result: SuccessChatCompletion = {
       success: true,
@@ -82,7 +87,8 @@ export class AnthropicProvider implements ProviderBase {
       object: "chat.completion",
       content,
       content_object:
-        response.content[0].type === "text" ? tryCatch(() => JSON.parse(content))
+        response.content[0].type === "text"
+          ? tryCatch(() => JSON.parse(content))
           : undefined,
       tools: response.content
         .filter(
@@ -106,6 +112,100 @@ export class AnthropicProvider implements ProviderBase {
     };
 
     return result;
+  }
+
+  handleError(
+    error: Error
+  ): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
+    if (error instanceof Anthropic.APIError) {
+      const status = error.status;
+
+      if (status === 400) {
+        return {
+          error: "Bad Request: Invalid request parameters",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 401) {
+        return {
+          error: "Unauthorized: Invalid API key",
+          raw: error,
+          tag: "InvalidAuth",
+        };
+      }
+
+      if (status === 403) {
+        return {
+          error: "Forbidden: Insufficient permissions",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 404) {
+        return {
+          error: "Not Found: Resource not found",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 409) {
+        return {
+          error: "Conflict: Request conflicts with current state",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 422) {
+        return {
+          error: "Unprocessable Entity: Invalid input data",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 429) {
+        return {
+          error: "Rate Limit Exceeded: Too many requests",
+          raw: error,
+          tag: "RateLimitExceeded",
+        };
+      }
+
+      if (status >= 500) {
+        return {
+          error: "Internal Server Error: Anthropic API is experiencing issues",
+          raw: error,
+          tag: "ServerError",
+        };
+      }
+
+      return {
+        error: `${error.name}: ${error.message}`,
+        raw: error,
+        tag: "Unknown",
+      };
+    }
+
+    // Handle connection errors
+    if (error instanceof Anthropic.APIConnectionError) {
+      return {
+        error: "Connection Error: Failed to connect to Anthropic API",
+        raw: error,
+        tag: "ServerError",
+      };
+    }
+
+    // Handle any other errors
+    return {
+      error: `${error.name} : ${error.message}`,
+      raw: error,
+      tag: "Unknown",
+    };
   }
 }
 

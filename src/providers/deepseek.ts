@@ -1,5 +1,9 @@
 import { OpenAI } from "openai";
-import { MessageModel, SuccessChatCompletion } from "../types/chat.js";
+import {
+  ErrorChatCompletion,
+  MessageModel,
+  SuccessChatCompletion,
+} from "../types/chat.js";
 import { ChatOptions, ProviderBase } from "./_base.js";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import { tryCatch } from "../types/utils.js";
@@ -55,9 +59,10 @@ export class DeepSeekProvider implements ProviderBase {
       messages: mappedMessages,
       stream: options.stream || false,
       temperature: options.temperature,
-      response_format: options.responseFormat === "json_schema"
-        ? zodResponseFormat(options.zodSchema, "default")
-        : { type: options.responseFormat },
+      response_format:
+        options.responseFormat === "json_schema"
+          ? zodResponseFormat(options.zodSchema, "default")
+          : { type: options.responseFormat },
       tools: options.tools,
     });
 
@@ -77,17 +82,102 @@ export class DeepSeekProvider implements ProviderBase {
       })),
       content: completion.choices[0].message.content || "",
       content_object:
-        options.responseFormat !== "text" ?
-          tryCatch(() => JSON.parse(completion.choices[0].message.content!))
+        options.responseFormat !== "text"
+          ? tryCatch(() => JSON.parse(completion.choices[0].message.content!))
           : undefined,
       usage: {
         input_tokens: completion.usage?.prompt_tokens || 0,
         output_tokens: completion.usage?.completion_tokens || 0,
         total_tokens: completion.usage?.total_tokens || 0,
-        cached_tokens: completion.usage?.prompt_tokens_details?.cached_tokens || 0,
+        cached_tokens:
+          completion.usage?.prompt_tokens_details?.cached_tokens || 0,
       },
     };
 
     return result;
+  }
+
+  handleError(
+    error: Error
+  ): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
+    if (error instanceof OpenAI.APIError) {
+      const status = error.status;
+
+      if (status === 400) {
+        return {
+          error: "Bad Request",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 401) {
+        return {
+          error: "Unauthorized",
+          raw: error,
+          tag: "InvalidAuth",
+        };
+      }
+
+      if (status === 403) {
+        return {
+          error: "Forbidden",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 404) {
+        return {
+          error: "Not Found",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 409) {
+        return {
+          error: "Conflict",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 422) {
+        return {
+          error: "Unprocessable Entity",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 429) {
+        return {
+          error: "Rate Limit Exceeded",
+          raw: error,
+          tag: "RateLimitExceeded",
+        };
+      }
+
+      if (status >= 500) {
+        return {
+          error: "Internal Server Error",
+          raw: error,
+          tag: "ServerError",
+        };
+      }
+
+      return {
+        error: "Unknown Error",
+        raw: error,
+        tag: "Unknown",
+      };
+    } else {
+      return {
+        error: "Unknown Error",
+        raw: error,
+        tag: "Unknown",
+      };
+    }
   }
 }

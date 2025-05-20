@@ -4,7 +4,11 @@ import {
   Tool,
   FunctionCall,
 } from "@google/genai";
-import { MessageModel, SuccessChatCompletion } from "../types/chat.js";
+import {
+  ErrorChatCompletion,
+  MessageModel,
+  SuccessChatCompletion,
+} from "../types/chat.js";
 import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
 import { extendZodWithOpenApi } from "zod-openapi";
 import { z } from "zod";
@@ -133,6 +137,18 @@ export class GeminiProvider implements ProviderBase {
     };
 
     return result;
+  }
+
+  handleError(
+    error: Error
+  ): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
+    // https://github.com/googleapis/js-genai/pull/476
+    // Google ainda não exporta o erro
+    return {
+      error: `${error.name} : ${error.message}`,
+      raw: error,
+      tag: "Unknown",
+    };
   }
 }
 

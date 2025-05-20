@@ -1,4 +1,8 @@
-import { MessageModel, SuccessChatCompletion } from "../types/chat.js";
+import {
+  ErrorChatCompletion,
+  MessageModel,
+  SuccessChatCompletion,
+} from "../types/chat.js";
 import { ZodType } from "zod";
 
 /**
@@ -79,4 +83,5 @@ export interface ProviderBase {
     messages: MessageModel[],
     options: ChatOptions
   ): Promise<SuccessChatCompletion>;
+  handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag">;
 }
