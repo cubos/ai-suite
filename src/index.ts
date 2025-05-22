@@ -6,20 +6,20 @@ import { ChatOptions } from "./providers/_base.js";
 import { DeepSeekModels, DeepSeekProvider } from "./providers/deepseek.js";
 import { Langfuse } from "langfuse";
 import dotenv from "dotenv";
-import { CustomLLMModels, CustomLLMProvider } from "./providers/customLLM.js";
+import { CustomLLMProvider } from "./providers/customLLM.js";
 import { GrokModels, GrokProvider } from "./providers/grok.js";
 
 dotenv.config();
 
-export type ProviderModel =
+export type ProviderModel<S extends string> =
   | `openai/${OpenAIModels}`
   | `anthropic/${AnthropicModels}`
   | `gemini/${GeminiModels}`
   | `deepseek/${DeepSeekModels}`
-  | `custom-llm/${CustomLLMModels}`
+  | `custom-llm/${S}`
   | `grok/${GrokModels}`;
 
-export class AISuite {
+export class AISuite<S extends string = string> {
   private openaiKey: string;
   private anthropicKey: string;
   private geminiKey: string;
@@ -27,6 +27,7 @@ export class AISuite {
   private grokKey: string;
   private langFuse?: Langfuse;
   private customURL?: string;
+  private customLLMKey?: string;
   private applicationName = "ai-suite";
 
   constructor(
@@ -37,6 +38,7 @@ export class AISuite {
       deepseekKey?: string;
       grokKey?: string;
       customURL?: string;
+      customLLMKey?: string;
     },
     options?: {
       langFuse?: Langfuse;
@@ -48,6 +50,7 @@ export class AISuite {
     this.deepseekKey = keys.deepseekKey || "";
     this.grokKey = keys.grokKey || "";
     this.customURL = keys.customURL || "";
+    this.customLLMKey = keys.customLLMKey || "";
     this.langFuse = options?.langFuse;
   }
 
@@ -58,7 +61,7 @@ export class AISuite {
    * @param options - The options to use
    * @returns The chat completion
    */
-  async createChatCompletionMultiResult<T extends ProviderModel>(
+  async createChatCompletionMultiResult<T extends ProviderModel<S>>(
     providers: T[],
     messages: MessageModel[],
     options: { stream: false } & ChatOptions = {
@@ -76,7 +79,7 @@ export class AISuite {
       })
     );
 
-    return results as { [key in ProviderModel]: ResultChatCompletion }[];
+    return results as { [key in ProviderModel<S>]: ResultChatCompletion }[];
   }
 
   /**
@@ -87,7 +90,7 @@ export class AISuite {
    * @returns The chat completion
    */
   async createChatCompletion(
-    provider: ProviderModel,
+    provider: ProviderModel<S>,
     messages: MessageModel[],
     options?: { stream: false } & ChatOptions
   ): Promise<ResultChatCompletion>;
@@ -106,7 +109,7 @@ export class AISuite {
   // ): Promise<Readable>;
 
   async createChatCompletion(
-    provider: ProviderModel,
+    provider: ProviderModel<S>,
     messages: MessageModel[],
     options?: ChatOptions
   ): Promise<ResultChatCompletion> {
@@ -172,7 +175,7 @@ export class AISuite {
     }
   }
 
-  private getProvider(provider: ProviderModel) {
+  private getProvider(provider: ProviderModel<S>) {
     const [providerName, model] = provider.split("/");
     if (providerName === "openai") {
       return new OpenAIProvider(this.openaiKey, model);
@@ -192,7 +195,11 @@ export class AISuite {
           `Need to provide a custom URL for the custom-llm provider`
         );
       }
-      return new CustomLLMProvider("not-needed", model, this.customURL);
+      return new CustomLLMProvider(
+        this.customLLMKey ?? "not-needed",
+        model,
+        this.customURL
+      );
     } else if (providerName === "grok") {
       return new GrokProvider(this.grokKey, model, "https://api.x.ai/v1");
     }
