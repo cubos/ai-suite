@@ -104,3 +104,18 @@ export interface ProviderBase {
   ): Promise<SuccessChatCompletion>;
   handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag">;
 }
+
+export abstract class BaseHook {
+  handleRequest: (req: unknown) => Promise<void>
+  handleResponse: (res: unknown) => Promise<void>
+  constructor(hooks?: {
+    handleRequest?: (req: unknown) => Promise<void>;
+    handleResponse?: (res: unknown) => Promise<void>;
+  }) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    this.handleRequest = hooks?.handleRequest ?? (async (_) => { });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    this.handleResponse = hooks?.handleResponse ?? (async (_) => { });
+  }
+}
+
