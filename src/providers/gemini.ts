@@ -14,6 +14,7 @@ import { extendZodWithOpenApi } from "zod-openapi";
 import { z } from "zod";
 import { toGeminiSchema } from "gemini-zod";
 import { tryCatch } from "../types/utils.js";
+import { BaseHook } from "./_base.js";
 
 extendZodWithOpenApi(z);
 
@@ -34,11 +35,15 @@ const notUseThinkingConfig = [
   "gemini-1.5-pro",
 ];
 
-export class GeminiProvider implements ProviderBase {
+export class GeminiProvider extends BaseHook implements ProviderBase {
   private client: GoogleGenAI;
   private model: string;
 
-  constructor(apiKey: string, model: string) {
+  constructor(apiKey: string, model: string, hooks?: {
+    handleRequest?: (req: unknown) => Promise<void>;
+    handleResponse?: (res: unknown) => Promise<void>;
+  }) {
+    super(hooks);
     this.client = new GoogleGenAI({ apiKey });
     this.model = model;
   }
@@ -105,9 +110,13 @@ export class GeminiProvider implements ProviderBase {
       },
     });
 
+    await this.handleRequest(chat);
+
     const lastResponse = await chat.sendMessage({
       message: messages[messages.length - 1].content,
     });
+
+    await this.handleResponse(lastResponse);
 
     const result: SuccessChatCompletion = {
       success: true,

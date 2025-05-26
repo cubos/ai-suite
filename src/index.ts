@@ -29,6 +29,10 @@ export class AISuite<S extends string = string> {
   private customURL?: string;
   private customLLMKey?: string;
   private applicationName = "ai-suite";
+  public hooks?: {
+    handleRequest?: (req: unknown) => Promise<void>;
+    handleResponse?: (res: unknown) => Promise<void>;
+  };
 
   constructor(
     keys: {
@@ -41,6 +45,10 @@ export class AISuite<S extends string = string> {
       customLLMKey?: string;
     },
     options?: {
+      hooks?: {
+        handleRequest?: (req: unknown) => Promise<void>;
+        handleResponse?: (res: unknown) => Promise<void>;
+      };
       langFuse?: Langfuse;
     }
   ) {
@@ -52,6 +60,7 @@ export class AISuite<S extends string = string> {
     this.customURL = keys.customURL || "";
     this.customLLMKey = keys.customLLMKey || "";
     this.langFuse = options?.langFuse;
+    this.hooks = options?.hooks;
   }
 
   /**
@@ -178,16 +187,17 @@ export class AISuite<S extends string = string> {
   private getProvider(provider: ProviderModel<S>) {
     const [providerName, model] = provider.split("/");
     if (providerName === "openai") {
-      return new OpenAIProvider(this.openaiKey, model);
+      return new OpenAIProvider(this.openaiKey, model, undefined, this.hooks);
     } else if (providerName === "anthropic") {
-      return new AnthropicProvider(this.anthropicKey, model);
+      return new AnthropicProvider(this.anthropicKey, model, this.hooks);
     } else if (providerName === "gemini") {
-      return new GeminiProvider(this.geminiKey, model);
+      return new GeminiProvider(this.geminiKey, model, this.hooks);
     } else if (providerName === "deepseek") {
       return new DeepSeekProvider(
         this.deepseekKey,
         model,
-        "https://api.deepseek.com/v1"
+        "https://api.deepseek.com/v1",
+        this.hooks,
       );
     } else if (providerName === "custom-llm") {
       if (!this.customURL) {
@@ -198,10 +208,11 @@ export class AISuite<S extends string = string> {
       return new CustomLLMProvider(
         this.customLLMKey ?? "not-needed",
         model,
-        this.customURL
+        this.customURL,
+        this.hooks,
       );
     } else if (providerName === "grok") {
-      return new GrokProvider(this.grokKey, model, "https://api.x.ai/v1");
+      return new GrokProvider(this.grokKey, model, "https://api.x.ai/v1", this.hooks);
     }
     throw new Error(`Unsupported provider: ${providerName}`);
   }

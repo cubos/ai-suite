@@ -4,17 +4,22 @@ import {
   MessageModel,
   SuccessChatCompletion,
 } from "../types/chat.js";
-import { ChatOptions, ProviderBase } from "./_base.js";
+import { BaseHook, ChatOptions, ProviderBase } from "./_base.js";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import { tryCatch } from "../types/utils.js";
 import { ChatModel } from "openai/resources/index.mjs";
 
 export type OpenAIModels = ChatModel;
 
-export class OpenAIProvider implements ProviderBase {
+export class OpenAIProvider extends BaseHook implements ProviderBase {
   private client: OpenAI;
   private model: string;
-  constructor(apiKey: string, model: string, customURL?: string) {
+
+  constructor(apiKey: string, model: string, customURL?: string, hooks?: {
+    handleRequest?: (req: unknown) => Promise<void>;
+    handleResponse?: (res: unknown) => Promise<void>;
+  }) {
+    super(hooks);
     this.client = new OpenAI({
       apiKey: apiKey,
       ...(customURL ? { baseURL: customURL } : {}),
@@ -61,14 +66,20 @@ export class OpenAIProvider implements ProviderBase {
       response_format = { type: options.responseFormat };
     }
 
-    const response = await this.client.chat.completions.create({
+    const request = {
       model: this.model,
       messages: mappedMessages,
       stream: options.stream || false,
       temperature: options.temperature,
       response_format,
       tools: options.tools,
-    });
+    }
+
+    await this.handleRequest(request);
+
+    const response = await this.client.chat.completions.create(request);
+
+    await this.handleResponse(response);
 
     const completion = response as OpenAI.Chat.Completions.ChatCompletion;
     const result: SuccessChatCompletion = {
