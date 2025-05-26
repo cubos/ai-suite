@@ -6,7 +6,10 @@ export type DeepSeekModels =
   | "deepseek-coder-plus";
 
 export class DeepSeekProvider extends OpenAIProvider {
-  constructor(apiKey: string, model: string, customURL?: string) {
-    super(apiKey, model, customURL);
+  constructor(apiKey: string, model: string, customURL?: string, hooks?: {
+    handleRequest?: (req: unknown) => Promise<void>;
+    handleResponse?: (res: unknown) => Promise<void>;
+  }) {
+    super(apiKey, model, customURL, hooks);
   }
 }

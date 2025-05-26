@@ -5,16 +5,21 @@ import {
   SuccessChatCompletion,
 } from "../types/chat.js";
 import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
+import { BaseHook } from "./_base.js";
 import { IsLiteral, tryCatch } from "../types/utils.js";
 import { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
 
 export type AnthropicModels = IsLiteral<Model>;
 
-export class AnthropicProvider implements ProviderBase {
+export class AnthropicProvider extends BaseHook implements ProviderBase {
   private client: Anthropic;
   private model: string;
 
-  constructor(apiKey: string, model: string) {
+  constructor(apiKey: string, model: string, hooks?: {
+    handleRequest?: (req: unknown) => Promise<void>;
+    handleResponse?: (res: unknown) => Promise<void>;
+  }) {
+    super(hooks);
     this.client = new Anthropic({
       apiKey: apiKey,
     });
@@ -75,10 +80,14 @@ export class AnthropicProvider implements ProviderBase {
       anthropicOptions.system = "Please provide your response in JSON format.";
     }
 
+    await this.handleRequest(anthropicOptions);
+
     const response = await this.client.messages.create({
       ...anthropicOptions,
       stream: false,
     });
+
+    await this.handleResponse(response);
 
     const content =
       response.content[0].type === "text" ? response.content[0].text : "";

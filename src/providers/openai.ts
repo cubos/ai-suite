@@ -14,6 +14,7 @@ export type OpenAIModels = ChatModel;
 export class OpenAIProvider extends BaseHook implements ProviderBase {
   private client: OpenAI;
   private model: string;
+
   constructor(apiKey: string, model: string, customURL?: string, hooks?: {
     handleRequest?: (req: unknown) => Promise<void>;
     handleResponse?: (res: unknown) => Promise<void>;

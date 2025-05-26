@@ -7,7 +7,10 @@ export type GrokModels =
   | "grok-3-mini-fast";
 
 export class GrokProvider extends OpenAIProvider {
-  constructor(apiKey: string, model: string, customURL?: string) {
-    super(apiKey, model, customURL);
+  constructor(apiKey: string, model: string, customURL?: string, hooks?: {
+    handleRequest?: (req: unknown) => Promise<void>;
+    handleResponse?: (res: unknown) => Promise<void>;
+  }) {
+    super(apiKey, model, customURL, hooks);
   }
 }
