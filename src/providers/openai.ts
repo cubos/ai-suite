@@ -15,10 +15,19 @@ export class OpenAIProvider extends BaseHook implements ProviderBase {
   private client: OpenAI;
   private model: string;
 
-  constructor(apiKey: string, model: string, customURL?: string, hooks?: {
-    handleRequest?: (req: unknown) => Promise<void>;
-    handleResponse?: (res: unknown) => Promise<void>;
-  }) {
+  constructor(
+    apiKey: string,
+    model: string,
+    customURL?: string,
+    hooks?: {
+      handleRequest?: (req: unknown) => Promise<void>;
+      handleResponse?: (
+        req: unknown,
+        res: unknown,
+        metadata: Record<string, unknown>
+      ) => Promise<void>;
+    }
+  ) {
     super(hooks);
     this.client = new OpenAI({
       apiKey: apiKey,
@@ -73,13 +82,13 @@ export class OpenAIProvider extends BaseHook implements ProviderBase {
       temperature: options.temperature,
       response_format,
       tools: options.tools,
-    }
+    };
 
     await this.handleRequest(request);
 
     const response = await this.client.chat.completions.create(request);
 
-    await this.handleResponse(response);
+    await this.handleResponse(request, response, options.metadata ?? {});
 
     const completion = response as OpenAI.Chat.Completions.ChatCompletion;
     const result: SuccessChatCompletion = {
@@ -110,6 +119,7 @@ export class OpenAIProvider extends BaseHook implements ProviderBase {
           completion.usage?.completion_tokens_details?.reasoning_tokens || 0,
         thoughts_tokens: 0,
       },
+      metadata: options.metadata,
     };
 
     return result;

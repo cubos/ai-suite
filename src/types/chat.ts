@@ -113,6 +113,11 @@ interface ResultSuccessChatCompletion {
    * The execution time of the completion request. In milliseconds.
    */
   execution_time?: number;
+
+  /**
+   * The metadata to use
+   */
+  metadata?: Record<string, unknown>;
 }
 
 export type SuccessChatCompletion = ResultSuccessChatCompletion & {

@@ -31,7 +31,11 @@ export class AISuite<S extends string = string> {
   private applicationName = "ai-suite";
   public hooks?: {
     handleRequest?: (req: unknown) => Promise<void>;
-    handleResponse?: (res: unknown) => Promise<void>;
+    handleResponse?: (
+      req: unknown,
+      res: unknown,
+      metadata: Record<string, unknown>
+    ) => Promise<void>;
   };
 
   constructor(
@@ -47,7 +51,11 @@ export class AISuite<S extends string = string> {
     options?: {
       hooks?: {
         handleRequest?: (req: unknown) => Promise<void>;
-        handleResponse?: (res: unknown) => Promise<void>;
+        handleResponse?: (
+          req: unknown,
+          res: unknown,
+          metadata: Record<string, unknown>
+        ) => Promise<void>;
       };
       langFuse?: Langfuse;
     }
@@ -197,7 +205,7 @@ export class AISuite<S extends string = string> {
         this.deepseekKey,
         model,
         "https://api.deepseek.com/v1",
-        this.hooks,
+        this.hooks
       );
     } else if (providerName === "custom-llm") {
       if (!this.customURL) {
@@ -209,10 +217,15 @@ export class AISuite<S extends string = string> {
         this.customLLMKey ?? "not-needed",
         model,
         this.customURL,
-        this.hooks,
+        this.hooks
       );
     } else if (providerName === "grok") {
-      return new GrokProvider(this.grokKey, model, "https://api.x.ai/v1", this.hooks);
+      return new GrokProvider(
+        this.grokKey,
+        model,
+        "https://api.x.ai/v1",
+        this.hooks
+      );
     }
     throw new Error(`Unsupported provider: ${providerName}`);
   }

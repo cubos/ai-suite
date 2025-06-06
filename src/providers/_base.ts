@@ -68,6 +68,11 @@ export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig {
    * The tools to use
    */
   tools?: ToolModel[];
+
+  /**
+   * The metadata to use
+   */
+  metadata?: Record<string, unknown>;
 }
 
 export interface JSONSchema<T = unknown> extends ChatOptionsBase {
@@ -106,16 +111,24 @@ export interface ProviderBase {
 }
 
 export abstract class BaseHook {
-  handleRequest: (req: unknown) => Promise<void>
-  handleResponse: (res: unknown) => Promise<void>
+  handleRequest: (req: unknown) => Promise<void>;
+  handleResponse: (
+    req: unknown,
+    res: unknown,
+    metadata: Record<string, unknown>
+  ) => Promise<void>;
   constructor(hooks?: {
     handleRequest?: (req: unknown) => Promise<void>;
-    handleResponse?: (res: unknown) => Promise<void>;
+    handleResponse?: (
+      req: unknown,
+      res: unknown,
+      metadata: Record<string, unknown>
+    ) => Promise<void>;
   }) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this.handleRequest = hooks?.handleRequest ?? (async (_) => { });
+    this.handleRequest = hooks?.handleRequest ?? (async (_) => {});
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this.handleResponse = hooks?.handleResponse ?? (async (_) => { });
+    this.handleResponse = hooks?.handleResponse ?? (async (_) => {});
   }
 }
 

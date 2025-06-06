@@ -39,10 +39,18 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
   private client: GoogleGenAI;
   private model: string;
 
-  constructor(apiKey: string, model: string, hooks?: {
-    handleRequest?: (req: unknown) => Promise<void>;
-    handleResponse?: (res: unknown) => Promise<void>;
-  }) {
+  constructor(
+    apiKey: string,
+    model: string,
+    hooks?: {
+      handleRequest?: (req: unknown) => Promise<void>;
+      handleResponse?: (
+        req: unknown,
+        res: unknown,
+        metadata: Record<string, unknown>
+      ) => Promise<void>;
+    }
+  ) {
     super(hooks);
     this.client = new GoogleGenAI({ apiKey });
     this.model = model;
@@ -116,7 +124,7 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
       message: messages[messages.length - 1].content,
     });
 
-    await this.handleResponse(lastResponse);
+    await this.handleResponse(chat, lastResponse, options.metadata ?? {});
 
     const result: SuccessChatCompletion = {
       success: true,
@@ -147,6 +155,7 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
         thoughts_tokens: lastResponse.usageMetadata?.thoughtsTokenCount || 0,
         reasoning_tokens: 0,
       },
+      metadata: options.metadata,
     };
 
     return result;

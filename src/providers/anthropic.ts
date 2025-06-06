@@ -15,10 +15,18 @@ export class AnthropicProvider extends BaseHook implements ProviderBase {
   private client: Anthropic;
   private model: string;
 
-  constructor(apiKey: string, model: string, hooks?: {
-    handleRequest?: (req: unknown) => Promise<void>;
-    handleResponse?: (res: unknown) => Promise<void>;
-  }) {
+  constructor(
+    apiKey: string,
+    model: string,
+    hooks?: {
+      handleRequest?: (req: unknown) => Promise<void>;
+      handleResponse?: (
+        req: unknown,
+        res: unknown,
+        metadata: Record<string, unknown>
+      ) => Promise<void>;
+    }
+  ) {
     super(hooks);
     this.client = new Anthropic({
       apiKey: apiKey,
@@ -87,7 +95,11 @@ export class AnthropicProvider extends BaseHook implements ProviderBase {
       stream: false,
     });
 
-    await this.handleResponse(response);
+    await this.handleResponse(
+      anthropicOptions,
+      response,
+      options.metadata ?? {}
+    );
 
     const content =
       response.content[0].type === "text" ? response.content[0].text : "";
@@ -124,6 +136,7 @@ export class AnthropicProvider extends BaseHook implements ProviderBase {
         reasoning_tokens: 0,
         thoughts_tokens: 0,
       },
+      metadata: options.metadata,
     };
 
     return result;
