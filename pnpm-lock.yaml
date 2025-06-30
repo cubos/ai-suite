@@ -17,6 +17,9 @@ importers:
       '@types/node':
         specifier: ^22.15.18
         version: 22.15.18
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
       gemini-zod:
         specifier: ^0.1.2
         version: 0.1.2
@@ -42,9 +45,6 @@ importers:
       '@eslint/js':
         specifier: ^9.24.0
         version: 9.24.0
-      dotenv:
-        specifier: ^16.5.0
-        version: 16.5.0
       eslint:
         specifier: 9.24.0
         version: 9.24.0
