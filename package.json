@@ -26,7 +26,6 @@
   "devDependencies": {
     "@cubos/eslint-config": "^2.2.0",
     "@eslint/js": "^9.24.0",
-    "dotenv": "^16.5.0",
     "eslint": "9.24.0",
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-prettier": "^5.2.6",
@@ -40,6 +39,7 @@
     "@anthropic-ai/sdk": "^0.50.4",
     "@google/genai": "^0.14.1",
     "@types/node": "^22.15.18",
+    "dotenv": "^16.5.0",
     "gemini-zod": "^0.1.2",
     "langfuse": "^3.37.2",
     "openai": "^4.98.0",
