@@ -3,6 +3,7 @@ import {
   Type as SchemaType,
   Tool,
   FunctionCall,
+  ApiError,
 } from "@google/genai";
 import {
   ErrorChatCompletion,
@@ -19,8 +20,9 @@ import { BaseHook } from "./_base.js";
 extendZodWithOpenApi(z);
 
 export type GeminiModels =
-  | "gemini-2.5-flash-preview-04-17"
-  | "gemini-2.5-pro-preview-05-06"
+  | "gemini-2.5-pro"
+  | "gemini-2.5-flash"
+  | "gemini-2.5-flash-lite-preview-06-17"
   | "gemini-2.0-flash"
   | "gemini-2.0-flash-lite"
   | "gemini-1.5-flash"
@@ -164,8 +166,75 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
   handleError(
     error: Error
   ): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
-    // https://github.com/googleapis/js-genai/pull/476
-    // Google ainda não exporta o erro
+    if (error instanceof ApiError) {
+      const status = error.status;
+
+      if (status === 400) {
+        return {
+          error: "Bad Request",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 401) {
+        return {
+          error: "Unauthorized",
+          raw: error,
+          tag: "InvalidAuth",
+        };
+      }
+
+      if (status === 403) {
+        return {
+          error: "Forbidden",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 404) {
+        return {
+          error: "Not Found",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 409) {
+        return {
+          error: "Conflict",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 422) {
+        return {
+          error: "Unprocessable Entity",
+          raw: error,
+          tag: "InvalidRequest",
+        };
+      }
+
+      if (status === 429) {
+        return {
+          error: "Rate Limit Exceeded",
+          raw: error,
+          tag: "RateLimitExceeded",
+        };
+      }
+
+      if (status >= 500) {
+        return {
+          error: "Internal Server Error",
+          raw: error,
+          tag: "ServerError",
+        };
+      }
+
+    }
+
     return {
       error: `${error.name} : ${error.message}`,
       raw: error,
