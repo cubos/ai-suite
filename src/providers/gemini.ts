@@ -4,6 +4,7 @@ import {
   Tool,
   FunctionCall,
   ApiError,
+  GenerateContentParameters,
 } from "@google/genai";
 import {
   ErrorChatCompletion,
@@ -65,12 +66,28 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
     const systemPrompt =
       messages[0].role !== "user" ? messages[0].content : null;
 
-    const chat = this.client.chats.create({
-      model: this.model,
-      history: (systemPrompt
-        ? messages.slice(1, messages.length - 1)
-        : messages.slice(0, messages.length - 1)
-      ).map((msg) => {
+    const req: GenerateContentParameters = {
+      config: {
+        tools: options.tools
+          ? convertToGeminiFunctions(options.tools)
+          : undefined,
+        temperature: options.temperature ?? 0.7,
+        ...(!notUseThinkingConfig.includes(this.model) && {
+          thinkingConfig: {
+            thinkingBudget: options.thinking?.budget ?? 0,
+            includeThoughts: options.thinking?.output ?? false,
+          },
+        }),
+        ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
+        responseMimeType:
+          options.responseFormat !== "text" ? "application/json" : undefined,
+        ...(options.responseFormat === "json_schema"
+          ? {
+              responseSchema: toGeminiSchema(options.zodSchema),
+            }
+          : {}),
+      },
+      contents: messages.slice(systemPrompt ? 1 : 0, messages.length).map((msg) => {
         if (msg.role === "user" || msg.role === "developer") {
           return {
             role: "user",
@@ -98,35 +115,14 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
         }
         throw new Error(`Unsupported role: ${msg.role}`);
       }),
-      config: {
-        tools: options.tools
-          ? convertToGeminiFunctions(options.tools)
-          : undefined,
-        temperature: options.temperature ?? 0.7,
-        ...(!notUseThinkingConfig.includes(this.model) && {
-          thinkingConfig: {
-            thinkingBudget: options.thinking?.budget ?? 0,
-            includeThoughts: options.thinking?.output ?? false,
-          },
-        }),
-        ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
-        responseMimeType:
-          options.responseFormat !== "text" ? "application/json" : undefined,
-        ...(options.responseFormat === "json_schema"
-          ? {
-              responseSchema: toGeminiSchema(options.zodSchema),
-            }
-          : {}),
-      },
-    });
+      model: this.model,
+    }
 
-    await this.handleRequest(chat);
+    const response = await this.client.models.generateContent(req);
 
-    const lastResponse = await chat.sendMessage({
-      message: messages[messages.length - 1].content,
-    });
+    await this.handleRequest(req);
 
-    await this.handleResponse(chat, lastResponse, options.metadata ?? {});
+    await this.handleResponse(req, response, options.metadata ?? {});
 
     const result: SuccessChatCompletion = {
       success: true,
@@ -134,12 +130,12 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
       created: Math.floor(Date.now() / 1000),
       model: this.model,
       object: "chat.completion",
-      content: lastResponse.text ?? null,
+      content: response.text ?? null,
       content_object:
-        options.responseFormat !== "text" && (lastResponse.text ?? null)
-          ? tryCatch(() => JSON.parse(lastResponse.text ?? ""))
+        options.responseFormat !== "text" && (response.text ?? null)
+          ? tryCatch(() => JSON.parse(response.text ?? ""))
           : undefined,
-      tools: lastResponse.functionCalls?.map((tool: FunctionCall) => ({
+      tools: response.functionCalls?.map((tool: FunctionCall) => ({
         id: tool.name ?? "",
         type: "function",
         name: tool.name ?? "",
@@ -147,14 +143,14 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
         rawContent: JSON.stringify(tool.args),
       })),
       usage: {
-        input_tokens: lastResponse.usageMetadata?.promptTokenCount || 0,
-        output_tokens: lastResponse.usageMetadata?.candidatesTokenCount || 0,
+        input_tokens: response.usageMetadata?.promptTokenCount || 0,
+        output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
         total_tokens:
-          (lastResponse.usageMetadata?.promptTokenCount || 0) +
-          (lastResponse.usageMetadata?.candidatesTokenCount || 0) +
-          (lastResponse.usageMetadata?.thoughtsTokenCount || 0),
-        cached_tokens: lastResponse.usageMetadata?.cachedContentTokenCount || 0,
-        thoughts_tokens: lastResponse.usageMetadata?.thoughtsTokenCount || 0,
+          (response.usageMetadata?.promptTokenCount || 0) +
+          (response.usageMetadata?.candidatesTokenCount || 0) +
+          (response.usageMetadata?.thoughtsTokenCount || 0),
+        cached_tokens: response.usageMetadata?.cachedContentTokenCount || 0,
+        thoughts_tokens: response.usageMetadata?.thoughtsTokenCount || 0,
         reasoning_tokens: 0,
       },
       metadata: options.metadata,
