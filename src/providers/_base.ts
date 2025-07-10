@@ -72,7 +72,14 @@ export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig {
   /**
    * The metadata to use
    */
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, unknown> & {
+    langFuse: {
+      environment?: string;
+      sessionId?: string;
+      name?: string;
+      tags?: string[];
+    };
+  };
 }
 
 export interface JSONSchema<T = unknown> extends ChatOptionsBase {
@@ -126,9 +133,9 @@ export abstract class BaseHook {
     ) => Promise<void>;
   }) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this.handleRequest = hooks?.handleRequest ?? (async (_) => {});
+    this.handleRequest = hooks?.handleRequest ?? (async (_) => { });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this.handleResponse = hooks?.handleResponse ?? (async (_) => {});
+    this.handleResponse = hooks?.handleResponse ?? (async (_) => { });
   }
 }
 

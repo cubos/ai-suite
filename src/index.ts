@@ -152,11 +152,14 @@ export class AISuite<S extends string = string> {
     }
 
     const trace = this.langFuse?.trace({
-      name: `${this.applicationName}`,
+      ...(options?.metadata?.langFuse?.sessionId ? { sessionId: options?.metadata?.langFuse?.sessionId } : {}),
+      name: options?.metadata?.langFuse?.name ?? "create-chat-completion",
+      tags: options?.metadata?.langFuse?.tags ?? [],
     });
 
     const generation = trace?.generation({
-      name: "create-chat-completion",
+      environment: options?.metadata?.langFuse?.environment ?? "default",
+      name: options?.metadata?.langFuse?.name ?? "create-chat-completion",
       model: provider.split("/")[1],
       input: messages,
     });
@@ -168,8 +171,18 @@ export class AISuite<S extends string = string> {
       const end = Date.now();
 
       generation?.end({
+        usage: {
+          input: result.usage?.input_tokens ?? 0,
+          output: result.usage?.output_tokens ?? 0,
+          total: result.usage?.total_tokens ?? 0,
+        },
         output: result,
       });
+
+      trace?.update({
+        input: messages,
+        output: result.content,
+      })
 
       return {
         ...result,
