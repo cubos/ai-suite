@@ -195,6 +195,11 @@ export class AISuite<S extends string = string> {
         output: error,
       });
 
+      trace?.update({
+        input: messages,
+        output: error,
+      })
+
       return {
         success: false,
         ...result,
