@@ -155,6 +155,7 @@ export class AISuite<S extends string = string> {
       ...(options?.metadata?.langFuse?.sessionId ? { sessionId: options?.metadata?.langFuse?.sessionId } : {}),
       name: options?.metadata?.langFuse?.name ?? "create-chat-completion",
       tags: options?.metadata?.langFuse?.tags ?? [],
+      environment: options?.metadata?.langFuse?.environment ?? "default",
     });
 
     const generation = trace?.generation({
