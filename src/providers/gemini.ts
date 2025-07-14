@@ -127,6 +127,13 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
 
     const contentObject = options.responseFormat !== "text" && response.text ? tryCatch(() => JSON5.parse<Record<string, unknown>>(response.text ?? "")) : undefined
 
+    // eslint-disable-next-line no-useless-escape
+    const regex = /[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gi;
+
+    const matches = response.text?.match(regex);
+
+    const obj =  Object.assign({}, ...(matches ?? []).map((m) => JSON5.parse(m)))
+
     const result: SuccessChatCompletion = {
       success: true,
       id: `gemini-${Date.now()}`,
@@ -134,7 +141,7 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
       model: this.model,
       object: "chat.completion",
       content: response.text ?? null,
-      content_object: contentObject ?? {},
+      content_object: contentObject ?? obj,
       tools: response.functionCalls?.map((tool: FunctionCall) => ({
         id: tool.name ?? "",
         type: "function",
