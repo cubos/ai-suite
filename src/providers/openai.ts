@@ -8,6 +8,7 @@ import { BaseHook, ChatOptions, ProviderBase } from "./_base.js";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import { tryCatch } from "../types/utils.js";
 import { ChatModel } from "openai/resources/index.mjs";
+import JSON5 from 'json5'
 
 export type OpenAIModels = ChatModel;
 
@@ -90,6 +91,8 @@ export class OpenAIProvider extends BaseHook implements ProviderBase {
 
     await this.handleResponse(request, response, options.metadata ?? {});
 
+    const contentObject = options.responseFormat !== "text" ? tryCatch(() => JSON5.parse<Record<string, unknown>>(completion.choices[0].message.content ?? "")) : undefined
+
     const completion = response as OpenAI.Chat.Completions.ChatCompletion;
     const result: SuccessChatCompletion = {
       success: true,
@@ -98,10 +101,7 @@ export class OpenAIProvider extends BaseHook implements ProviderBase {
       model: completion.model,
       object: "chat.completion",
       content: completion.choices[0].message.content,
-      content_object:
-        options.responseFormat !== "text"
-          ? tryCatch(() => JSON.parse(completion.choices[0].message.content!))
-          : undefined,
+      content_object: contentObject ?? {},
       tools: completion.choices[0].message.tool_calls?.map((tool) => ({
         id: tool.id,
         type: "function",

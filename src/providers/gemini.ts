@@ -17,6 +17,7 @@ import { z } from "zod";
 import { toGeminiSchema } from "gemini-zod";
 import { tryCatch } from "../types/utils.js";
 import { BaseHook } from "./_base.js";
+import JSON5 from 'json5'
 
 extendZodWithOpenApi(z);
 
@@ -124,6 +125,8 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
 
     await this.handleResponse(req, response, options.metadata ?? {});
 
+    const contentObject = options.responseFormat !== "text" && response.text ? tryCatch(() => JSON5.parse<Record<string, unknown>>(response.text ?? "")) : undefined
+
     const result: SuccessChatCompletion = {
       success: true,
       id: `gemini-${Date.now()}`,
@@ -131,10 +134,7 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
       model: this.model,
       object: "chat.completion",
       content: response.text ?? null,
-      content_object:
-        options.responseFormat !== "text" && (response.text ?? null)
-          ? tryCatch(() => JSON.parse(response.text ?? ""))
-          : undefined,
+      content_object: contentObject ?? {},
       tools: response.functionCalls?.map((tool: FunctionCall) => ({
         id: tool.name ?? "",
         type: "function",

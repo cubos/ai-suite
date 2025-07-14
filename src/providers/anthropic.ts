@@ -8,6 +8,7 @@ import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
 import { BaseHook } from "./_base.js";
 import { IsLiteral, tryCatch } from "../types/utils.js";
 import { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
+import JSON5 from 'json5'
 
 export type AnthropicModels = IsLiteral<Model>;
 
@@ -104,6 +105,8 @@ export class AnthropicProvider extends BaseHook implements ProviderBase {
     const content =
       response.content[0].type === "text" ? response.content[0].text : "";
 
+    const contentObject = options.responseFormat !== "text" ? tryCatch(() => JSON5.parse<Record<string, unknown>>(content)) : undefined
+
     const result: SuccessChatCompletion = {
       success: true,
       id: response.id,
@@ -111,10 +114,7 @@ export class AnthropicProvider extends BaseHook implements ProviderBase {
       model: this.model,
       object: "chat.completion",
       content,
-      content_object:
-        response.content[0].type === "text"
-          ? tryCatch(() => JSON.parse(content))
-          : undefined,
+      content_object: contentObject ?? {},
       tools: response.content
         .filter(
           (block): block is Anthropic.Messages.ToolUseBlock =>
