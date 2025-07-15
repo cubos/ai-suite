@@ -73,7 +73,7 @@ export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig {
    * The metadata to use
    */
   metadata?: Record<string, unknown> & {
-    langFuse: {
+    langFuse?: {
       environment?: string;
       sessionId?: string;
       name?: string;
