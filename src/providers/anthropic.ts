@@ -12,9 +12,10 @@ import JSON5 from 'json5'
 
 export type AnthropicModels = IsLiteral<Model>;
 
-export class AnthropicProvider extends BaseHook implements ProviderBase {
+export class AnthropicProvider extends ProviderBase {
   private client: Anthropic;
   private model: string;
+  private hooks: BaseHook;
 
   constructor(
     apiKey: string,
@@ -26,16 +27,18 @@ export class AnthropicProvider extends BaseHook implements ProviderBase {
         res: unknown,
         metadata: Record<string, unknown>
       ) => Promise<void>;
+      failOnError?: boolean;
     }
   ) {
-    super(hooks);
+    super();
+    this.hooks = new BaseHook(hooks);
     this.client = new Anthropic({
       apiKey: apiKey,
     });
     this.model = model;
   }
 
-  async createChatCompletion(
+  async _createChatCompletion(
     messages: MessageModel[],
     options: ChatOptions
   ): Promise<SuccessChatCompletion> {
@@ -89,14 +92,14 @@ export class AnthropicProvider extends BaseHook implements ProviderBase {
       anthropicOptions.system = "Please provide your response in JSON format.";
     }
 
-    await this.handleRequest(anthropicOptions);
+    await this.hooks.handleRequest(anthropicOptions);
 
     const response = await this.client.messages.create({
       ...anthropicOptions,
       stream: false,
     });
 
-    await this.handleResponse(
+    await this.hooks.handleResponse(
       anthropicOptions,
       response,
       options.metadata ?? {}

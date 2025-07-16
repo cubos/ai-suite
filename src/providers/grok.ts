@@ -18,6 +18,7 @@ export class GrokProvider extends OpenAIProvider {
         res: unknown,
         metadata: Record<string, unknown>
       ) => Promise<void>;
+      failOnError?: boolean;
     }
   ) {
     super(apiKey, model, customURL, hooks);

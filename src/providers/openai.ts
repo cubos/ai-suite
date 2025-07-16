@@ -12,9 +12,10 @@ import JSON5 from 'json5'
 
 export type OpenAIModels = ChatModel;
 
-export class OpenAIProvider extends BaseHook implements ProviderBase {
+export class OpenAIProvider extends ProviderBase {
   private client: OpenAI;
   private model: string;
+  private hooks: BaseHook;
 
   constructor(
     apiKey: string,
@@ -27,9 +28,11 @@ export class OpenAIProvider extends BaseHook implements ProviderBase {
         res: unknown,
         metadata: Record<string, unknown>
       ) => Promise<void>;
+      failOnError?: boolean;
     }
   ) {
-    super(hooks);
+    super();
+    this.hooks = new BaseHook(hooks);
     this.client = new OpenAI({
       apiKey: apiKey,
       ...(customURL ? { baseURL: customURL } : {}),
@@ -37,7 +40,7 @@ export class OpenAIProvider extends BaseHook implements ProviderBase {
     this.model = model;
   }
 
-  async createChatCompletion(
+  async _createChatCompletion(
     messages: MessageModel[],
     options: ChatOptions
   ): Promise<SuccessChatCompletion> {
@@ -85,11 +88,11 @@ export class OpenAIProvider extends BaseHook implements ProviderBase {
       tools: options.tools,
     };
 
-    await this.handleRequest(request);
+    await this.hooks.handleRequest(request);
 
     const response = await this.client.chat.completions.create(request);
 
-    await this.handleResponse(request, response, options.metadata ?? {});
+    await this.hooks.handleResponse(request, response, options.metadata ?? {});
 
     const contentObject = options.responseFormat !== "text" ? tryCatch(() => JSON5.parse<Record<string, unknown>>(completion.choices[0].message.content ?? "")) : undefined
 

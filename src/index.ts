@@ -36,6 +36,7 @@ export class AISuite<S extends string = string> {
       res: unknown,
       metadata: Record<string, unknown>
     ) => Promise<void>;
+    failOnError?: boolean;
   };
 
   constructor(
@@ -56,6 +57,7 @@ export class AISuite<S extends string = string> {
           res: unknown,
           metadata: Record<string, unknown>
         ) => Promise<void>;
+        failOnError?: boolean;
       };
       langFuse?: Langfuse;
     }
