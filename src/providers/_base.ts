@@ -63,7 +63,7 @@ export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig {
    */
   retry?: {
     attempts: number;
-    delay: (attempt: number) => number;
+    delay?: (attempt: number) => number;
   };
   /**
    * Whether to stream the response
@@ -140,17 +140,16 @@ export abstract class ProviderBase {
     messages: MessageModel[],
     options: ChatOptions
   ): Promise<SuccessChatCompletion> {
-    const retryOptions = options.retry || {
-      attempts: 1,
-      delay: (attempt) => Math.pow(2, attempt) * 100,
-    };
+    
+    const attempts = options.retry?.attempts || 1;
+    const delay = options.retry?.delay || ((attempt) => Math.pow(2, attempt) * 100);
 
-    const debug = true;
+    const debug = false;
 
-    for (let i = 0; i < retryOptions.attempts; i++) {
+    for (let i = 0; i < attempts; i++) {
       try {
         if (debug) {
-          console.log(`Attempt ${i + 1} of ${retryOptions.attempts} with delay ${retryOptions.delay(i)}`);
+          console.log(`Attempt ${i + 1} of ${attempts} with delay ${delay(i)}`);
         }
         return await this._createChatCompletion(messages, options);
       } catch (error) {
@@ -161,14 +160,14 @@ export abstract class ProviderBase {
           throw error;
         }
         
-        if (i === retryOptions.attempts - 1) {
+        if (i === attempts - 1) {
           if (debug) {
             console.log(`This is the last attempt, throwing the error`);
           }
           throw error;
         }
         
-        await sleep(retryOptions.delay(i))
+        await sleep(delay(i))
       }
     }
     
