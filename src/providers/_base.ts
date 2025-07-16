@@ -140,7 +140,7 @@ export abstract class ProviderBase {
   ): Promise<SuccessChatCompletion> {
     const retryOptions = options.retry || {
       attempts: 1,
-      delay: () => 0,
+      delay: (attempt) => Math.pow(2, attempt) * 100,
     };
 
     const debug = true;
