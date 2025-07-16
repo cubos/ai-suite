@@ -27,6 +27,7 @@ export class OpenAIProvider extends BaseHook implements ProviderBase {
         res: unknown,
         metadata: Record<string, unknown>
       ) => Promise<void>;
+      failOnError?: boolean;
     }
   ) {
     super(hooks);

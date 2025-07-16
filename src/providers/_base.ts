@@ -131,11 +131,39 @@ export abstract class BaseHook {
       res: unknown,
       metadata: Record<string, unknown>
     ) => Promise<void>;
+    failOnError?: boolean;
   }) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this.handleRequest = hooks?.handleRequest ?? (async (_) => { });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this.handleResponse = hooks?.handleResponse ?? (async (_) => { });
+    const failOnError = hooks?.failOnError ?? true;
+
+    this.handleRequest = async (req: unknown) => {
+      if (hooks?.handleRequest) {
+        try {
+          await hooks.handleRequest(req);
+        } catch (error) {
+          console.warn("Error in handleRequest", error);
+          if (failOnError) {
+            throw error;
+          }
+        }
+      }
+    };
+
+    this.handleResponse = async (
+      req: unknown,
+      res: unknown,
+      metadata: Record<string, unknown>
+    ) => {
+      if (hooks?.handleResponse) {
+        try {
+          await hooks.handleResponse(req, res, metadata);
+        } catch (error) {
+          console.warn("Error in handleResponse", error);
+          if (failOnError) {
+            throw error;
+          }
+        }
+      }
+    };
   }
 }
 

@@ -49,6 +49,7 @@ describe("AnthropicProvider", () => {
         cache_creation_input_tokens: null,
         cache_read_input_tokens: null,
         server_tool_use: null,
+        service_tier: null
       },
       stop_reason: null,
       stop_sequence: null,
