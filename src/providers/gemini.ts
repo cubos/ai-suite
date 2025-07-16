@@ -39,9 +39,10 @@ const notUseThinkingConfig = [
   "gemini-1.5-pro",
 ];
 
-export class GeminiProvider extends BaseHook implements ProviderBase {
+export class GeminiProvider extends ProviderBase {
   private client: GoogleGenAI;
   private model: string;
+  private hooks: BaseHook;
 
   constructor(
     apiKey: string,
@@ -56,12 +57,15 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
       failOnError?: boolean;
     }
   ) {
-    super(hooks);
-    this.client = new GoogleGenAI({ apiKey });
+    super();
+    this.hooks = new BaseHook(hooks);
+    this.client = new GoogleGenAI({
+      apiKey: apiKey,
+    });
     this.model = model;
   }
 
-  async createChatCompletion(
+  async _createChatCompletion(
     messages: MessageModel[],
     options: ChatOptions
   ): Promise<SuccessChatCompletion> {
@@ -122,9 +126,9 @@ export class GeminiProvider extends BaseHook implements ProviderBase {
 
     const response = await this.client.models.generateContent(req);
 
-    await this.handleRequest(req);
+    await this.hooks.handleRequest(req);
 
-    await this.handleResponse(req, response, options.metadata ?? {});
+    await this.hooks.handleResponse(req, response, options.metadata ?? {});
 
     const contentObject = options.responseFormat !== "text" && response.text ? tryCatch(() => JSON5.parse<Record<string, unknown>>(response.text ?? "")) : undefined
 

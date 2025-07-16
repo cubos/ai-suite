@@ -4,6 +4,7 @@ import {
   SuccessChatCompletion,
 } from "../types/chat.js";
 import { ZodType } from "zod";
+import { AISuiteError } from "../utils.js";
 
 /**
  * The JSON schema to use for the response and tool parameters
@@ -55,6 +56,13 @@ export interface ReasoningConfig {
 }
 
 export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig {
+  /**
+   * The retry options
+   */
+  retry?: {
+    attempts: number;
+    delay: (attempt: number) => number;
+  };
   /**
    * Whether to stream the response
    */
@@ -109,15 +117,64 @@ export interface Text extends ChatOptionsBase {
 
 export type ChatOptions = JSONSchema | JSONObject | Text;
 
-export interface ProviderBase {
-  createChatCompletion(
+export abstract class ProviderBase {
+  /**
+   * Abstract method that must be implemented by each provider
+   */
+  protected abstract _createChatCompletion(
     messages: MessageModel[],
     options: ChatOptions
   ): Promise<SuccessChatCompletion>;
-  handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag">;
+
+  /**
+   * Abstract method that must be implemented by each provider
+   */
+  abstract handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag">;
+
+  /**
+   * Public method that includes retry logic
+   */
+  async createChatCompletion(
+    messages: MessageModel[],
+    options: ChatOptions
+  ): Promise<SuccessChatCompletion> {
+    const retryOptions = options.retry || {
+      attempts: 1,
+      delay: () => 0,
+    };
+
+    const debug = true;
+
+    for (let i = 0; i < retryOptions.attempts; i++) {
+      try {
+        if (debug) {
+          console.log(`Attempt ${i + 1} of ${retryOptions.attempts} with delay ${retryOptions.delay(i)}`);
+        }
+        return await this._createChatCompletion(messages, options);
+      } catch (error) {
+        if (error instanceof AISuiteError) {
+          if (debug) {
+            console.log(`Error is an AISuiteError, throwing it`);
+          }
+          throw error;
+        }
+        
+        if (i === retryOptions.attempts - 1) {
+          if (debug) {
+            console.log(`This is the last attempt, throwing the error`);
+          }
+          throw error;
+        }
+        
+        await new Promise((resolve) => setTimeout(resolve, retryOptions.delay(i)));
+      }
+    }
+    
+    throw new Error("Retry logic failed");
+  }
 }
 
-export abstract class BaseHook {
+export class BaseHook {
   handleRequest: (req: unknown) => Promise<void>;
   handleResponse: (
     req: unknown,
@@ -142,7 +199,7 @@ export abstract class BaseHook {
         } catch (error) {
           console.warn("Error in handleRequest", error);
           if (failOnError) {
-            throw error;
+            throw new AISuiteError(error as string);
           }
         }
       }
@@ -159,7 +216,7 @@ export abstract class BaseHook {
         } catch (error) {
           console.warn("Error in handleResponse", error);
           if (failOnError) {
-            throw error;
+            throw new AISuiteError(error as string);
           }
         }
       }
