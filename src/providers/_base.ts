@@ -166,7 +166,7 @@ export abstract class ProviderBase {
           throw error;
         }
         
-        await new Promise((resolve) => setTimeout(resolve, retryOptions.delay(i)));
+        await sleep(retryOptions.delay(i))
       }
     }
     
