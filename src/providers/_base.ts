@@ -5,7 +5,7 @@ import {
 } from "../types/chat.js";
 import { ZodType } from "zod";
 import { AISuiteError } from "../utils.js";
-
+const sleep = promisify(setTimeout);
 /**
  * The JSON schema to use for the response and tool parameters
  */
