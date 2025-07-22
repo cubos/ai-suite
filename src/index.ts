@@ -154,10 +154,15 @@ export class AISuite<S extends string = string> {
     }
 
     const trace = this.langFuse?.trace({
-      ...(options?.metadata?.langFuse?.sessionId ? { sessionId: options?.metadata?.langFuse?.sessionId } : {}),
+      ...(options?.metadata?.langFuse?.sessionId
+        ? { sessionId: options?.metadata?.langFuse?.sessionId }
+        : {}),
       name: options?.metadata?.langFuse?.name ?? "create-chat-completion",
       tags: options?.metadata?.langFuse?.tags ?? [],
       environment: options?.metadata?.langFuse?.environment ?? "default",
+      ...(options?.metadata?.langFuse?.userId
+        ? { userId: options?.metadata?.langFuse?.userId }
+        : {}),
     });
 
     const generation = trace?.generation({
@@ -185,7 +190,7 @@ export class AISuite<S extends string = string> {
       trace?.update({
         input: messages,
         output: result.content,
-      })
+      });
 
       return {
         ...result,
@@ -201,7 +206,7 @@ export class AISuite<S extends string = string> {
       trace?.update({
         input: messages,
         output: error,
-      })
+      });
 
       return {
         success: false,

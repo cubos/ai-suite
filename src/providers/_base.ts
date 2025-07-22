@@ -84,6 +84,7 @@ export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig {
    */
   metadata?: Record<string, unknown> & {
     langFuse?: {
+      userId?: string;
       environment?: string;
       sessionId?: string;
       name?: string;
@@ -131,7 +132,9 @@ export abstract class ProviderBase {
   /**
    * Abstract method that must be implemented by each provider
    */
-  abstract handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag">;
+  abstract handleError(
+    error: Error
+  ): Pick<ErrorChatCompletion, "error" | "raw" | "tag">;
 
   /**
    * Public method that includes retry logic
@@ -140,9 +143,9 @@ export abstract class ProviderBase {
     messages: MessageModel[],
     options: ChatOptions
   ): Promise<SuccessChatCompletion> {
-    
     const attempts = options.retry?.attempts || 1;
-    const delay = options.retry?.delay || ((attempt) => Math.pow(2, attempt) * 100);
+    const delay =
+      options.retry?.delay || ((attempt) => Math.pow(2, attempt) * 100);
 
     const debug = false;
 
@@ -159,18 +162,18 @@ export abstract class ProviderBase {
           }
           throw error;
         }
-        
+
         if (i === attempts - 1) {
           if (debug) {
             console.log(`This is the last attempt, throwing the error`);
           }
           throw error;
         }
-        
-        await sleep(delay(i))
+
+        await sleep(delay(i));
       }
     }
-    
+
     throw new Error("Retry logic failed");
   }
 }
@@ -224,4 +227,3 @@ export class BaseHook {
     };
   }
 }
-
