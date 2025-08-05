@@ -36,15 +36,15 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.56.0",
-    "@google/genai": "^1.8.0",
+    "@anthropic-ai/sdk": "0.57.0",
+    "@google/genai": "^1.12.0",
     "@types/node": "^22.15.18",
     "dotenv": "^16.5.0",
     "gemini-zod": "^0.1.2",
     "json5": "^2.2.3",
-    "langfuse": "^3.38.2",
-    "openai": "^5.8.2",
-    "zod": "^3.25.73",
+    "langfuse": "^3.38.4",
+    "openai": "5.11.0",
+    "zod": "^3.25.76",
     "zod-openapi": "^4.2.4",
     "zod-to-json-schema": "^3.24.6"
   }
