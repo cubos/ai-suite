@@ -44,6 +44,7 @@ describe("AnthropicProvider", () => {
       model: "claude-3-opus-20240229",
       role: "assistant",
       usage: {
+        cache_creation: null,
         input_tokens: 5,
         output_tokens: 3,
         cache_creation_input_tokens: null,
