@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, vi } from "vitest";
-import { GrokProvider } from "../src/providers/grok.js";
 import dotenv from "dotenv";
-import { SuccessChatCompletion } from "../src/types/chat.js";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { GrokProvider } from "../src/providers/grok.js";
+import type { SuccessChatCompletion } from "../src/types/chat.js";
 
 dotenv.config();
 
@@ -52,7 +52,7 @@ describe("GrokProvider", () => {
         cached_tokens: 0,
         reasoning_tokens: 0,
         thoughts_tokens: 0,
-      }
+      },
     };
 
     vi.spyOn(ai, "createChatCompletion").mockImplementation(async () => {
@@ -61,10 +61,10 @@ describe("GrokProvider", () => {
       return mockResponse;
     });
 
-    const response = await ai.createChatCompletion(
-      [{ role: "user", content: "Hello, how are you?" }],
-      { stream: false, responseFormat: "text" }
-    );
+    const response = await ai.createChatCompletion([{ role: "user", content: "Hello, how are you?" }], {
+      stream: false,
+      responseFormat: "text",
+    });
 
     expect(response).toBeDefined();
     expect(response.success).toBe(true);

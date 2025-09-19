@@ -20,13 +20,13 @@ interface ResultErrorChatCompletion {
    *
    */
   tag:
-  | "InvalidAuth"
-  | "InvalidRequest"
-  | "InvalidModel"
-  | "RateLimitExceeded"
-  | "ServerError"
-  | "ServerOverloaded"
-  | "Unknown";
+    | "InvalidAuth"
+    | "InvalidRequest"
+    | "InvalidModel"
+    | "RateLimitExceeded"
+    | "ServerError"
+    | "ServerOverloaded"
+    | "Unknown";
   /**
    *
    * The raw error from the API.

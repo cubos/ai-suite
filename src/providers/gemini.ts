@@ -1,23 +1,18 @@
 import {
+  ApiError,
+  type FunctionCall,
+  type GenerateContentParameters,
   GoogleGenAI,
   Type as SchemaType,
-  Tool,
-  FunctionCall,
-  ApiError,
-  GenerateContentParameters,
+  type Tool,
 } from "@google/genai";
-import {
-  ErrorChatCompletion,
-  MessageModel,
-  SuccessChatCompletion,
-} from "../types/chat.js";
-import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
-import { extendZodWithOpenApi } from "zod-openapi";
-import { z } from "zod";
 import { toGeminiSchema } from "gemini-zod";
+import JSON5 from "json5";
+import { z } from "zod";
+import { extendZodWithOpenApi } from "zod-openapi";
+import type { ErrorChatCompletion, MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import { tryCatch } from "../types/utils.js";
-import { BaseHook } from "./_base.js";
-import JSON5 from 'json5'
+import { BaseHook, type ChatOptions, ProviderBase, type ToolModel } from "./_base.js";
 
 extendZodWithOpenApi(z);
 
@@ -49,13 +44,9 @@ export class GeminiProvider extends ProviderBase {
     model: string,
     hooks?: {
       handleRequest?: (req: unknown) => Promise<void>;
-      handleResponse?: (
-        req: unknown,
-        res: unknown,
-        metadata: Record<string, unknown>
-      ) => Promise<void>;
+      handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
       failOnError?: boolean;
-    }
+    },
   ) {
     super();
     this.hooks = new BaseHook(hooks);
@@ -65,18 +56,12 @@ export class GeminiProvider extends ProviderBase {
     this.model = model;
   }
 
-  async _createChatCompletion(
-    messages: MessageModel[],
-    options: ChatOptions
-  ): Promise<SuccessChatCompletion> {
-    const systemPrompt =
-      messages[0].role !== "user" ? messages[0].content : null;
+  async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
+    const systemPrompt = messages[0].role !== "user" ? messages[0].content : null;
 
     const req: GenerateContentParameters = {
       config: {
-        tools: options.tools
-          ? convertToGeminiFunctions(options.tools)
-          : undefined,
+        tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
         temperature: options.temperature ?? 0.7,
         ...(!notUseThinkingConfig.includes(this.model) && {
           thinkingConfig: {
@@ -85,15 +70,14 @@ export class GeminiProvider extends ProviderBase {
           },
         }),
         ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
-        responseMimeType:
-          options.responseFormat !== "text" ? "application/json" : undefined,
+        responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
         ...(options.responseFormat === "json_schema"
           ? {
               responseSchema: toGeminiSchema(options.zodSchema),
             }
           : {}),
       },
-      contents: messages.slice(systemPrompt ? 1 : 0, messages.length).map((msg) => {
+      contents: messages.slice(systemPrompt ? 1 : 0, messages.length).map(msg => {
         if (msg.role === "user" || msg.role === "developer") {
           return {
             role: "user",
@@ -112,9 +96,7 @@ export class GeminiProvider extends ProviderBase {
             role: "user",
             parts: [
               {
-                text: `Tool Response (${msg.name || "default_tool"}): ${
-                  msg.content
-                }`,
+                text: `Tool Response (${msg.name || "default_tool"}): ${msg.content}`,
               },
             ],
           };
@@ -122,7 +104,7 @@ export class GeminiProvider extends ProviderBase {
         throw new Error(`Unsupported role: ${msg.role}`);
       }),
       model: this.model,
-    }
+    };
 
     const response = await this.client.models.generateContent(req);
 
@@ -130,14 +112,17 @@ export class GeminiProvider extends ProviderBase {
 
     await this.hooks.handleResponse(req, response, options.metadata ?? {});
 
-    const contentObject = options.responseFormat !== "text" && response.text ? tryCatch(() => JSON5.parse<Record<string, unknown>>(response.text ?? "")) : undefined
+    const contentObject =
+      options.responseFormat !== "text" && response.text
+        ? tryCatch(() => JSON5.parse<Record<string, unknown>>(response.text ?? ""))
+        : undefined;
 
     // eslint-disable-next-line no-useless-escape
-    const regex = /[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gi;
+    const regex = /[{[]{1}([,:{}[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gi;
 
     const matches = response.text?.match(regex);
 
-    const obj =  Object.assign({}, ...(matches ?? []).map((m) => JSON5.parse(m)))
+    const obj = Object.assign({}, ...(matches ?? []).map(m => JSON5.parse(m)));
 
     const result: SuccessChatCompletion = {
       success: true,
@@ -171,9 +156,7 @@ export class GeminiProvider extends ProviderBase {
     return result;
   }
 
-  handleError(
-    error: Error
-  ): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
+  handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
     if (error instanceof ApiError) {
       const status = error.status;
 
@@ -240,7 +223,6 @@ export class GeminiProvider extends ProviderBase {
           tag: "ServerError",
         };
       }
-
     }
 
     return {
@@ -251,50 +233,46 @@ export class GeminiProvider extends ProviderBase {
   }
 }
 
-export function convertToGeminiFunctions(
-  tools?: ToolModel[]
-): Tool[] | undefined {
+export function convertToGeminiFunctions(tools?: ToolModel[]): Tool[] | undefined {
   if (!tools) return undefined;
 
   return [
     {
-      functionDeclarations: tools.map((tool) => ({
+      functionDeclarations: tools.map(tool => ({
         name: tool.function.name,
         description: tool.function.description,
         parameters: {
           type: SchemaType.OBJECT,
           properties: Object.fromEntries(
-            Object.entries(tool.function.parameters.properties).map(
-              ([key, value]) => [
-                key,
-                {
-                  type:
-                    value.type === "string"
-                      ? SchemaType.STRING
-                      : value.type === "number"
+            Object.entries(tool.function.parameters.properties).map(([key, value]) => [
+              key,
+              {
+                type:
+                  value.type === "string"
+                    ? SchemaType.STRING
+                    : value.type === "number"
                       ? SchemaType.NUMBER
                       : value.type === "boolean"
-                      ? SchemaType.BOOLEAN
-                      : value.type === "array"
-                      ? SchemaType.ARRAY
-                      : SchemaType.OBJECT,
-                  description: value.description,
-                  ...(value.type === "array"
-                    ? {
-                        items: {
-                          type: SchemaType.STRING,
-                        },
-                      }
-                    : {}),
-                  ...(value.type === "object"
-                    ? {
-                        properties: {},
-                        required: [],
-                      }
-                    : {}),
-                },
-              ]
-            )
+                        ? SchemaType.BOOLEAN
+                        : value.type === "array"
+                          ? SchemaType.ARRAY
+                          : SchemaType.OBJECT,
+                description: value.description,
+                ...(value.type === "array"
+                  ? {
+                      items: {
+                        type: SchemaType.STRING,
+                      },
+                    }
+                  : {}),
+                ...(value.type === "object"
+                  ? {
+                      properties: {},
+                      required: [],
+                    }
+                  : {}),
+              },
+            ]),
           ),
           required: tool.function.parameters.required,
         },

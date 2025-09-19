@@ -1,13 +1,13 @@
-import { MessageModel, ResultChatCompletion } from "./types/chat.js";
-import { OpenAIModels, OpenAIProvider } from "./providers/openai.js";
-import { AnthropicModels, AnthropicProvider } from "./providers/anthropic.js";
-import { GeminiModels, GeminiProvider } from "./providers/gemini.js";
-import { ChatOptions } from "./providers/_base.js";
-import { DeepSeekModels, DeepSeekProvider } from "./providers/deepseek.js";
-import { Langfuse } from "langfuse";
 import dotenv from "dotenv";
+import type { Langfuse } from "langfuse";
+import type { ChatOptions } from "./providers/_base.js";
+import { type AnthropicModels, AnthropicProvider } from "./providers/anthropic.js";
 import { CustomLLMProvider } from "./providers/customLLM.js";
-import { GrokModels, GrokProvider } from "./providers/grok.js";
+import { type DeepSeekModels, DeepSeekProvider } from "./providers/deepseek.js";
+import { type GeminiModels, GeminiProvider } from "./providers/gemini.js";
+import { type GrokModels, GrokProvider } from "./providers/grok.js";
+import { type OpenAIModels, OpenAIProvider } from "./providers/openai.js";
+import type { MessageModel, ResultChatCompletion } from "./types/chat.js";
 
 dotenv.config();
 
@@ -28,14 +28,9 @@ export class AISuite<S extends string = string> {
   private langFuse?: Langfuse;
   private customURL?: string;
   private customLLMKey?: string;
-  private applicationName = "ai-suite";
   public hooks?: {
     handleRequest?: (req: unknown) => Promise<void>;
-    handleResponse?: (
-      req: unknown,
-      res: unknown,
-      metadata: Record<string, unknown>
-    ) => Promise<void>;
+    handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
     failOnError?: boolean;
   };
 
@@ -52,15 +47,11 @@ export class AISuite<S extends string = string> {
     options?: {
       hooks?: {
         handleRequest?: (req: unknown) => Promise<void>;
-        handleResponse?: (
-          req: unknown,
-          res: unknown,
-          metadata: Record<string, unknown>
-        ) => Promise<void>;
+        handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
         failOnError?: boolean;
       };
       langFuse?: Langfuse;
-    }
+    },
   ) {
     this.openaiKey = keys.openaiKey || "";
     this.anthropicKey = keys.anthropicKey || "";
@@ -87,15 +78,15 @@ export class AISuite<S extends string = string> {
       stream: false,
       responseFormat: "text" as const,
       temperature: 0.7,
-    }
+    },
   ): Promise<{ [key in T]: ResultChatCompletion }[]> {
     // handle possible errors from the providers
     const results = await Promise.all(
-      providers.map(async (p) => {
+      providers.map(async p => {
         return {
           [p]: await this.createChatCompletion(p, messages, options),
         };
-      })
+      }),
     );
 
     return results as { [key in ProviderModel<S>]: ResultChatCompletion }[];
@@ -111,7 +102,7 @@ export class AISuite<S extends string = string> {
   async createChatCompletion(
     provider: ProviderModel<S>,
     messages: MessageModel[],
-    options?: { stream: false } & ChatOptions
+    options?: { stream: false } & ChatOptions,
   ): Promise<ResultChatCompletion>;
 
   /**
@@ -130,7 +121,7 @@ export class AISuite<S extends string = string> {
   async createChatCompletion(
     provider: ProviderModel<S>,
     messages: MessageModel[],
-    options?: ChatOptions
+    options?: ChatOptions,
   ): Promise<ResultChatCompletion> {
     const opts = {
       stream: false,
@@ -154,15 +145,11 @@ export class AISuite<S extends string = string> {
     }
 
     const trace = this.langFuse?.trace({
-      ...(options?.metadata?.langFuse?.sessionId
-        ? { sessionId: options?.metadata?.langFuse?.sessionId }
-        : {}),
+      ...(options?.metadata?.langFuse?.sessionId ? { sessionId: options?.metadata?.langFuse?.sessionId } : {}),
       name: options?.metadata?.langFuse?.name ?? "create-chat-completion",
       tags: options?.metadata?.langFuse?.tags ?? [],
       environment: options?.metadata?.langFuse?.environment ?? "default",
-      ...(options?.metadata?.langFuse?.userId
-        ? { userId: options?.metadata?.langFuse?.userId }
-        : {}),
+      ...(options?.metadata?.langFuse?.userId ? { userId: options?.metadata?.langFuse?.userId } : {}),
     });
 
     const generation = trace?.generation({
@@ -227,31 +214,14 @@ export class AISuite<S extends string = string> {
     } else if (providerName === "gemini") {
       return new GeminiProvider(this.geminiKey, model, this.hooks);
     } else if (providerName === "deepseek") {
-      return new DeepSeekProvider(
-        this.deepseekKey,
-        model,
-        "https://api.deepseek.com/v1",
-        this.hooks
-      );
+      return new DeepSeekProvider(this.deepseekKey, model, "https://api.deepseek.com/v1", this.hooks);
     } else if (providerName === "custom-llm") {
       if (!this.customURL) {
-        throw new Error(
-          `Need to provide a custom URL for the custom-llm provider`
-        );
+        throw new Error(`Need to provide a custom URL for the custom-llm provider`);
       }
-      return new CustomLLMProvider(
-        this.customLLMKey ?? "not-needed",
-        model,
-        this.customURL,
-        this.hooks
-      );
+      return new CustomLLMProvider(this.customLLMKey ?? "not-needed", model, this.customURL, this.hooks);
     } else if (providerName === "grok") {
-      return new GrokProvider(
-        this.grokKey,
-        model,
-        "https://api.x.ai/v1",
-        this.hooks
-      );
+      return new GrokProvider(this.grokKey, model, "https://api.x.ai/v1", this.hooks);
     }
     throw new Error(`Unsupported provider: ${providerName}`);
   }

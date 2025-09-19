@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, vi } from "vitest";
-import { CustomLLMProvider } from "../src/providers/customLLM.js";
 import dotenv from "dotenv";
-import { SuccessChatCompletion } from "../src/types/chat.js";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { CustomLLMProvider } from "../src/providers/customLLM.js";
+import type { SuccessChatCompletion } from "../src/types/chat.js";
 
 dotenv.config();
 
@@ -37,7 +37,7 @@ describe("CustomLLMProvider", () => {
       stream: false,
     };
 
-    const mockResponse = { 
+    const mockResponse = {
       id: "mock",
       created: Date.now(),
       model: "custom-model",
@@ -48,8 +48,8 @@ describe("CustomLLMProvider", () => {
       usage: {
         prompt_tokens: 5,
         completion_tokens: 3,
-        total_tokens: 8
-      }
+        total_tokens: 8,
+      },
     };
 
     vi.spyOn(ai, "createChatCompletion").mockImplementation(async () => {
@@ -58,10 +58,10 @@ describe("CustomLLMProvider", () => {
       return mockResponse as unknown as SuccessChatCompletion;
     });
 
-    const response = await ai.createChatCompletion(
-      [{ role: "user", content: "Hello, how are you?" }],
-      { stream: false, responseFormat: "text" }
-    );
+    const response = await ai.createChatCompletion([{ role: "user", content: "Hello, how are you?" }], {
+      stream: false,
+      responseFormat: "text",
+    });
 
     expect(response).toBeDefined();
     expect(response.success).toBe(true);

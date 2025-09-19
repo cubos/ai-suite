@@ -1,14 +1,10 @@
+import JSON5 from "json5";
 import { OpenAI } from "openai";
-import {
-  ErrorChatCompletion,
-  MessageModel,
-  SuccessChatCompletion,
-} from "../types/chat.js";
-import { BaseHook, ChatOptions, ProviderBase } from "./_base.js";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
+import type { ChatModel } from "openai/resources/index.mjs";
+import type { ErrorChatCompletion, MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import { tryCatch } from "../types/utils.js";
-import { ChatModel } from "openai/resources/index.mjs";
-import JSON5 from 'json5'
+import { BaseHook, type ChatOptions, ProviderBase } from "./_base.js";
 
 export type OpenAIModels = ChatModel;
 
@@ -23,13 +19,9 @@ export class OpenAIProvider extends ProviderBase {
     customURL?: string,
     hooks?: {
       handleRequest?: (req: unknown) => Promise<void>;
-      handleResponse?: (
-        req: unknown,
-        res: unknown,
-        metadata: Record<string, unknown>
-      ) => Promise<void>;
+      handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
       failOnError?: boolean;
-    }
+    },
   ) {
     super();
     this.hooks = new BaseHook(hooks);
@@ -40,34 +32,29 @@ export class OpenAIProvider extends ProviderBase {
     this.model = model;
   }
 
-  async _createChatCompletion(
-    messages: MessageModel[],
-    options: ChatOptions
-  ): Promise<SuccessChatCompletion> {
-    const mappedMessages = messages.map(
-      (msg): OpenAI.ChatCompletionMessageParam => {
-        if (msg.role === "developer") {
-          return {
-            role: "user",
-            content: msg.content,
-          };
-        }
-        if (msg.role === "tool") {
-          return {
-            role: "function",
-            content: msg.content,
-            name: msg.name || "default_tool",
-          };
-        }
-        if (msg.role === "assistant" || msg.role === "user") {
-          return {
-            role: msg.role,
-            content: msg.content,
-          };
-        }
-        throw new Error(`Unsupported role: ${msg.role}`);
+  async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
+    const mappedMessages = messages.map((msg): OpenAI.ChatCompletionMessageParam => {
+      if (msg.role === "developer") {
+        return {
+          role: "user",
+          content: msg.content,
+        };
       }
-    );
+      if (msg.role === "tool") {
+        return {
+          role: "function",
+          content: msg.content,
+          name: msg.name || "default_tool",
+        };
+      }
+      if (msg.role === "assistant" || msg.role === "user") {
+        return {
+          role: msg.role,
+          content: msg.content,
+        };
+      }
+      throw new Error(`Unsupported role: ${msg.role}`);
+    });
 
     let response_format: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming["response_format"];
 
@@ -94,7 +81,10 @@ export class OpenAIProvider extends ProviderBase {
 
     await this.hooks.handleResponse(request, response, options.metadata ?? {});
 
-    const contentObject = options.responseFormat !== "text" ? tryCatch(() => JSON5.parse<Record<string, unknown>>(completion.choices[0].message.content ?? "")) : undefined
+    const contentObject =
+      options.responseFormat !== "text"
+        ? tryCatch(() => JSON5.parse<Record<string, unknown>>(completion.choices[0].message.content ?? ""))
+        : undefined;
 
     const completion = response as OpenAI.Chat.Completions.ChatCompletion;
     const result: SuccessChatCompletion = {
@@ -105,7 +95,7 @@ export class OpenAIProvider extends ProviderBase {
       object: "chat.completion",
       content: completion.choices[0].message.content,
       content_object: contentObject ?? {},
-      tools: completion.choices[0].message.tool_calls?.map((tool) => ({
+      tools: completion.choices[0].message.tool_calls?.map(tool => ({
         id: tool.id,
         type: "function",
         name: tool.function.name,
@@ -116,10 +106,8 @@ export class OpenAIProvider extends ProviderBase {
         input_tokens: completion.usage?.prompt_tokens || 0,
         output_tokens: completion.usage?.completion_tokens || 0,
         total_tokens: completion.usage?.total_tokens || 0,
-        cached_tokens:
-          completion.usage?.prompt_tokens_details?.cached_tokens || 0,
-        reasoning_tokens:
-          completion.usage?.completion_tokens_details?.reasoning_tokens || 0,
+        cached_tokens: completion.usage?.prompt_tokens_details?.cached_tokens || 0,
+        reasoning_tokens: completion.usage?.completion_tokens_details?.reasoning_tokens || 0,
         thoughts_tokens: 0,
       },
       metadata: options.metadata,
@@ -128,9 +116,7 @@ export class OpenAIProvider extends ProviderBase {
     return result;
   }
 
-  handleError(
-    error: Error
-  ): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
+  handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
     if (error instanceof OpenAI.APIError) {
       const status = error.status;
 
