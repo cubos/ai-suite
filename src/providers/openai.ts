@@ -95,13 +95,17 @@ export class OpenAIProvider extends ProviderBase {
       object: "chat.completion",
       content: completion.choices[0].message.content,
       content_object: contentObject ?? {},
-      tools: completion.choices[0].message.tool_calls?.map(tool => ({
-        id: tool.id,
-        type: "function",
-        name: tool.function.name,
-        content: JSON.parse(tool.function.arguments),
-        rawContent: tool.function.arguments,
-      })),
+      tools: completion.choices[0].message.tool_calls
+        ?.filter(l => l.type === "function")
+        .map(tool => {
+          return {
+            id: tool.id,
+            type: "function",
+            name: tool.function?.name || "unknown",
+            content: tool.function?.arguments ? JSON.parse(tool.function.arguments) : {},
+            rawContent: tool.function?.arguments || "",
+          };
+        }),
       usage: {
         input_tokens: completion.usage?.prompt_tokens || 0,
         output_tokens: completion.usage?.completion_tokens || 0,
