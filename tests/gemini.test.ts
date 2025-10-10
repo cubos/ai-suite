@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, vi } from "vitest";
-import { GeminiProvider } from "../src/providers/gemini.js";
-import { GenerateContentResponse } from "@google/genai";
+import type { GenerateContentResponse } from "@google/genai";
 import dotenv from "dotenv";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { GeminiProvider } from "../src/providers/gemini.js";
 
 dotenv.config();
 
@@ -30,7 +30,7 @@ describe("GeminiProvider", () => {
       handleRequest,
       handleResponse,
     });
-  
+
     const mockChat = {
       model: "gemini-model",
       history: [{ role: "user", content: "Hello, how are you?" }],
@@ -50,12 +50,14 @@ describe("GeminiProvider", () => {
       candidates: [
         {
           content: {
-            parts: [{
-              text: "I'm fine!",
-            }],
+            parts: [
+              {
+                text: "I'm fine!",
+              },
+            ],
             role: "model",
-          }
-        }
+          },
+        },
       ],
       text: "I'm fine!",
       data: undefined,
@@ -87,10 +89,10 @@ describe("GeminiProvider", () => {
       };
     });
 
-    const result = await ai.createChatCompletion(
-      [{ role: "user", content: "Hello, how are you?" }],
-      { stream: false, responseFormat: "text" }
-    );
+    const result = await ai.createChatCompletion([{ role: "user", content: "Hello, how are you?" }], {
+      stream: false,
+      responseFormat: "text",
+    });
 
     expect(result).toBeDefined();
     expect(result.success).toBe(true);

@@ -1,14 +1,9 @@
 import { Anthropic } from "@anthropic-ai/sdk";
-import {
-  ErrorChatCompletion,
-  MessageModel,
-  SuccessChatCompletion,
-} from "../types/chat.js";
-import { ChatOptions, ProviderBase, ToolModel } from "./_base.js";
-import { BaseHook } from "./_base.js";
-import { IsLiteral, tryCatch } from "../types/utils.js";
-import { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
-import JSON5 from 'json5'
+import type { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
+import JSON5 from "json5";
+import type { ErrorChatCompletion, MessageModel, SuccessChatCompletion } from "../types/chat.js";
+import { type IsLiteral, tryCatch } from "../types/utils.js";
+import { BaseHook, type ChatOptions, ProviderBase, type ToolModel } from "./_base.js";
 
 export type AnthropicModels = IsLiteral<Model>;
 
@@ -22,13 +17,9 @@ export class AnthropicProvider extends ProviderBase {
     model: string,
     hooks?: {
       handleRequest?: (req: unknown) => Promise<void>;
-      handleResponse?: (
-        req: unknown,
-        res: unknown,
-        metadata: Record<string, unknown>
-      ) => Promise<void>;
+      handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
       failOnError?: boolean;
-    }
+    },
   ) {
     super();
     this.hooks = new BaseHook(hooks);
@@ -38,36 +29,29 @@ export class AnthropicProvider extends ProviderBase {
     this.model = model;
   }
 
-  async _createChatCompletion(
-    messages: MessageModel[],
-    options: ChatOptions
-  ): Promise<SuccessChatCompletion> {
-    const mappedMessages = messages.map(
-      (msg): { role: "user" | "assistant"; content: string } => {
-        if (msg.role === "developer" || msg.role === "user") {
-          return {
-            role: "user",
-            content: msg.content,
-          };
-        }
-        if (msg.role === "assistant") {
-          return {
-            role: "assistant",
-            content: msg.content,
-          };
-        }
-        if (msg.role === "tool") {
-          // Anthropic doesn't have direct tool/function support, so we'll format it as user message
-          return {
-            role: "user",
-            content: `Tool Response (${msg.name || "default_tool"}): ${
-              msg.content
-            }`,
-          };
-        }
-        throw new Error(`Unsupported role: ${msg.role}`);
+  async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
+    const mappedMessages = messages.map((msg): { role: "user" | "assistant"; content: string } => {
+      if (msg.role === "developer" || msg.role === "user") {
+        return {
+          role: "user",
+          content: msg.content,
+        };
       }
-    );
+      if (msg.role === "assistant") {
+        return {
+          role: "assistant",
+          content: msg.content,
+        };
+      }
+      if (msg.role === "tool") {
+        // Anthropic doesn't have direct tool/function support, so we'll format it as user message
+        return {
+          role: "user",
+          content: `Tool Response (${msg.name || "default_tool"}): ${msg.content}`,
+        };
+      }
+      throw new Error(`Unsupported role: ${msg.role}`);
+    });
 
     // Prepare common options
     const anthropicOptions: Anthropic.Messages.MessageCreateParams = {
@@ -99,16 +83,12 @@ export class AnthropicProvider extends ProviderBase {
       stream: false,
     });
 
-    await this.hooks.handleResponse(
-      anthropicOptions,
-      response,
-      options.metadata ?? {}
-    );
+    await this.hooks.handleResponse(anthropicOptions, response, options.metadata ?? {});
 
-    const content =
-      response.content[0].type === "text" ? response.content[0].text : "";
+    const content = response.content[0].type === "text" ? response.content[0].text : "";
 
-    const contentObject = options.responseFormat !== "text" ? tryCatch(() => JSON5.parse<Record<string, unknown>>(content)) : undefined
+    const contentObject =
+      options.responseFormat !== "text" ? tryCatch(() => JSON5.parse<Record<string, unknown>>(content)) : undefined;
 
     const result: SuccessChatCompletion = {
       success: true,
@@ -119,11 +99,8 @@ export class AnthropicProvider extends ProviderBase {
       content,
       content_object: contentObject ?? {},
       tools: response.content
-        .filter(
-          (block): block is Anthropic.Messages.ToolUseBlock =>
-            block.type === "tool_use"
-        )
-        .map((tool) => ({
+        .filter((block): block is Anthropic.Messages.ToolUseBlock => block.type === "tool_use")
+        .map(tool => ({
           id: tool.id,
           type: "function",
           name: tool.name,
@@ -133,8 +110,7 @@ export class AnthropicProvider extends ProviderBase {
       usage: {
         input_tokens: response.usage.input_tokens || 0,
         output_tokens: response.usage.output_tokens || 0,
-        total_tokens:
-          response.usage.input_tokens + response.usage.output_tokens,
+        total_tokens: response.usage.input_tokens + response.usage.output_tokens,
         cached_tokens: response.usage.cache_read_input_tokens || 0,
         reasoning_tokens: 0,
         thoughts_tokens: 0,
@@ -145,9 +121,7 @@ export class AnthropicProvider extends ProviderBase {
     return result;
   }
 
-  handleError(
-    error: Error
-  ): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
+  handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
     if (error instanceof Anthropic.APIError) {
       const status = error.status;
 
@@ -240,9 +214,7 @@ export class AnthropicProvider extends ProviderBase {
   }
 }
 
-function convertToAnthropicFunctions(
-  tools?: ToolModel[]
-): Anthropic.Messages.ToolUnion[] | undefined {
+function convertToAnthropicFunctions(tools?: ToolModel[]): Anthropic.Messages.ToolUnion[] | undefined {
   if (!tools) {
     return undefined;
   }

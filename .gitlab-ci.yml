@@ -16,7 +16,7 @@ Lint:
   stage: check
   script:
     - pnpm i --frozen-lockfile
-    - pnpm run lint:check
+    - pnpm run lint
 
 NPM Audit:
   stage: check

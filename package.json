@@ -5,9 +5,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx --trace-deprecation --watch src/index.ts",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "lint:check": "eslint . --ext .ts",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
     "test": "vitest"
   },
   "type": "module",
@@ -24,11 +23,8 @@
   "description": "All ai providers in one place",
   "packageManager": "pnpm@10.4.1",
   "devDependencies": {
+    "@biomejs/biome": "2.2.4",
     "@cubos/eslint-config": "^2.2.0",
-    "@eslint/js": "^9.30.1",
-    "eslint": "9.30.1",
-    "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-prettier": "^5.5.1",
     "globals": "^16.3.0",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
@@ -36,14 +32,14 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.57.0",
-    "@google/genai": "^1.12.0",
+    "@anthropic-ai/sdk": "0.63.0",
+    "@google/genai": "^1.20.0",
     "@types/node": "^22.15.18",
     "dotenv": "^16.5.0",
     "gemini-zod": "^0.1.2",
     "json5": "^2.2.3",
-    "langfuse": "^3.38.4",
-    "openai": "5.11.0",
+    "langfuse": "^3.38.5",
+    "openai": "5.22.0",
     "zod": "^3.25.76",
     "zod-openapi": "^4.2.4",
     "zod-to-json-schema": "^3.24.6"

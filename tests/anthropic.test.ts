@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, vi } from "vitest";
-import { AnthropicProvider } from "../src/providers/anthropic.js";
+import type Anthropic from "@anthropic-ai/sdk";
 import dotenv from "dotenv";
-import Anthropic from "@anthropic-ai/sdk";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { AnthropicProvider } from "../src/providers/anthropic.js";
 
 dotenv.config();
 
@@ -44,16 +44,17 @@ describe("AnthropicProvider", () => {
       model: "claude-3-opus-20240229",
       role: "assistant",
       usage: {
+        cache_creation: null,
         input_tokens: 5,
         output_tokens: 3,
         cache_creation_input_tokens: null,
         cache_read_input_tokens: null,
         server_tool_use: null,
-        service_tier: null
+        service_tier: null,
       },
       stop_reason: null,
       stop_sequence: null,
-      type: "message"
+      type: "message",
     };
 
     vi.spyOn(ai, "createChatCompletion").mockImplementation(async () => {
@@ -79,10 +80,10 @@ describe("AnthropicProvider", () => {
       };
     });
 
-    const result = await ai.createChatCompletion(
-      [{ role: "user", content: "Hello, how are you?" }],
-      { stream: false, responseFormat: "text" }
-    );
+    const result = await ai.createChatCompletion([{ role: "user", content: "Hello, how are you?" }], {
+      stream: false,
+      responseFormat: "text",
+    });
 
     expect(result).toBeDefined();
     expect(result.success).toBe(true);

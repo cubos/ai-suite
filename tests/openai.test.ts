@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, vi } from "vitest";
-import { OpenAIProvider } from "../src/providers/openai.js";
-import { SuccessChatCompletion } from "../src/types/chat";
 import dotenv from "dotenv";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { OpenAIProvider } from "../src/providers/openai.js";
+import type { SuccessChatCompletion } from "../src/types/chat";
 
 dotenv.config();
 
@@ -66,10 +66,10 @@ describe("OpenAIProvider", () => {
       return mockResponse;
     });
 
-    const response = await ai.createChatCompletion(
-      [{ role: "user", content: "Hello, how are you?" }],
-      { stream: false, responseFormat: "text" }
-    );
+    const response = await ai.createChatCompletion([{ role: "user", content: "Hello, how are you?" }], {
+      stream: false,
+      responseFormat: "text",
+    });
 
     expect(response).toBeDefined();
     expect(response.success).toBe(true);
