@@ -79,17 +79,8 @@ export class AISuite<S extends string = string> {
       responseFormat: "text" as const,
       temperature: 0.7,
     },
-  ): Promise<{ [key in T]: ResultChatCompletion }[]> {
-    // handle possible errors from the providers
-    const results = await Promise.all(
-      providers.map(async p => {
-        return {
-          [p]: await this.createChatCompletion(p, messages, options),
-        };
-      }),
-    );
-
-    return results as { [key in ProviderModel<S>]: ResultChatCompletion }[];
+  ): Promise<ResultChatCompletion[]> {
+    return Promise.all(providers.map(async p => this.createChatCompletion(p, messages, options)));
   }
 
   /**
