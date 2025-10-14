@@ -81,12 +81,13 @@ export class OpenAIProvider extends ProviderBase {
 
     await this.hooks.handleResponse(request, response, options.metadata ?? {});
 
+    const completion = response as OpenAI.Chat.Completions.ChatCompletion;
+
     const contentObject =
       options.responseFormat !== "text"
         ? tryCatch(() => JSON5.parse<Record<string, unknown>>(completion.choices[0].message.content ?? ""))
         : undefined;
 
-    const completion = response as OpenAI.Chat.Completions.ChatCompletion;
     const result: SuccessChatCompletion = {
       success: true,
       id: completion.id,
