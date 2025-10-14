@@ -19,12 +19,14 @@ extendZodWithOpenApi(z);
 export type GeminiModels =
   | "gemini-2.5-pro"
   | "gemini-2.5-flash"
-  | "gemini-2.5-flash-lite-preview-06-17"
+  | "gemini-2.5-flash-lite"
   | "gemini-2.0-flash"
   | "gemini-2.0-flash-lite"
   | "gemini-1.5-flash"
   | "gemini-1.5-flash-8b"
   | "gemini-1.5-pro";
+
+const onlyWorksWithThinking = ["gemini-2.5-pro"];
 
 const notUseThinkingConfig = [
   "gemini-2.0-flash",
@@ -63,6 +65,12 @@ export class GeminiProvider extends ProviderBase {
       config: {
         tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
         temperature: options.temperature ?? 0.7,
+        ...(!onlyWorksWithThinking.includes(this.model) && {
+          thinkingConfig: {
+            thinkingBudget: options.thinking?.budget ?? 128,
+            includeThoughts: options.thinking?.output ?? false,
+          },
+        }),
         ...(!notUseThinkingConfig.includes(this.model) && {
           thinkingConfig: {
             thinkingBudget: options.thinking?.budget ?? 0,
