@@ -84,6 +84,7 @@ export class GeminiProvider extends ProviderBase {
               responseSchema: toGeminiSchema(options.zodSchema),
             }
           : {}),
+        ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
       },
       contents: messages.slice(systemPrompt ? 1 : 0, messages.length).map(msg => {
         if (msg.role === "user" || msg.role === "developer") {

@@ -76,6 +76,11 @@ export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig {
   tools?: ToolModel[];
 
   /**
+   * Maximum number of output tokens (only for Gemini)
+   */
+  maxOutputTokens?: number;
+
+  /**
    * The metadata to use
    */
   metadata?: Record<string, unknown> & {
