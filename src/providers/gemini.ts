@@ -11,7 +11,6 @@ import JSON5 from "json5";
 import { z } from "zod";
 import { extendZodWithOpenApi } from "zod-openapi";
 import type { ErrorChatCompletion, MessageModel, SuccessChatCompletion } from "../types/chat.js";
-import { tryCatch } from "../types/utils.js";
 import { BaseHook, type ChatOptions, ProviderBase, type ToolModel } from "./_base.js";
 
 extendZodWithOpenApi(z);
@@ -121,10 +120,15 @@ export class GeminiProvider extends ProviderBase {
 
     await this.hooks.handleResponse(req, response, options.metadata ?? {});
 
-    const contentObject =
-      options.responseFormat !== "text" && response.text
-        ? tryCatch(() => JSON5.parse<Record<string, unknown>>(response.text ?? ""))
-        : undefined;
+    let contentObject: Record<string, unknown> | undefined;
+
+    if (options.responseFormat !== "text" && response.text) {
+      try {
+        contentObject = JSON5.parse<Record<string, unknown>>(response.text ?? "");
+      } catch (_) {
+        // ignore JSON5 parse errors
+      }
+    }
 
     // eslint-disable-next-line no-useless-escape
     const regex = /[{[]{1}([,:{}[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gi;
