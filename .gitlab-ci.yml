@@ -48,6 +48,4 @@ create-pages:
   script:
     - pnpm run docs:build
   pages:
-    paths:
-      - _site/
     expire_in: 1 week
