@@ -57,7 +57,7 @@ export class AnthropicProvider extends ProviderBase {
     const anthropicOptions: Anthropic.Messages.MessageCreateParams = {
       model: this.model,
       messages: mappedMessages,
-      ...(options.maxOutputTokens ? { max_tokens: options.maxOutputTokens } : {max_tokens: 4096}),
+      ...(options.maxOutputTokens ? { max_tokens: options.maxOutputTokens } : { max_tokens: 4096 }),
       stream: options.stream || false,
       tools: convertToAnthropicFunctions(options.tools),
       thinking: {

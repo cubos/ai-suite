@@ -1,10 +1,10 @@
 import JSON5 from "json5";
 import { OpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
+import type { ChatCompletionCreateParamsBase } from "openai/resources/chat/completions.mjs";
 import type { ChatModel } from "openai/resources/index.mjs";
 import type { ErrorChatCompletion, MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import { BaseHook, type ChatOptions, ProviderBase } from "./_base.js";
-import type { ChatCompletionCreateParamsBase } from "openai/resources/chat/completions.mjs";
 
 export type OpenAIModels = ChatModel;
 
@@ -73,7 +73,7 @@ export class OpenAIProvider extends ProviderBase {
       temperature: options.temperature,
       response_format,
       tools: options.tools,
-      ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {})
+      ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
     };
 
     await this.hooks.handleRequest(request);
