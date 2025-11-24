@@ -76,7 +76,9 @@ export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig {
   tools?: ToolModel[];
 
   /**
-   * Maximum number of output tokens (only for Gemini)
+   * Maximum number of output tokens
+   *
+   * Anthropic max_tokens is set to 4096 by default
    */
   maxOutputTokens?: number;
 

@@ -2,7 +2,7 @@ import { Anthropic } from "@anthropic-ai/sdk";
 import type { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
 import JSON5 from "json5";
 import type { ErrorChatCompletion, MessageModel, SuccessChatCompletion } from "../types/chat.js";
-import { type IsLiteral, tryCatch } from "../types/utils.js";
+import type { IsLiteral } from "../types/utils.js";
 import { BaseHook, type ChatOptions, ProviderBase, type ToolModel } from "./_base.js";
 
 export type AnthropicModels = IsLiteral<Model>;
@@ -57,7 +57,7 @@ export class AnthropicProvider extends ProviderBase {
     const anthropicOptions: Anthropic.Messages.MessageCreateParams = {
       model: this.model,
       messages: mappedMessages,
-      max_tokens: 4096,
+      ...(options.maxOutputTokens ? { max_tokens: options.maxOutputTokens } : { max_tokens: 4096 }),
       stream: options.stream || false,
       tools: convertToAnthropicFunctions(options.tools),
       thinking: {
@@ -87,8 +87,15 @@ export class AnthropicProvider extends ProviderBase {
 
     const content = response.content[0].type === "text" ? response.content[0].text : "";
 
-    const contentObject =
-      options.responseFormat !== "text" ? tryCatch(() => JSON5.parse<Record<string, unknown>>(content)) : undefined;
+    let contentObject: Record<string, unknown> | undefined;
+
+    if (options.responseFormat !== "text") {
+      try {
+        contentObject = JSON5.parse<Record<string, unknown>>(content);
+      } catch {
+        // ignore JSON5 parse errors
+      }
+    }
 
     const result: SuccessChatCompletion = {
       success: true,

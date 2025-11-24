@@ -1,9 +1,9 @@
 import JSON5 from "json5";
 import { OpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
+import type { ChatCompletionCreateParamsBase } from "openai/resources/chat/completions.mjs";
 import type { ChatModel } from "openai/resources/index.mjs";
 import type { ErrorChatCompletion, MessageModel, SuccessChatCompletion } from "../types/chat.js";
-import { tryCatch } from "../types/utils.js";
 import { BaseHook, type ChatOptions, ProviderBase } from "./_base.js";
 
 export type OpenAIModels = ChatModel;
@@ -66,13 +66,14 @@ export class OpenAIProvider extends ProviderBase {
       response_format = { type: options.responseFormat };
     }
 
-    const request = {
+    const request: ChatCompletionCreateParamsBase = {
       model: this.model,
       messages: mappedMessages,
       stream: options.stream || false,
       temperature: options.temperature,
       response_format,
       tools: options.tools,
+      ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
     };
 
     await this.hooks.handleRequest(request);
@@ -83,10 +84,15 @@ export class OpenAIProvider extends ProviderBase {
 
     const completion = response as OpenAI.Chat.Completions.ChatCompletion;
 
-    const contentObject =
-      options.responseFormat !== "text"
-        ? tryCatch(() => JSON5.parse<Record<string, unknown>>(completion.choices[0].message.content ?? ""))
-        : undefined;
+    let contentObject: Record<string, unknown> | undefined;
+
+    if (options.responseFormat !== "text") {
+      try {
+        contentObject = JSON5.parse<Record<string, unknown>>(completion.choices[0].message.content ?? "");
+      } catch (_) {
+        // ignore JSON5 parse errors
+      }
+    }
 
     const result: SuccessChatCompletion = {
       success: true,

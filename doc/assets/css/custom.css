@@ -1,0 +1,26 @@
+/* Custom styles for AI-Suite documentation */
+
+/* You can add custom styles here to override or extend the default styles */
+
+/* Example: Custom code block styling */
+/*
+pre code {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+*/
+
+/* Example: Custom heading colors */
+/*
+h2 {
+  color: var(--color-primary);
+}
+*/
+
+/* Example: Custom link hover effect */
+/*
+a:hover {
+  transform: translateX(2px);
+  transition: transform 0.2s;
+}
+*/

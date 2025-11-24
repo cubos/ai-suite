@@ -1,3 +1,13 @@
+---
+layout: doc.njk
+title: Advanced Usage
+description: Advanced features and usage patterns
+permalink: /advanced-usage/
+eleventyNavigation:
+  key: Advanced Usage
+  order: 5
+---
+
 # Advanced Usage
 
 This document covers advanced usage patterns for AI-Suite.
@@ -10,23 +20,153 @@ Control the randomness of responses by adjusting the temperature:
 
 ```typescript
 const response = await aiSuite.createChatCompletion(
-  'openai/gpt-4',
-  [{ role: 'user', content: 'Hello, world!' }],
-  { temperature: 0.2 } // Lower temperature for more deterministic responses
+  'openai/gpt-4o',
+  [{ role: 'user', content: 'Write a creative story' }],
+  {
+    responseFormat: 'text',
+    temperature: 0.2  // Lower temperature for more deterministic responses
+  }
 );
 ```
 
-### Token Limits
+### Max Output Tokens
 
 Limit the maximum number of tokens in the response:
 
 ```typescript
 const response = await aiSuite.createChatCompletion(
-  'anthropic/claude-3-sonnet',
+  'anthropic/claude-3-5-sonnet-20241022',
   [{ role: 'user', content: 'Write a short story.' }],
-  { max_tokens: 500 } // Limit response to 500 tokens
+  {
+    responseFormat: 'text',
+    maxOutputTokens: 500  // Limit response to 500 tokens
+  }
 );
 ```
+
+## Structured Output
+
+### JSON Object Mode
+
+Get any valid JSON response:
+
+```typescript
+const response = await aiSuite.createChatCompletion(
+  'openai/gpt-4o',
+  [{ role: 'user', content: 'Generate a user profile with name, age, and email' }],
+  {
+    responseFormat: 'json_object'
+  }
+);
+
+if (response.success) {
+  console.log(response.content_object);  // Parsed JSON object
+}
+```
+
+### JSON Schema Mode (Strongly Typed)
+
+Use Zod schemas for type-safe, validated JSON responses:
+
+```typescript
+import { z } from 'zod';
+
+const UserSchema = z.object({
+  name: z.string(),
+  age: z.number().int().positive(),
+  email: z.string().email(),
+  interests: z.array(z.string())
+});
+
+const response = await aiSuite.createChatCompletion(
+  'openai/gpt-4o',
+  [{ role: 'user', content: 'Generate a sample user' }],
+  {
+    responseFormat: 'json_schema',
+    zodSchema: UserSchema
+  }
+);
+
+if (response.success) {
+  // response.content_object is typed according to your schema
+  const user = response.content_object;
+  console.log(`${user.name} is ${user.age} years old`);
+}
+```
+
+This works with all providers that support JSON mode (OpenAI, Gemini, etc.).
+
+## Tool/Function Calling
+
+Enable models to call functions:
+
+```typescript
+const tools = [{
+  type: 'function' as const,
+  function: {
+    name: 'get_weather',
+    description: 'Get the current weather for a location',
+    parameters: {
+      type: 'object' as const,
+      properties: {
+        location: {
+          type: 'string' as const,
+          description: 'The city name'
+        },
+        unit: {
+          type: 'string' as const,
+          description: 'Temperature unit (celsius or fahrenheit)'
+        }
+      },
+      required: ['location'],
+      additionalProperties: false
+    },
+    additionalProperties: false,
+    strict: true
+  }
+}];
+
+const response = await aiSuite.createChatCompletion(
+  'openai/gpt-4o',
+  [{ role: 'user', content: 'What is the weather in Paris?' }],
+  {
+    responseFormat: 'text',
+    tools
+  }
+);
+
+if (response.success && response.tools) {
+  for (const tool of response.tools) {
+    console.log(`Calling ${tool.name} with:`, tool.content);
+    // Execute your function and send result back
+  }
+}
+```
+
+## Retry Logic
+
+Built-in retry mechanism with exponential backoff:
+
+```typescript
+const response = await aiSuite.createChatCompletion(
+  'openai/gpt-4o',
+  [{ role: 'user', content: 'Hello!' }],
+  {
+    responseFormat: 'text',
+    retry: {
+      attempts: 5,
+      delay: (attempt) => {
+        // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1600ms
+        return Math.pow(2, attempt) * 100;
+      }
+    }
+  }
+);
+```
+
+Default retry configuration:
+- Attempts: 1 (no retry)
+- Delay: Exponential backoff starting at 100ms
 
 ## Langfuse Integration
 
@@ -40,7 +180,6 @@ import { Langfuse } from 'langfuse';
 const langfuse = new Langfuse({
   publicKey: process.env.LANGFUSE_PUBLIC_KEY,
   secretKey: process.env.LANGFUSE_SECRET_KEY,
-  projectId: process.env.LANGFUSE_PROJECT_ID,
 });
 
 const aiSuite = new AISuite(
@@ -54,15 +193,41 @@ const aiSuite = new AISuite(
 );
 ```
 
-### Tracking Details
+### Adding Metadata
+
+Track additional context with your requests:
+
+```typescript
+const response = await aiSuite.createChatCompletion(
+  'openai/gpt-4o',
+  [{ role: 'user', content: 'Hello!' }],
+  {
+    responseFormat: 'text',
+    metadata: {
+      langFuse: {
+        userId: 'user-123',
+        sessionId: 'session-456',
+        environment: 'production',
+        name: 'greeting-interaction',
+        tags: ['customer-support', 'greeting']
+      },
+      // Custom metadata
+      customField: 'value'
+    }
+  }
+);
+```
+
+### What Gets Tracked
 
 When Langfuse is integrated, AI-Suite automatically tracks:
-
 - Model used for each request
 - Input messages
 - Output responses
+- Token usage (input, output, cached, reasoning, thinking)
 - Execution time
 - Success/failure status
+- Custom metadata
 
 ## Comparing Multiple Providers
 
@@ -71,71 +236,254 @@ AI-Suite makes it easy to compare responses from different providers:
 ```typescript
 const responses = await aiSuite.createChatCompletionMultiResult(
   [
-    'openai/gpt-4',
-    'anthropic/claude-3-opus',
-    'gemini/gemini-pro'
+    'openai/gpt-4o',
+    'anthropic/claude-3-5-sonnet-20241022',
+    'gemini/gemini-2.5-flash'
   ],
-  [{ role: 'user', content: 'Explain quantum computing in simple terms.' }]
+  [{ role: 'user', content: 'Explain quantum computing in simple terms.' }],
+  {
+    responseFormat: 'text',
+    temperature: 0.7
+  }
 );
 
-// Extract and compare responses
-const openaiResponse = responses[0]['openai/gpt-4'];
-const claudeResponse = responses[1]['anthropic/claude-3-opus'];
-const geminiResponse = responses[2]['gemini/gemini-pro'];
+// Responses is an array in the same order as providers
+const [openaiResponse, claudeResponse, geminiResponse] = responses;
 
-console.log('OpenAI:', openaiResponse.message.content);
-console.log('Claude:', claudeResponse.message.content);
-console.log('Gemini:', geminiResponse.message.content);
+if (openaiResponse.success) {
+  console.log('OpenAI:', openaiResponse.content);
+  console.log('Time:', openaiResponse.execution_time + 'ms');
+}
 
-// Compare execution times
-console.log('OpenAI time:', openaiResponse.execution_time + 'ms');
-console.log('Claude time:', claudeResponse.execution_time + 'ms');
-console.log('Gemini time:', geminiResponse.execution_time + 'ms');
+if (claudeResponse.success) {
+  console.log('Claude:', claudeResponse.content);
+  console.log('Time:', claudeResponse.execution_time + 'ms');
+}
+
+if (geminiResponse.success) {
+  console.log('Gemini:', geminiResponse.content);
+  console.log('Time:', geminiResponse.execution_time + 'ms');
+}
 ```
 
-## Provider-Specific Features
+## Reasoning Models (OpenAI o1/o3, Grok)
 
-Each provider may have specific features or parameters. You can access these through the options parameter:
+OpenAI's reasoning models (o1, o3) and Grok support extended reasoning:
 
 ```typescript
-// OpenAI-specific options
-const openaiResponse = await aiSuite.createChatCompletion(
-  'openai/gpt-4',
-  [{ role: 'user', content: 'Hello!' }],
+const response = await aiSuite.createChatCompletion(
+  'openai/o1',
+  [{ role: 'user', content: 'Solve this complex problem: ...' }],
   {
-    temperature: 0.7,
-    top_p: 1,
-    presence_penalty: 0.6,
-    frequency_penalty: 0.5
+    responseFormat: 'text',
+    reasoning: {
+      effort: 'high'  // 'low' | 'medium' | 'high'
+    }
   }
 );
 
-// Anthropic-specific options
-const anthropicResponse = await aiSuite.createChatCompletion(
-  'anthropic/claude-3-opus',
-  [{ role: 'user', content: 'Hello!' }],
+if (response.success) {
+  console.log('Response:', response.content);
+  console.log('Reasoning tokens used:', response.usage?.reasoning_tokens);
+  console.log('Total tokens:', response.usage?.total_tokens);
+}
+```
+
+The `reasoning.effort` parameter controls how much computational effort the model uses for reasoning:
+- `low`: Faster, less thorough reasoning
+- `medium`: Balanced reasoning
+- `high`: Slower, more thorough reasoning
+
+## Thinking Mode (Gemini 2.5)
+
+Gemini 2.5 models support thinking budget for extended reasoning:
+
+```typescript
+const response = await aiSuite.createChatCompletion(
+  'gemini/gemini-2.5-pro',
+  [{ role: 'user', content: 'Analyze this complex problem deeply...' }],
   {
-    temperature: 0.7,
-    top_k: 50
+    responseFormat: 'text',
+    thinking: {
+      budget: 1024,     // Token budget for thinking (0-16384)
+      output: true      // Include thinking process in output
+    }
+  }
+);
+
+if (response.success) {
+  console.log('Response:', response.content);
+  console.log('Thinking tokens used:', response.usage?.thoughts_tokens);
+}
+```
+
+Notes:
+- `budget`: Number of tokens allocated for thinking (0-16384). Higher = more thorough analysis
+- `output`: Whether to include the thinking process in the response
+- Only works with `gemini-2.5-pro` currently
+
+## Hooks System
+
+Intercept and process requests/responses:
+
+```typescript
+const aiSuite = new AISuite(
+  {
+    openaiKey: process.env.OPENAI_API_KEY,
+  },
+  {
+    hooks: {
+      handleRequest: async (req) => {
+        // Log or modify request before sending
+        console.log('Sending request:', JSON.stringify(req, null, 2));
+
+        // You can throw an error to abort the request
+        // throw new Error('Request aborted');
+      },
+      handleResponse: async (req, res, metadata) => {
+        // Process response
+        console.log('Received response:', res);
+        console.log('Metadata:', metadata);
+
+        // Log to your own tracking system
+        await myTrackingSystem.log({
+          request: req,
+          response: res,
+          metadata
+        });
+      },
+      failOnError: true  // If false, hook errors won't abort the request
+    }
   }
 );
 ```
+
+Use cases for hooks:
+- Custom logging
+- Request/response transformation
+- Additional validation
+- Integration with custom tracking systems
+- A/B testing
+- Request filtering/blocking
 
 ## Error Handling
 
-AI-Suite provides a consistent error handling approach across all providers:
+AI-Suite provides consistent error handling across all providers:
 
 ```typescript
-try {
-  const response = await aiSuite.createChatCompletion(
-    'openai/gpt-4',
-    [{ role: 'user', content: 'Hello, world!' }]
-  );
-  console.log(response.message.content);
-} catch (error) {
-  console.error('Error type:', error.name);
-  console.error('Error message:', error.message);
-  console.error('Provider:', error.provider);
-  console.error('Status code:', error.statusCode);
+const response = await aiSuite.createChatCompletion(
+  'openai/gpt-4o',
+  [{ role: 'user', content: 'Hello, world!' }],
+  {
+    responseFormat: 'text'
+  }
+);
+
+if (response.success) {
+  console.log('Success:', response.content);
+  console.log('Tokens used:', response.usage?.total_tokens);
+} else {
+  // Error handling
+  console.error('Error tag:', response.tag);
+  console.error('Error message:', response.error);
+  console.error('Raw error:', response.raw);
+
+  // Handle specific error types
+  switch (response.tag) {
+    case 'InvalidAuth':
+      console.error('Invalid API key');
+      break;
+    case 'RateLimitExceeded':
+      console.error('Rate limit hit, retry later');
+      break;
+    case 'InvalidRequest':
+      console.error('Invalid request parameters');
+      break;
+    case 'ServerError':
+      console.error('Provider server error');
+      break;
+    default:
+      console.error('Unknown error');
+  }
 }
 ```
+
+Error tags:
+- `InvalidAuth`: Authentication/API key issues
+- `InvalidRequest`: Malformed request
+- `InvalidModel`: Model not found or not available
+- `RateLimitExceeded`: Rate limit hit
+- `ServerError`: Provider server error (5xx)
+- `ServerOverloaded`: Server overloaded/capacity issues
+- `Unknown`: Other errors
+
+## Custom LLM Provider
+
+Use any OpenAI-compatible API:
+
+```typescript
+// Example: Using Ollama
+const aiSuite = new AISuite({
+  customURL: 'http://localhost:11434/v1',
+  customLLMKey: 'not-needed'  // Ollama doesn't require auth
+});
+
+const response = await aiSuite.createChatCompletion(
+  'custom-llm/llama3.2',
+  [{ role: 'user', content: 'Hello!' }],
+  {
+    responseFormat: 'text',
+    temperature: 0.7
+  }
+);
+
+// Example: Using vLLM
+const vllmSuite = new AISuite({
+  customURL: 'http://your-vllm-server:8000/v1',
+  customLLMKey: 'optional-key'
+});
+
+// Example: Using LM Studio
+const lmStudioSuite = new AISuite({
+  customURL: 'http://localhost:1234/v1',
+});
+```
+
+This works with any server implementing the OpenAI Chat Completions API format.
+
+## Message Roles
+
+AI-Suite supports different message roles:
+
+```typescript
+const messages = [
+  {
+    role: 'developer',  // System/developer instructions
+    content: 'You are a helpful assistant specialized in TypeScript'
+  },
+  {
+    role: 'user',
+    content: 'How do I define an interface?'
+  },
+  {
+    role: 'assistant',
+    content: 'You can define an interface like this: interface MyInterface { ... }'
+  },
+  {
+    role: 'user',
+    content: 'Can you show me an example?'
+  }
+];
+
+const response = await aiSuite.createChatCompletion(
+  'openai/gpt-4o',
+  messages,
+  { responseFormat: 'text' }
+);
+```
+
+Role mapping per provider:
+- `developer`: Mapped to appropriate system instruction per provider
+- `user`: User message
+- `assistant`: Assistant response
+- `tool`: Tool/function call result

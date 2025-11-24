@@ -33,3 +33,7 @@ coverage/
 
 # Optional eslint cache
 .eslintcache
+_site/
+node_modules/
+.DS_Store
+public/
