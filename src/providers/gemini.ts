@@ -8,12 +8,9 @@ import {
 } from "@google/genai";
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
-import { z } from "zod";
-import { extendZodWithOpenApi } from "zod-openapi";
 import type { ErrorChatCompletion, MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import { BaseHook, type ChatOptions, ProviderBase, type ToolModel } from "./_base.js";
 
-extendZodWithOpenApi(z);
 
 export type GeminiModels =
   | "gemini-2.5-pro"
