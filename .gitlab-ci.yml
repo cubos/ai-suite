@@ -46,6 +46,7 @@ NPM Package (DEV):
 create-pages:
   stage: publish
   script:
+    - pnpm i --frozen-lockfile
     - pnpm run docs:build
   pages:
     expire_in: 1 week
