@@ -7,7 +7,10 @@
     "dev": "tsx --trace-deprecation --watch src/index.ts",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
-    "test": "vitest"
+    "test": "vitest",
+    "docs:start": "eleventy --serve --input=./doc --config=./doc/.eleventy.cjs",
+    "docs:build": "eleventy --input=./doc --config=./doc/.eleventy.cjs"
+
   },
   "type": "module",
   "module": "./dist/index.js",
@@ -29,7 +32,12 @@
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.35.1",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@11ty/eleventy": "^2.0.1",
+    "@11ty/eleventy-navigation": "^0.3.5",
+    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.0",
+    "markdown-it": "^14.0.0",
+    "markdown-it-anchor": "^8.6.7"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.70.0",

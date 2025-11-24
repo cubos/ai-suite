@@ -42,3 +42,12 @@ NPM Package (DEV):
     - pnpm version 1.0.$CI_PIPELINE_ID.dev || true
     - pnpm run build
     - pnpm publish --no-git-checks --tag dev
+
+create-pages:
+  stage: publish
+  script:
+    - pnpm run docs:build
+  pages:
+    paths:
+      - _site/
+    expire_in: 1 week

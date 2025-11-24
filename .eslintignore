@@ -8,3 +8,4 @@ deploy/
 */**/*.d.ts
 .next/
 *.config.*
+public/

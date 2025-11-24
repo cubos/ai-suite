@@ -1,3 +1,13 @@
+---
+layout: doc.njk
+title: Providers
+description: Detailed information about supported AI providers
+permalink: /providers/
+eleventyNavigation:
+  key: Providers
+  order: 3
+---
+
 # Providers
 
 AI-Suite supports multiple AI providers through a unified interface. This document details each supported provider and its implementation.
@@ -29,9 +39,13 @@ OpenAI integration supports models like GPT-3.5 and GPT-4. The provider maps AI-
 
 ```typescript
 const response = await aiSuite.createChatCompletion(
-  'openai/gpt-4',
+  'openai/gpt-4o',
   [{ role: 'user', content: 'Hello, world!' }]
 );
+
+if (response.success) {
+  console.log(response.content);
+}
 ```
 
 ### Anthropic
@@ -51,9 +65,13 @@ Anthropic integration supports Claude models. The provider handles the conversio
 
 ```typescript
 const response = await aiSuite.createChatCompletion(
-  'anthropic/claude-3-opus',
+  'anthropic/claude-3-5-sonnet-20241022',
   [{ role: 'user', content: 'Hello, world!' }]
 );
+
+if (response.success) {
+  console.log(response.content);
+}
 ```
 
 ### Google Gemini
@@ -64,20 +82,37 @@ Google Gemini integration supports Gemini models. The provider maps between AI-S
 
 #### Supported Models
 
-- `gemini-2.5-pro-preview-03-25`
+- `gemini-2.5-pro`
+- `gemini-2.5-flash`
+- `gemini-2.5-flash-lite`
 - `gemini-2.0-flash`
 - `gemini-2.0-flash-lite`
 - `gemini-1.5-flash`
 - `gemini-1.5-flash-8b`
 - `gemini-1.5-pro`
 
+#### Special Features
+
+- **Thinking Budget**: Gemini 2.5 models support thinking budget configuration for extended reasoning
+- **JSON Schema**: Native support for structured JSON output via Zod schemas
+
 #### Usage Example
 
 ```typescript
 const response = await aiSuite.createChatCompletion(
-  'gemini/gemini-1.5-pro',
-  [{ role: 'user', content: 'Hello, world!' }]
+  'gemini/gemini-2.5-pro',
+  [{ role: 'user', content: 'Hello, world!' }],
+  {
+    thinking: {
+      budget: 256,      // Thinking budget (only for gemini-2.5-pro)
+      output: true      // Include thinking in output
+    }
+  }
 );
+
+if (response.success) {
+  console.log(response.content);
+}
 ```
 
 ### DeepSeek
@@ -99,6 +134,72 @@ const response = await aiSuite.createChatCompletion(
   'deepseek/deepseek-chat',
   [{ role: 'user', content: 'Hello, world!' }]
 );
+
+if (response.success) {
+  console.log(response.content);
+}
+```
+
+### Grok
+
+**Module**: `./src/providers/grok.ts`
+
+Grok integration supports Grok models from xAI. The provider extends OpenAI provider as Grok uses OpenAI-compatible API.
+
+#### Supported Models
+
+- `grok-3`
+- `grok-3-mini`
+- `grok-3-fast`
+- `grok-3-mini-fast`
+
+#### Special Features
+
+- **Reasoning Effort**: Grok models support reasoning effort configuration (low, medium, high)
+
+#### Usage Example
+
+```typescript
+const response = await aiSuite.createChatCompletion(
+  'grok/grok-3',
+  [{ role: 'user', content: 'Explain quantum entanglement.' }],
+  {
+    reasoning: {
+      effort: 'high'  // Use extended reasoning
+    }
+  }
+);
+
+if (response.success) {
+  console.log(response.content);
+}
+```
+
+### Custom LLM
+
+**Module**: `./src/providers/customLLM.ts`
+
+Custom LLM provider allows you to use any OpenAI-compatible API endpoint. This is useful for:
+- Self-hosted LLMs (Ollama, LM Studio, vLLM, etc.)
+- Third-party OpenAI-compatible APIs
+- Custom inference endpoints
+
+#### Usage Example
+
+```typescript
+const aiSuite = new AISuite({
+  customURL: 'http://localhost:11434/v1',  // Example: Ollama endpoint
+  customLLMKey: 'optional-api-key'         // Some endpoints don't need auth
+});
+
+const response = await aiSuite.createChatCompletion(
+  'custom-llm/llama3.2',  // Model name from your custom endpoint
+  [{ role: 'user', content: 'Hello, world!' }]
+);
+
+if (response.success) {
+  console.log(response.content);
+}
 ```
 
 ## Adding Custom Providers
@@ -113,20 +214,31 @@ To add a new provider to AI-Suite, you need to:
 Example implementation skeleton:
 
 ```typescript
-import { BaseProvider, ChatOptions } from './_base';
-import { MessageModel, ResultChatCompletion } from '../types/chat';
+import { ProviderBase, ChatOptions } from './_base';
+import { MessageModel, SuccessChatCompletion, ErrorChatCompletion } from '../types/chat';
 
 export type CustomModels = 'model-1' | 'model-2';
 
-export class CustomProvider extends BaseProvider {
-  constructor(apiKey: string, model: string) {
-    super(apiKey, model);
+export class CustomProvider extends ProviderBase {
+  constructor(apiKey: string, model: string, hooks?: any) {
+    super();
+    // Initialize your provider client
   }
 
-  async createChatCompletion(
+  async _createChatCompletion(
     messages: MessageModel[],
-    options?: Partial<ChatOptions>
-  ): Promise<ResultChatCompletion> {
+    options: ChatOptions
+  ): Promise<SuccessChatCompletion> {
     // Implement custom provider logic here
+    // Return SuccessChatCompletion object
+  }
+
+  handleError(error: Error): Pick<ErrorChatCompletion, 'error' | 'raw' | 'tag'> {
+    // Implement error handling
+    return {
+      error: error.message,
+      raw: error,
+      tag: 'Unknown'
+    };
   }
 }
