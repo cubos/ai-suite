@@ -1,107 +1,111 @@
-import type { GenerateContentResponse } from "@google/genai";
 import dotenv from "dotenv";
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { GeminiProvider } from "../src/providers/gemini.js";
+import { AISuite } from "../src/index.js";
+import type { SuccessChatCompletion } from "../src/types/chat.js";
+import z from "zod";
 
 dotenv.config();
 
-let apiKey: string;
+let apiKey: string | undefined;
 
 beforeAll(() => {
-  apiKey = process.env.GEMINI_API_KEY || "fake-api-key";
+  apiKey = process.env.GEMINI_API_KEY;
   expect(apiKey).toBeDefined();
 });
 
 describe("GeminiProvider", () => {
   it("should mock a response using mock and call the hooks", async () => {
-    const handleRequest = vi.fn(async (req: unknown) => {
-      console.log("handleRequest Gemini", req);
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not defined");
+    }
 
+    const handleRequest = vi.fn(async (req: unknown) => {
       expect(req).toBeDefined();
     });
 
     const handleResponse = vi.fn(async (res: unknown) => {
-      console.log("handleResponse Gemini", res);
-
       expect(res).toBeDefined();
     });
 
-    const ai = new GeminiProvider(apiKey, "gemini-2.0-flash", {
-      handleRequest,
-      handleResponse,
+    const gemini = new AISuite(
+      {
+        geminiKey: apiKey,
+      },
+      {
+        hooks: {
+          handleRequest,
+          handleResponse,
+        },
+      },
+    );
+
+    const result = await gemini.createChatCompletion("gemini/gemini-2.0-flash-lite", [
+      {
+        role: "user",
+        content: "Hello, world!",
+      },
+    ]);
+
+    if (!result.success) {
+      console.log("Gemini error:", result);
+    }
+
+    expect(result.success).toBe(true);
+    expect((result as SuccessChatCompletion).content).toBeDefined();
+    expect(handleRequest).toHaveBeenCalled();
+    expect(handleResponse).toHaveBeenCalled();
+  });
+
+  it("should return JSON format response", async () => {
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not defined");
+    }
+
+    const gemini = new AISuite({
+      geminiKey: apiKey,
     });
 
-    const mockChat = {
-      model: "gemini-model",
-      history: [{ role: "user", content: "Hello, how are you?" }],
-    };
-
-    const mockResponse: GenerateContentResponse = {
-      responseId: "mock",
-      createTime: new Date().toISOString(),
-      modelVersion: "gemini-2.0-flash",
-      usageMetadata: {
-        promptTokenCount: 5,
-        candidatesTokenCount: 3,
-        totalTokenCount: 8,
-        cachedContentTokenCount: 0,
-        thoughtsTokenCount: 0,
-      },
-      candidates: [
+    const result = await gemini.createChatCompletion(
+      "gemini/gemini-2.0-flash-lite",
+      [
         {
-          content: {
-            parts: [
-              {
-                text: "I'm fine!",
-              },
-            ],
-            role: "model",
-          },
+          role: "user",
+          content: "Return a JSON object with a field 'message' containing 'Hello, world!'",
         },
       ],
-      text: "I'm fine!",
-      data: undefined,
-      functionCalls: undefined,
-      executableCode: undefined,
-      codeExecutionResult: undefined,
-    };
+      {
+        stream: false,
+        responseFormat: "json_object",
+      },
+    );
 
-    vi.spyOn(ai, "createChatCompletion").mockImplementation(async () => {
-      await handleRequest(mockChat);
-      await handleResponse(mockResponse);
-      return {
-        success: true,
-        id: "mock",
-        created: Date.now(),
-        model: "gemini-2.0-flash",
-        object: "chat.completion",
-        content: "I'm fine!",
-        content_object: { role: "assistant", content: "I'm fine!" },
-        tools: [],
-        usage: {
-          input_tokens: 5,
-          output_tokens: 3,
-          total_tokens: 8,
-          cached_tokens: 0,
-          reasoning_tokens: 0,
-          thoughts_tokens: 0,
-        },
-      };
-    });
-
-    const result = await ai.createChatCompletion([{ role: "user", content: "Hello, how are you?" }], {
-      stream: false,
-      responseFormat: "text",
-    });
-
-    expect(result).toBeDefined();
     expect(result.success).toBe(true);
-    expect(result.content).toContain("fine");
+    expect((result as SuccessChatCompletion).content).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toHaveProperty("message");
+    expect((result as SuccessChatCompletion).content_object.message).toBe("Hello, world!");
 
-    expect(handleRequest).toHaveBeenCalledTimes(1);
-    expect(handleRequest).toHaveBeenCalledWith(mockChat);
+    const result2 = await gemini.createChatCompletion(
+      "gemini/gemini-2.5-flash-lite",
+      [
+        {
+          role: "user",
+          content: "Return a JSON object with a field 'message' containing 'Hello, world!'",
+        },
+      ],
+      {
+        stream: false,
+        zodSchema: z.object({
+          message: z.string(),
+        }),
+        responseFormat: "json_schema",
+      },
+    );
 
-    expect(handleResponse).toHaveBeenCalledTimes(1);
-    expect(handleResponse).toHaveBeenCalledWith(mockResponse);
+    expect(result2.success).toBe(true);
+    expect((result2 as SuccessChatCompletion).content).toBeDefined();
+    expect((result2 as SuccessChatCompletion).content_object).toBeDefined();
+    expect((result2 as SuccessChatCompletion).content_object).toHaveProperty("message");
+    expect((result2 as SuccessChatCompletion).content_object.message).toBe("Hello, world!");
   });
 });
