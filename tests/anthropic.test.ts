@@ -54,7 +54,7 @@ describe("AnthropicProvider", () => {
     expect((result as SuccessChatCompletion).content).toBeDefined();
     expect(handleRequest).toHaveBeenCalled();
     expect(handleResponse).toHaveBeenCalled();
-  });
+  }, 15000);
 
   it("should return JSON format response", async () => {
     if (!apiKey) {
@@ -84,5 +84,5 @@ describe("AnthropicProvider", () => {
 
     expect(result.success).toBe(true);
     expect((result as SuccessChatCompletion).content).toBeDefined();
-  });
+  }, 15000);
 });
