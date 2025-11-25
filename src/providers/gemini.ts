@@ -8,7 +8,7 @@ import {
 } from "@google/genai";
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
-import type { ErrorChatCompletion, MessageModel, SuccessChatCompletion } from "../types/chat.js";
+import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import { BaseHook, type ChatOptions, ProviderBase, type ToolModel } from "./_base.js";
 
 export type GeminiModels =
@@ -54,25 +54,44 @@ export class GeminiProvider extends ProviderBase {
   }
 
   async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
-    const systemPrompt = messages[0].role !== "user" ? messages[0].content : null;
+    const systemMessage = messages[0].role !== "user" ? messages[0] : null;
+    const systemPrompt = systemMessage
+      ? Array.isArray(systemMessage.content)
+        ? systemMessage.content.map(c =>
+            this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(c),
+          )
+        : [
+            this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(
+              systemMessage.content,
+            ),
+          ]
+      : null;
+
+    let thinkingConfig: {
+      thinkingBudget: number;
+      includeThoughts: boolean;
+    } | null = null;
+
+    if (onlyWorksWithThinking.includes(this.model)) {
+      thinkingConfig = {
+        thinkingBudget: options.thinking?.budget ?? 128,
+        includeThoughts: options.thinking?.output ?? false,
+      };
+    } else if (notUseThinkingConfig.includes(this.model)) {
+      thinkingConfig = null;
+    } else {
+      thinkingConfig = {
+        thinkingBudget: options.thinking?.budget ?? 0,
+        includeThoughts: options.thinking?.output ?? false,
+      };
+    }
 
     const req: GenerateContentParameters = {
       config: {
         tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
         temperature: options.temperature ?? 0.7,
-        ...(!onlyWorksWithThinking.includes(this.model) && {
-          thinkingConfig: {
-            thinkingBudget: options.thinking?.budget ?? 128,
-            includeThoughts: options.thinking?.output ?? false,
-          },
-        }),
-        ...(!notUseThinkingConfig.includes(this.model) && {
-          thinkingConfig: {
-            thinkingBudget: options.thinking?.budget ?? 0,
-            includeThoughts: options.thinking?.output ?? false,
-          },
-        }),
-        ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
+        ...(thinkingConfig ?? {}),
+        ...(systemPrompt ? { systemInstruction: { role: "user", parts: systemPrompt } } : {}),
         responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
         ...(options.responseFormat === "json_schema"
           ? {
@@ -81,26 +100,40 @@ export class GeminiProvider extends ProviderBase {
           : {}),
         ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
       },
-      contents: messages.slice(systemPrompt ? 1 : 0, messages.length).map(msg => {
+      contents: messages.slice(systemMessage ? 1 : 0, messages.length).map(msg => {
+        const content = Array.isArray(msg.content) ? msg.content : [msg.content];
+        const parsedContent = content.map(c =>
+          this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(c),
+        );
+
         if (msg.role === "user" || msg.role === "developer") {
           return {
             role: "user",
-            parts: [{ text: msg.content }],
+            parts: parsedContent,
           };
         }
         if (msg.role === "assistant") {
+          const textContent = parsedContent
+            .filter(c => c.text !== undefined)
+            .map(c => c.text!)
+            .join("");
+
           return {
             role: "model",
-            parts: [{ text: msg.content }],
+            parts: [{ text: textContent }],
           };
         }
         if (msg.role === "tool") {
-          // Gemini doesn't directly support tools/functions, so format as user message
+          const textContent = parsedContent
+            .filter(c => c.text !== undefined)
+            .map(c => c.text!)
+            .join("");
+
           return {
             role: "user",
             parts: [
               {
-                text: `Tool Response (${msg.name || "default_tool"}): ${msg.content}`,
+                text: `Tool Response (${msg.name || "default_tool"}): ${textContent}`,
               },
             ],
           };
@@ -163,6 +196,63 @@ export class GeminiProvider extends ProviderBase {
     };
 
     return result;
+  }
+
+  /**
+   * Parses the input content into a Gemini-compatible content part.
+   * @param content The input content to parse.
+   * @returns The parsed content part.
+   */
+  parseInputContent<T>(content: InputContent): T {
+    if (typeof content === "string") {
+      return { text: content } as unknown as T;
+    }
+
+    if (content.type === "text") {
+      return { text: content.text } as unknown as T;
+    }
+
+    if (content.type === "image") {
+      let base64: string;
+      if (Buffer.isBuffer(content.image)) {
+        base64 = content.image.toString("base64");
+      } else if (typeof content.image === "string") {
+        if (content.image.startsWith("http") || content.image.startsWith("data:")) {
+          throw new Error("Gemini does not support image URLs directly. Please provide base64 encoded images.");
+        } else {
+          base64 = content.image;
+        }
+      } else {
+        throw new Error("Unsupported image type");
+      }
+
+      return {
+        inlineData: {
+          mimeType: "image/png",
+          data: base64,
+        },
+      } as unknown as T;
+    }
+
+    if (content.type === "file") {
+      let base64: string;
+      if (Buffer.isBuffer(content.file)) {
+        base64 = content.file.toString("base64");
+      } else if (content.file instanceof ArrayBuffer) {
+        base64 = Buffer.from(content.file).toString("base64");
+      } else {
+        base64 = content.file;
+      }
+
+      return {
+        inlineData: {
+          mimeType: content.mediaType,
+          data: base64,
+        },
+      } as unknown as T;
+    }
+
+    throw new Error("Unsupported content type");
   }
 
   handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {

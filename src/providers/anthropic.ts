@@ -1,7 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk";
 import type { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
 import JSON5 from "json5";
-import type { ErrorChatCompletion, MessageModel, SuccessChatCompletion } from "../types/chat.js";
+import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import type { IsLiteral } from "../types/utils.js";
 import { BaseHook, type ChatOptions, ProviderBase, type ToolModel } from "./_base.js";
 
@@ -30,28 +30,54 @@ export class AnthropicProvider extends ProviderBase {
   }
 
   async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
-    const mappedMessages = messages.map((msg): { role: "user" | "assistant"; content: string } => {
-      if (msg.role === "developer" || msg.role === "user") {
-        return {
-          role: "user",
-          content: msg.content,
-        };
-      }
-      if (msg.role === "assistant") {
-        return {
-          role: "assistant",
-          content: msg.content,
-        };
-      }
-      if (msg.role === "tool") {
-        // Anthropic doesn't have direct tool/function support, so we'll format it as user message
-        return {
-          role: "user",
-          content: `Tool Response (${msg.name || "default_tool"}): ${msg.content}`,
-        };
-      }
-      throw new Error(`Unsupported role: ${msg.role}`);
-    });
+    type AnthropicImageType = "image/png" | "image/jpeg" | "image/gif" | "image/webp";
+    type AnthropicDocumentType = "application/pdf";
+    type AnthropicContentBlock =
+      | { type: "text"; text: string }
+      | { type: "image"; source: { type: "base64"; media_type: AnthropicImageType; data: string } }
+      | { type: "document"; source: { type: "base64"; media_type: AnthropicDocumentType; data: string } };
+
+    const mappedMessages = messages.map(
+      (
+        msg,
+      ): {
+        role: "user" | "assistant";
+        content: string | Array<AnthropicContentBlock>;
+      } => {
+        const content = Array.isArray(msg.content) ? msg.content : [msg.content];
+        const parsedContent = content.map(c => this.parseInputContent<AnthropicContentBlock>(c));
+
+        if (msg.role === "developer" || msg.role === "user") {
+          return {
+            role: "user",
+            content: parsedContent,
+          };
+        }
+        if (msg.role === "assistant") {
+          const textContent = parsedContent
+            .filter((c): c is { type: "text"; text: string } => c.type === "text")
+            .map(c => c.text)
+            .join("");
+
+          return {
+            role: "assistant",
+            content: textContent,
+          };
+        }
+        if (msg.role === "tool") {
+          const textContent = parsedContent
+            .filter((c): c is { type: "text"; text: string } => c.type === "text")
+            .map(c => c.text)
+            .join("");
+
+          return {
+            role: "user",
+            content: `Tool Response (${msg.name || "default_tool"}): ${textContent}`,
+          };
+        }
+        throw new Error(`Unsupported role: ${msg.role}`);
+      },
+    );
 
     // Prepare common options
     const anthropicOptions: Anthropic.Messages.MessageCreateParams = {
@@ -61,8 +87,7 @@ export class AnthropicProvider extends ProviderBase {
       stream: options.stream || false,
       tools: convertToAnthropicFunctions(options.tools),
       thinking: {
-        budget_tokens: options.thinking?.budget ?? 0,
-        type: (options.thinking?.budget ?? 0) > 0 ? "enabled" : "disabled",
+        ...((options.thinking?.budget ?? 0) > 0 ? { budget_tokens: options.thinking?.budget ?? 0, type: "enabled" } : { type: "disabled" }),
       },
     };
 
@@ -126,6 +151,94 @@ export class AnthropicProvider extends ProviderBase {
     };
 
     return result;
+  }
+
+  /**
+   * Parses the input content into an Anthropic-compatible content part.
+   * @param content The input content to parse.
+   * @returns The parsed content part.
+   */
+  parseInputContent<T>(content: InputContent): T {
+    if (typeof content === "string") {
+      return { type: "text", text: content } as unknown as T;
+    }
+
+    if (content.type === "text") {
+      return { type: "text", text: content.text } as unknown as T;
+    }
+
+    if (content.type === "image") {
+      let base64: string;
+      if (Buffer.isBuffer(content.image)) {
+        base64 = content.image.toString("base64");
+      } else if (typeof content.image === "string") {
+        if (content.image.startsWith("http") || content.image.startsWith("data:")) {
+          throw new Error("Anthropic does not support image URLs directly. Please provide base64 encoded images.");
+        } else {
+          base64 = content.image;
+        }
+      } else {
+        throw new Error("Unsupported image type");
+      }
+
+      return {
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: "image/png" as const,
+          data: base64,
+        },
+      } as unknown as T;
+    }
+
+    if (content.type === "file") {
+      let base64: string;
+      if (Buffer.isBuffer(content.file)) {
+        base64 = content.file.toString("base64");
+      } else if (content.file instanceof ArrayBuffer) {
+        base64 = Buffer.from(content.file).toString("base64");
+      } else {
+        base64 = content.file;
+      }
+
+      if (content.mediaType.startsWith("image/")) {
+        // Map media type to Anthropic's allowed types
+        let mediaType: "image/png" | "image/jpeg" | "image/gif" | "image/webp";
+        if (content.mediaType === "image/jpeg" || content.mediaType === "image/jpg") {
+          mediaType = "image/jpeg";
+        } else if (content.mediaType === "image/gif") {
+          mediaType = "image/gif";
+        } else if (content.mediaType === "image/webp") {
+          mediaType = "image/webp";
+        } else {
+          mediaType = "image/png";
+        }
+
+        return {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: mediaType,
+            data: base64,
+          },
+        } as unknown as T;
+      }
+
+      if (content.mediaType === "application/pdf") {
+        return {
+          type: "document",
+          source: {
+            type: "base64",
+            media_type: "application/pdf" as const,
+            data: base64,
+          },
+        } as unknown as T;
+      }
+
+      throw new Error(`Unsupported media type for Anthropic: ${content.mediaType}`);
+    }
+
+    throw new Error("Unsupported content type");
   }
 
   handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {

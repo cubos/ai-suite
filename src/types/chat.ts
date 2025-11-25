@@ -157,13 +157,11 @@ export interface InputContentFile {
    */
   mediaType:
     | "application/pdf"
-    | "text/plain"
     | "image/png"
     | "image/jpg"
     | "image/jpeg"
-    | "audio/mpeg"
-    | "audio/wav"
-    | "audio/ogg";
+    | "image/gif"
+    | "image/webp";
   /**
    * The file data, either as a Buffer, ArrayBuffer, or base64 string.
    */
