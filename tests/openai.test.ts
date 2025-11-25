@@ -1,5 +1,7 @@
 import dotenv from "dotenv";
+import { readFileSync } from "fs";
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import z from "zod";
 import { AISuite } from "../src/index.js";
 import type { SuccessChatCompletion } from "../src/types/chat.js";
 
@@ -79,5 +81,51 @@ describe("OpenAIProvider", () => {
     expect((result as SuccessChatCompletion).content_object).toBeDefined();
     expect((result as SuccessChatCompletion).content_object).toHaveProperty("message");
     expect((result as SuccessChatCompletion).content_object.message).toBe("Hello, world!");
+  });
+
+  it("should send images", async () => {
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is not defined");
+    }
+
+    const openAi = new AISuite({
+      openaiKey: apiKey,
+    });
+
+    const img = readFileSync(`${__dirname}/cat.jpeg`);
+
+    const result = await openAi.createChatCompletion(
+      "openai/gpt-4o-mini",
+      [
+        {
+          role: "user",
+          content: {
+            type: "image",
+            image: Buffer.from(img.buffer),
+          },
+        },
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: "What kind of animal is this?",
+          },
+        },
+      ],
+      {
+        stream: false,
+        zodSchema: z.object({
+          description: z.string().describe("A description of the image"),
+          kind: z.enum(["human", "cat", "dog"]).describe("The kind of animal in the image"),
+        }),
+        responseFormat: "json_schema",
+      },
+    );
+
+    expect(result.success).toBe(true);
+    expect((result as SuccessChatCompletion).content).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toHaveProperty("kind");
+    expect((result as SuccessChatCompletion).content_object.kind).toBe("cat");
   });
 });
