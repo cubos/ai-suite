@@ -30,9 +30,10 @@ Check TODOs:
   script:
     - pnpm dlx leasot 'src/**/*.ts'
 
-Test:
+Test(With real providers):
   stage: check
   allow_failure: true
+  when: manual
   script:
     - pnpm i --frozen-lockfile
     - pnpm run test
