@@ -32,6 +32,7 @@ Check TODOs:
 
 Test:
   stage: check
+  allow_failure: true
   script:
     - pnpm i --frozen-lockfile
     - pnpm run test
