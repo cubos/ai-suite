@@ -1,6 +1,6 @@
 import { promisify } from "util";
 import type { ZodType } from "zod";
-import type { ErrorChatCompletion, MessageModel, SuccessChatCompletion } from "../types/chat.js";
+import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import { AISuiteError } from "../utils.js";
 
 const sleep = promisify(setTimeout);
@@ -136,6 +136,11 @@ export abstract class ProviderBase {
    * Abstract method that must be implemented by each provider
    */
   abstract handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag">;
+
+  /**
+   * Abstract method that must be implemented by each provider
+   */
+  abstract parseInputContent<T>(content: InputContent): T;
 
   /**
    * Public method that includes retry logic
