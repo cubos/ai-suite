@@ -35,7 +35,9 @@ export class OpenAIProvider extends ProviderBase {
   async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
     const mappedMessages: ChatCompletionMessageParam[] = messages.map(msg => {
       const content = Array.isArray(msg.content) ? msg.content : [msg.content];
-      const parsedContent = content.map(c => this.parseInputContent<OpenAI.Chat.Completions.ChatCompletionContentPart>(c));
+      const parsedContent = content.map(c =>
+        this.parseInputContent<OpenAI.Chat.Completions.ChatCompletionContentPart>(c),
+      );
 
       if (msg.role === "developer") {
         return {

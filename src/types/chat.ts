@@ -155,13 +155,7 @@ export interface InputContentFile {
   /**
    * The media type of the file.
    */
-  mediaType:
-    | "application/pdf"
-    | "image/png"
-    | "image/jpg"
-    | "image/jpeg"
-    | "image/gif"
-    | "image/webp";
+  mediaType: "application/pdf" | "image/png" | "image/jpg" | "image/jpeg" | "image/gif" | "image/webp";
   /**
    * The file data, either as a Buffer, ArrayBuffer, or base64 string.
    */
@@ -190,11 +184,7 @@ export interface InputContentText {
  * Represents the input content for a message.
  * It can be a simple string, an image, a file, or a structured text object.
  */
-export type InputContent =
-  | string
-  | InputContentImage
-  | InputContentFile
-  | InputContentText;
+export type InputContent = string | InputContentImage | InputContentFile | InputContentText;
 
 /**
  * Text-only content for assistant and tool messages.

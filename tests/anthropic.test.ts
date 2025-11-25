@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import z from "zod";
 import { AISuite } from "../src/index.js";
 import type { SuccessChatCompletion } from "../src/types/chat.js";
-import z from "zod";
 
 dotenv.config();
 
@@ -15,7 +15,6 @@ beforeAll(() => {
 
 describe("AnthropicProvider", () => {
   it("should mock a response using mock and call the hooks", async () => {
-
     if (!apiKey) {
       throw new Error("ANTHROPIC_API_KEY is not defined");
     }
@@ -28,19 +27,24 @@ describe("AnthropicProvider", () => {
       expect(res).toBeDefined();
     });
 
-    const anthropic = new AISuite({
-      anthropicKey: apiKey,
-    }, {
-      hooks: {
-        handleRequest,
-        handleResponse,
-      }
-    })
+    const anthropic = new AISuite(
+      {
+        anthropicKey: apiKey,
+      },
+      {
+        hooks: {
+          handleRequest,
+          handleResponse,
+        },
+      },
+    );
 
-    const result = await anthropic.createChatCompletion("anthropic/claude-sonnet-4-5", [{
-      role: "user",
-      content: "Hello, world!",
-    }]);
+    const result = await anthropic.createChatCompletion("anthropic/claude-sonnet-4-5", [
+      {
+        role: "user",
+        content: "Hello, world!",
+      },
+    ]);
 
     if (!result.success) {
       console.log("Anthropic error:", result);
@@ -53,25 +57,30 @@ describe("AnthropicProvider", () => {
   });
 
   it("should return JSON format response", async () => {
-
     if (!apiKey) {
       throw new Error("ANTHROPIC_API_KEY is not defined");
     }
 
     const anthropic = new AISuite({
       anthropicKey: apiKey,
-    })
-
-    const result = await anthropic.createChatCompletion("anthropic/claude-sonnet-4-5", [{
-      role: "assistant",
-      content: "Return a JSON object with a field 'message' containing 'Hello, world!'",
-    }], {
-      stream: false,
-      zodSchema: z.object({
-        message: z.string(),
-      }),
-      responseFormat: "json_schema",
     });
+
+    const result = await anthropic.createChatCompletion(
+      "anthropic/claude-sonnet-4-5",
+      [
+        {
+          role: "assistant",
+          content: "Return a JSON object with a field 'message' containing 'Hello, world!'",
+        },
+      ],
+      {
+        stream: false,
+        zodSchema: z.object({
+          message: z.string(),
+        }),
+        responseFormat: "json_schema",
+      },
+    );
 
     expect(result.success).toBe(true);
     expect((result as SuccessChatCompletion).content).toBeDefined();

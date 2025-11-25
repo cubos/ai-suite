@@ -87,7 +87,9 @@ export class AnthropicProvider extends ProviderBase {
       stream: options.stream || false,
       tools: convertToAnthropicFunctions(options.tools),
       thinking: {
-        ...((options.thinking?.budget ?? 0) > 0 ? { budget_tokens: options.thinking?.budget ?? 0, type: "enabled" } : { type: "disabled" }),
+        ...((options.thinking?.budget ?? 0) > 0
+          ? { budget_tokens: options.thinking?.budget ?? 0, type: "enabled" }
+          : { type: "disabled" }),
       },
     };
 

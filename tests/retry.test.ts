@@ -19,15 +19,11 @@ describe("Retry Logic - Integration Tests", () => {
       openaiKey: "invalid-api-key-that-will-fail",
     });
 
-    const result = await aiSuite.createChatCompletion(
-      "openai/gpt-4o-mini",
-      [{ role: "user", content: "Say hello" }],
-      {
-        stream: false,
-        responseFormat: "text",
-        retry: { attempts: 3, delay: () => 100 },
-      }
-    );
+    const result = await aiSuite.createChatCompletion("openai/gpt-4o-mini", [{ role: "user", content: "Say hello" }], {
+      stream: false,
+      responseFormat: "text",
+      retry: { attempts: 3, delay: () => 100 },
+    });
 
     expect(result.success).toBe(false);
     expect((result as ErrorChatCompletion).error).toBe("Unauthorized");
@@ -52,7 +48,7 @@ describe("Retry Logic - Integration Tests", () => {
           attempts: 3,
           delay: () => 50, // 50ms delay for faster test
         },
-      }
+      },
     );
 
     const endTime = Date.now();
@@ -83,18 +79,14 @@ describe("Retry Logic - Integration Tests", () => {
           },
           failOnError: true,
         },
-      }
+      },
     );
 
-    const result = await aiSuite.createChatCompletion(
-      "openai/gpt-4o-mini",
-      [{ role: "user", content: "Say hello" }],
-      {
-        stream: false,
-        responseFormat: "text",
-        retry: { attempts: 5 },
-      }
-    );
+    const result = await aiSuite.createChatCompletion("openai/gpt-4o-mini", [{ role: "user", content: "Say hello" }], {
+      stream: false,
+      responseFormat: "text",
+      retry: { attempts: 5 },
+    });
 
     expect(result.success).toBe(false);
     expect(requestCount).toBe(1); // Should not retry on AISuiteError
@@ -124,7 +116,7 @@ describe("Retry Logic - Integration Tests", () => {
           attempts: 3,
           delay: customDelay,
         },
-      }
+      },
     );
 
     expect(result.success).toBe(false);
@@ -139,14 +131,10 @@ describe("Retry Logic - Integration Tests", () => {
 
     const startTime = Date.now();
 
-    const result = await aiSuite.createChatCompletion(
-      "openai/gpt-4o-mini",
-      [{ role: "user", content: "Say hello" }],
-      {
-        stream: false,
-        responseFormat: "text",
-      }
-    );
+    const result = await aiSuite.createChatCompletion("openai/gpt-4o-mini", [{ role: "user", content: "Say hello" }], {
+      stream: false,
+      responseFormat: "text",
+    });
 
     const endTime = Date.now();
     const totalTime = endTime - startTime;
@@ -173,9 +161,9 @@ describe("Retry Logic - Integration Tests", () => {
         responseFormat: "text",
         retry: {
           attempts: 3,
-          delay: (attempt) => attempt * 100,
+          delay: attempt => attempt * 100,
         },
-      }
+      },
     );
 
     expect(result.success).toBe(true);
@@ -198,7 +186,7 @@ describe("Retry Logic - Integration Tests", () => {
         stream: false,
         responseFormat: "text",
         retry: { attempts: 4 }, // Will use default exponential delay
-      }
+      },
     );
 
     const endTime = Date.now();
