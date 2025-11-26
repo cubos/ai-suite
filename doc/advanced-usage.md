@@ -487,3 +487,150 @@ Role mapping per provider:
 - `user`: User message
 - `assistant`: Assistant response
 - `tool`: Tool/function call result
+
+## Image and File Support
+
+AI-Suite supports sending images and files as part of your messages, enabling multimodal AI interactions. This feature is available for compatible providers (OpenAI, Anthropic, Google Gemini).
+
+### Supported Content Types
+
+AI-Suite supports three content types in messages:
+- **Text**: Plain text or structured text objects
+- **Images**: Image data as Buffer or base64 string
+- **Files**: Documents with specified media type (PDF, PNG, JPG, JPEG, GIF, WEBP)
+
+### Sending Images
+
+Send images by using the `InputContentImage` format:
+
+```typescript
+import { readFileSync } from 'fs';
+
+const img = readFileSync('./path/to/image.jpg');
+
+const response = await aiSuite.createChatCompletion(
+  'openai/gpt-4o',
+  [
+    {
+      role: 'user',
+      content: {
+        type: 'image',
+        image: img  // readFileSync returns a Buffer, use it directly
+      }
+    },
+    {
+      role: 'user',
+      content: 'What do you see in this image?'
+    }
+  ],
+  { responseFormat: 'text' }
+);
+```
+
+You can also send base64-encoded images:
+
+```typescript
+const base64Image = 'iVBORw0KGgoAAAANSUhEUgAA...'; // Your base64 string
+
+const response = await aiSuite.createChatCompletion(
+  'openai/gpt-4o',
+  [
+    {
+      role: 'user',
+      content: {
+        type: 'image',
+        image: base64Image
+      }
+    },
+    {
+      role: 'user',
+      content: 'Describe this image'
+    }
+  ],
+  { responseFormat: 'text' }
+);
+```
+
+### Sending Files
+
+Send documents using the `InputContentFile` format:
+
+```typescript
+import { readFileSync } from 'fs';
+
+const pdf = readFileSync('./document.pdf');
+
+const response = await aiSuite.createChatCompletion(
+  'anthropic/claude-3-5-sonnet-20241022',
+  [
+    {
+      role: 'user',
+      content: {
+        type: 'file',
+        mediaType: 'application/pdf',
+        file: pdf,  // readFileSync returns a Buffer, use it directly
+        fileName: 'document.pdf'
+      }
+    },
+    {
+      role: 'user',
+      content: 'Summarize the contents of this PDF'
+    }
+  ],
+  { responseFormat: 'text' }
+);
+```
+
+Supported media types:
+- `application/pdf`: PDF documents
+- `image/png`: PNG images
+- `image/jpg`: JPG images
+- `image/jpeg`: JPEG images
+- `image/gif`: GIF images
+- `image/webp`: WebP images
+
+### Mixing Multiple Content Types
+
+You can send multiple content items (text, images, files) in a single message:
+
+```typescript
+import { readFileSync } from 'fs';
+
+const img1 = readFileSync('./image1.jpg');
+const img2 = readFileSync('./image2.jpg');
+
+const response = await aiSuite.createChatCompletion(
+  'openai/gpt-4o',
+  [
+    {
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text: 'Please analyze these images:'
+        },
+        {
+          type: 'image',
+          image: img1
+        },
+        {
+          type: 'image',
+          image: img2
+        },
+        {
+          type: 'text',
+          text: 'What are the differences between them?'
+        }
+      ]
+    }
+  ],
+  { responseFormat: 'text' }
+);
+```
+
+### Important Notes
+
+- **Role Restrictions**: Images and files can only be sent in `user` and `developer` role messages. Assistant and tool messages only support text content.
+- **Provider Support**: Not all providers support all content types. Check your provider's documentation for specific capabilities.
+- **File Size Limits**: Different providers have different file size limits. Consult provider documentation for specifics.
+- **Structured Output**: Image and file inputs work with all response formats including `json_schema` and `json_object`.

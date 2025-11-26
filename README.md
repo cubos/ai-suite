@@ -6,6 +6,7 @@ All AI providers in one place - a unified TypeScript interface for working with 
 
 - **Unified API** for multiple AI providers (OpenAI, Anthropic, Google Gemini, DeepSeek, Grok, Custom LLMs)
 - **Simple and consistent** message format across all providers
+- **Multimodal Support** for images and files (PDF, PNG, JPG, GIF, WebP)
 - **Structured Output** with JSON Schema support via Zod
 - **Tool/Function Calling** for all compatible providers
 - **Reasoning & Thinking Modes** (OpenAI o1/o3, Grok, Gemini 2.5)

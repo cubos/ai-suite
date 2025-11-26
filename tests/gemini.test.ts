@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { readFileSync } from "fs";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import z from "zod";
 import { AISuite } from "../src/index.js";
@@ -107,5 +108,56 @@ describe("GeminiProvider", () => {
     expect((result2 as SuccessChatCompletion).content_object).toBeDefined();
     expect((result2 as SuccessChatCompletion).content_object).toHaveProperty("message");
     expect((result2 as SuccessChatCompletion).content_object.message).toBe("Hello, world!");
+  });
+
+  it("should send pdf file", async () => {
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not defined");
+    }
+
+    const gemini = new AISuite({
+      geminiKey: apiKey,
+    });
+
+    const file = readFileSync(`${__dirname}/assets/teste.pdf`);
+
+    const base64File = file.toString("base64");
+
+    const result = await gemini.createChatCompletion(
+      "gemini/gemini-2.5-flash-lite",
+      [
+        {
+          role: "user",
+          content: {
+            type: "file",
+            fileName: "test.pdf",
+            mediaType: "application/pdf",
+            file: base64File,
+          },
+        },
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: "What is this file about?",
+          },
+        },
+      ],
+      {
+        stream: false,
+        zodSchema: z.object({
+          description: z.string().describe("A description of the pdf"),
+          title: z.string().describe("The title of the pdf"),
+        }),
+        responseFormat: "json_schema",
+      },
+    );
+
+    expect(result.success).toBe(true);
+    expect((result as SuccessChatCompletion).content).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toHaveProperty("description");
+    expect((result as SuccessChatCompletion).content_object).toHaveProperty("title");
+    expect((result as SuccessChatCompletion).content_object.title).toBe("ARQUIVO PDF DE TESTE");
   });
 });
