@@ -130,8 +130,86 @@ export type ErrorChatCompletion = ResultErrorChatCompletion & {
 
 export type ResultChatCompletion = SuccessChatCompletion | ErrorChatCompletion;
 
-export type MessageModel = {
-  role: "user" | "developer" | "assistant" | "tool";
-  content: string;
-  name?: string;
-};
+/**
+ * Represents an image input content.
+ */
+export interface InputContentImage {
+  /**
+   * The type of the content, which is always "image".
+   */
+  type: "image";
+  /**
+   * The image data, either as a base64 string or a Buffer.
+   */
+  image: string | Buffer;
+}
+
+/**
+ * Represents a file input content.
+ */
+export interface InputContentFile {
+  /**
+   * The type of the content, which is always "file".
+   */
+  type: "file";
+  /**
+   * The media type of the file.
+   */
+  mediaType: "application/pdf" | "image/png" | "image/jpg" | "image/jpeg" | "image/gif" | "image/webp";
+  /**
+   * The file data, either as a Buffer, ArrayBuffer, or base64 string.
+   */
+  file: Buffer | ArrayBuffer | string;
+  /**
+   * The name of the file.
+   */
+  fileName: string;
+}
+
+/**
+ * Represents a text input content.
+ */
+export interface InputContentText {
+  /**
+   * The type of the content, which is always "text".
+   */
+  type: "text";
+  /**
+   * The text content.
+   */
+  text: string;
+}
+
+/**
+ * Represents the input content for a message.
+ * It can be a simple string, an image, a file, or a structured text object.
+ */
+export type InputContent = string | InputContentImage | InputContentFile | InputContentText;
+
+/**
+ * Text-only content for assistant and tool messages.
+ * Images are not supported in assistant/tool messages by any provider (OpenAI, Anthropic, Gemini).
+ */
+export type InputContentTextOnly = string | InputContentText;
+
+/**
+ * Represents a message in the conversation.
+ * Assistant and tool messages can only contain text content (no images/files).
+ * User and developer messages can contain any content type including images and files.
+ */
+export type MessageModel =
+  | {
+      role: "assistant";
+      content: InputContentTextOnly | Array<InputContentTextOnly>;
+      name?: string;
+    }
+  | {
+      role: "tool";
+      content: InputContentTextOnly | Array<InputContentTextOnly>;
+      name?: string;
+    }
+  | {
+      role: "user" | "developer";
+      content: InputContent | Array<InputContent>;
+      name?: string;
+    };

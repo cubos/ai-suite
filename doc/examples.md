@@ -596,3 +596,368 @@ async function robustRequest() {
 
 robustRequest().catch(console.error);
 ```
+
+## Image and File Processing Examples
+
+### Image Analysis
+
+Analyze images using AI vision capabilities:
+
+```typescript
+import { AISuite } from '@cubos-ai/ai-suite';
+import { readFileSync } from 'fs';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const aiSuite = new AISuite({
+  openaiKey: process.env.OPENAI_API_KEY
+});
+
+async function analyzeImage() {
+  const img = readFileSync('./photo.jpg');
+
+  const response = await aiSuite.createChatCompletion(
+    'openai/gpt-4o',
+    [
+      {
+        role: 'user',
+        content: {
+          type: 'image',
+          image: img  // could also be base64 string
+        }
+      },
+      {
+        role: 'user',
+        content: 'What do you see in this image? Provide a detailed description.'
+      }
+    ],
+    { responseFormat: 'text' }
+  );
+
+  if (response.success) {
+    console.log('Image Analysis:', response.content);
+  }
+}
+
+analyzeImage().catch(console.error);
+```
+
+### Image Classification with Structured Output
+
+Classify images with type-safe JSON output:
+
+```typescript
+import { AISuite } from '@cubos-ai/ai-suite';
+import { readFileSync } from 'fs';
+import { z } from 'zod';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const aiSuite = new AISuite({
+  openaiKey: process.env.OPENAI_API_KEY
+});
+
+const ImageClassificationSchema = z.object({
+  description: z.string().describe('A detailed description of the image'),
+  objects: z.array(z.string()).describe('List of objects detected in the image'),
+  scene: z.string().describe('The type of scene (indoor, outdoor, nature, urban, etc.)'),
+  colors: z.array(z.string()).describe('Dominant colors in the image'),
+  mood: z.string().describe('The mood or atmosphere of the image')
+});
+
+async function classifyImage() {
+  const img = readFileSync('./photo.jpg');
+
+  const response = await aiSuite.createChatCompletion(
+    'openai/gpt-4o',
+    [
+      {
+        role: 'user',
+        content: {
+          type: 'image',
+          image: img
+        }
+      },
+      {
+        role: 'user',
+        content: 'Analyze and classify this image'
+      }
+    ],
+    {
+      responseFormat: 'json_schema',
+      zodSchema: ImageClassificationSchema
+    }
+  );
+
+  if (response.success) {
+    const classification = response.content_object;
+    console.log('Description:', classification.description);
+    console.log('Objects:', classification.objects.join(', '));
+    console.log('Scene Type:', classification.scene);
+    console.log('Colors:', classification.colors.join(', '));
+    console.log('Mood:', classification.mood);
+  }
+}
+
+classifyImage().catch(console.error);
+```
+
+### Compare Multiple Images
+
+Send multiple images in a single request:
+
+```typescript
+import { AISuite } from '@cubos-ai/ai-suite';
+import { readFileSync } from 'fs';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const aiSuite = new AISuite({
+  anthropicKey: process.env.ANTHROPIC_API_KEY
+});
+
+async function compareImages() {
+  const image1 = readFileSync('./before.jpg');
+  const image2 = readFileSync('./after.jpg');
+
+  const response = await aiSuite.createChatCompletion(
+    'anthropic/claude-3-5-sonnet-20241022',
+    [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: 'Compare these two images and describe the differences:'
+          },
+          {
+            type: 'image',
+            image: image1
+          },
+          {
+            type: 'image',
+            image: image2
+          }
+        ]
+      }
+    ],
+    { responseFormat: 'text' }
+  );
+
+  if (response.success) {
+    console.log('Comparison:', response.content);
+  }
+}
+
+compareImages().catch(console.error);
+```
+
+### PDF Document Analysis
+
+Analyze and extract information from PDF documents:
+
+```typescript
+import { AISuite } from '@cubos-ai/ai-suite';
+import { readFileSync } from 'fs';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const aiSuite = new AISuite({
+  anthropicKey: process.env.ANTHROPIC_API_KEY
+});
+
+async function analyzePDF() {
+  const pdf = readFileSync('./report.pdf');
+
+  const response = await aiSuite.createChatCompletion(
+    'anthropic/claude-3-5-sonnet-20241022',
+    [
+      {
+        role: 'user',
+        content: {
+          type: 'file',
+          mediaType: 'application/pdf',
+          file: pdf,
+          fileName: 'report.pdf'
+        }
+      },
+      {
+        role: 'user',
+        content: 'Summarize the key points from this document and extract any important dates or numbers.'
+      }
+    ],
+    { responseFormat: 'text' }
+  );
+
+  if (response.success) {
+    console.log('PDF Summary:', response.content);
+  }
+}
+
+analyzePDF().catch(console.error);
+```
+
+### Extract Structured Data from PDF
+
+Extract structured information from documents:
+
+```typescript
+import { AISuite } from '@cubos-ai/ai-suite';
+import { readFileSync } from 'fs';
+import { z } from 'zod';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const aiSuite = new AISuite({
+  anthropicKey: process.env.ANTHROPIC_API_KEY
+});
+
+const InvoiceSchema = z.object({
+  invoiceNumber: z.string(),
+  date: z.string(),
+  vendor: z.string(),
+  total: z.number(),
+  items: z.array(z.object({
+    description: z.string(),
+    quantity: z.number(),
+    price: z.number()
+  }))
+});
+
+async function extractInvoiceData() {
+  const pdf = readFileSync('./invoice.pdf');
+
+  const response = await aiSuite.createChatCompletion(
+    'anthropic/claude-3-5-sonnet-20241022',
+    [
+      {
+        role: 'user',
+        content: {
+          type: 'file',
+          mediaType: 'application/pdf',
+          file: pdf,
+          fileName: 'invoice.pdf'
+        }
+      },
+      {
+        role: 'user',
+        content: 'Extract the invoice information from this document'
+      }
+    ],
+    {
+      responseFormat: 'json_schema',
+      zodSchema: InvoiceSchema
+    }
+  );
+
+  if (response.success) {
+    const invoice = response.content_object;
+    console.log('Invoice Number:', invoice.invoiceNumber);
+    console.log('Date:', invoice.date);
+    console.log('Vendor:', invoice.vendor);
+    console.log('Total:', `$${invoice.total}`);
+    console.log('\nItems:');
+    invoice.items.forEach(item => {
+      console.log(`- ${item.description}: ${item.quantity} x $${item.price}`);
+    });
+  }
+}
+
+extractInvoiceData().catch(console.error);
+```
+
+### Image OCR (Text Extraction)
+
+Extract text from images:
+
+```typescript
+import { AISuite } from '@cubos-ai/ai-suite';
+import { readFileSync } from 'fs';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const aiSuite = new AISuite({
+  geminiKey: process.env.GEMINI_API_KEY
+});
+
+async function extractTextFromImage() {
+  const img = readFileSync('./document-scan.jpg');
+
+  const response = await aiSuite.createChatCompletion(
+    'gemini/gemini-2.5-flash',
+    [
+      {
+        role: 'user',
+        content: {
+          type: 'image',
+          image: img
+        }
+      },
+      {
+        role: 'user',
+        content: 'Extract all text from this image, maintaining the original formatting as much as possible.'
+      }
+    ],
+    { responseFormat: 'text' }
+  );
+
+  if (response.success) {
+    console.log('Extracted Text:');
+    console.log(response.content);
+  }
+}
+
+extractTextFromImage().catch(console.error);
+```
+
+### Using Base64 Images
+
+Work with base64-encoded images:
+
+```typescript
+import { AISuite } from '@cubos-ai/ai-suite';
+import { readFileSync } from 'fs';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const aiSuite = new AISuite({
+  openaiKey: process.env.OPENAI_API_KEY
+});
+
+async function analyzeBase64Image() {
+  // Read image and convert to base64
+  const img = readFileSync('./photo.jpg');
+  const base64Image = img.toString('base64');
+
+  const response = await aiSuite.createChatCompletion(
+    'openai/gpt-4o-mini',
+    [
+      {
+        role: 'user',
+        content: {
+          type: 'image',
+          image: base64Image  // Can also pass Buffer directly instead
+        }
+      },
+      {
+        role: 'user',
+        content: 'What is the main subject of this image?'
+      }
+    ],
+    { responseFormat: 'text' }
+  );
+
+  if (response.success) {
+    console.log('Analysis:', response.content);
+  }
+}
+
+analyzeBase64Image().catch(console.error);
+```

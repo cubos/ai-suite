@@ -1,84 +1,131 @@
 import dotenv from "dotenv";
+import { readFileSync } from "fs";
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { OpenAIProvider } from "../src/providers/openai.js";
-import type { SuccessChatCompletion } from "../src/types/chat";
+import z from "zod";
+import { AISuite } from "../src/index.js";
+import type { SuccessChatCompletion } from "../src/types/chat.js";
 
 dotenv.config();
 
-let apiKey: string;
+let apiKey: string | undefined;
 
 beforeAll(() => {
-  apiKey = process.env.OPENAI_API_KEY || "fake-api-key";
+  apiKey = process.env.OPENAI_API_KEY;
   expect(apiKey).toBeDefined();
 });
 
 describe("OpenAIProvider", () => {
   it("should mock a response using mock and call the hooks", async () => {
-    const handleRequest = vi.fn(async (req: unknown) => {
-      console.log("handleRequest OpenAI", req);
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is not defined");
+    }
 
+    const handleRequest = vi.fn(async (req: unknown) => {
       expect(req).toBeDefined();
     });
 
     const handleResponse = vi.fn(async (res: unknown) => {
-      console.log("handleResponse OpenAI", res);
-
       expect(res).toBeDefined();
     });
 
-    const ai = new OpenAIProvider(apiKey, "gpt-4o-mini-2024-07-18", undefined, {
-      handleRequest,
-      handleResponse,
-    });
-
-    const mockRequest = {
-      model: "gpt-4o-mini-2024-07-18",
-      messages: [{ role: "user", content: "Hello, how are you?" }],
-      stream: false,
-      temperature: undefined,
-      response_format: undefined,
-      tools: undefined,
-    };
-
-    const mockResponse: SuccessChatCompletion = {
-      id: "mock-id",
-      object: "chat.completion",
-      created: Date.now(),
-      model: "gpt-4o-mini-2024-07-18",
-      usage: {
-        input_tokens: 1,
-        output_tokens: 1,
-        total_tokens: 2,
-        cached_tokens: 0,
-        reasoning_tokens: 0,
-        thoughts_tokens: 0,
+    const openAi = new AISuite(
+      {
+        openaiKey: apiKey,
       },
-      success: true,
-      content:
-        "Hello! I'm just a computer program, so I don't have feelings, but I'm here and ready to help you. How can I assist you today?",
-      content_object: {},
-      tools: undefined,
-    };
+      {
+        hooks: {
+          handleRequest,
+          handleResponse,
+        },
+      },
+    );
 
-    vi.spyOn(ai, "createChatCompletion").mockImplementation(async () => {
-      await handleRequest(mockRequest);
-      await handleResponse(mockResponse);
-      return mockResponse;
+    const result = await openAi.createChatCompletion("openai/gpt-4o-mini", [
+      {
+        role: "user",
+        content: "Hello, world!",
+      },
+    ]);
+
+    expect(result.success).toBe(true);
+    expect((result as SuccessChatCompletion).content).toBeDefined();
+    expect(handleRequest).toHaveBeenCalled();
+    expect(handleResponse).toHaveBeenCalled();
+  });
+
+  it("should return JSON format response", async () => {
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is not defined");
+    }
+
+    const openAi = new AISuite({
+      openaiKey: apiKey,
     });
 
-    const response = await ai.createChatCompletion([{ role: "user", content: "Hello, how are you?" }], {
-      stream: false,
-      responseFormat: "text",
+    const result = await openAi.createChatCompletion(
+      "openai/gpt-4o-mini",
+      [
+        {
+          role: "user",
+          content: "Return a JSON object with a field 'message' containing 'Hello, world!'",
+        },
+      ],
+      {
+        stream: false,
+        responseFormat: "json_object",
+      },
+    );
+
+    expect(result.success).toBe(true);
+    expect((result as SuccessChatCompletion).content).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toHaveProperty("message");
+    expect((result as SuccessChatCompletion).content_object.message).toBe("Hello, world!");
+  });
+
+  it("should send images", async () => {
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is not defined");
+    }
+
+    const openAi = new AISuite({
+      openaiKey: apiKey,
     });
 
-    expect(response).toBeDefined();
-    expect(response.success).toBe(true);
-    expect(response.content).toContain("computer program");
+    const img = readFileSync(`${__dirname}/assets/cat.jpg`);
 
-    expect(handleRequest).toHaveBeenCalledTimes(1);
-    expect(handleRequest).toHaveBeenCalledWith(mockRequest);
+    const result = await openAi.createChatCompletion(
+      "openai/gpt-4o-mini",
+      [
+        {
+          role: "user",
+          content: {
+            type: "image",
+            image: img,
+          },
+        },
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: "What kind of animal is this?",
+          },
+        },
+      ],
+      {
+        stream: false,
+        zodSchema: z.object({
+          description: z.string().describe("A description of the image"),
+          kind: z.enum(["human", "cat", "dog"]).describe("The kind of animal in the image"),
+        }),
+        responseFormat: "json_schema",
+      },
+    );
 
-    expect(handleResponse).toHaveBeenCalledTimes(1);
-    expect(handleResponse).toHaveBeenCalledWith(mockResponse);
+    expect(result.success).toBe(true);
+    expect((result as SuccessChatCompletion).content).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toHaveProperty("kind");
+    expect((result as SuccessChatCompletion).content_object.kind).toBe("cat");
   });
 });
