@@ -92,7 +92,7 @@ describe("OpenAIProvider", () => {
       openaiKey: apiKey,
     });
 
-    const img = readFileSync(`${__dirname}/cat.jpeg`);
+    const img = readFileSync(`${__dirname}/cat.jpg`);
 
     const result = await openAi.createChatCompletion(
       "openai/gpt-4o-mini",

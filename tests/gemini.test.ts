@@ -54,7 +54,7 @@ describe("GeminiProvider", () => {
     expect((result as SuccessChatCompletion).content).toBeDefined();
     expect(handleRequest).toHaveBeenCalled();
     expect(handleResponse).toHaveBeenCalled();
-  });
+  }, 15000);
 
   it("should return JSON format response", async () => {
     if (!apiKey) {
