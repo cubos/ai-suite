@@ -58,13 +58,13 @@ export class GeminiProvider extends ProviderBase {
     const systemPrompt = systemMessage
       ? Array.isArray(systemMessage.content)
         ? systemMessage.content.map(c =>
-          this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(c),
-        )
+            this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(c),
+          )
         : [
-          this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(
-            systemMessage.content,
-          ),
-        ]
+            this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(
+              systemMessage.content,
+            ),
+          ]
       : null;
 
     let thinkingConfig: {
@@ -95,8 +95,8 @@ export class GeminiProvider extends ProviderBase {
         responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
         ...(options.responseFormat === "json_schema"
           ? {
-            responseSchema: toGeminiSchema(options.zodSchema),
-          }
+              responseSchema: toGeminiSchema(options.zodSchema),
+            }
           : {}),
         ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
       },
@@ -352,16 +352,16 @@ export function convertToGeminiFunctions(tools?: ToolModel[]): Tool[] | undefine
                 description: value.description,
                 ...(value.type === "array"
                   ? {
-                    items: {
-                      type: SchemaType.STRING,
-                    },
-                  }
+                      items: {
+                        type: SchemaType.STRING,
+                      },
+                    }
                   : {}),
                 ...(value.type === "object"
                   ? {
-                    properties: {},
-                    required: [],
-                  }
+                      properties: {},
+                      required: [],
+                    }
                   : {}),
               },
             ]),
