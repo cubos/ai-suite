@@ -58,13 +58,13 @@ export class GeminiProvider extends ProviderBase {
     const systemPrompt = systemMessage
       ? Array.isArray(systemMessage.content)
         ? systemMessage.content.map(c =>
-            this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(c),
-          )
+          this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(c),
+        )
         : [
-            this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(
-              systemMessage.content,
-            ),
-          ]
+          this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(
+            systemMessage.content,
+          ),
+        ]
       : null;
 
     let thinkingConfig: {
@@ -95,8 +95,8 @@ export class GeminiProvider extends ProviderBase {
         responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
         ...(options.responseFormat === "json_schema"
           ? {
-              responseSchema: toGeminiSchema(options.zodSchema),
-            }
+            responseSchema: toGeminiSchema(options.zodSchema),
+          }
           : {}),
         ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
       },
@@ -159,13 +159,6 @@ export class GeminiProvider extends ProviderBase {
       }
     }
 
-    // eslint-disable-next-line no-useless-escape
-    const regex = /[{[]{1}([,:{}[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gi;
-
-    const matches = response.text?.match(regex);
-
-    const obj = Object.assign({}, ...(matches ?? []).map(m => JSON5.parse(m)));
-
     const result: SuccessChatCompletion = {
       success: true,
       id: `gemini-${Date.now()}`,
@@ -173,7 +166,7 @@ export class GeminiProvider extends ProviderBase {
       model: this.model,
       object: "chat.completion",
       content: response.text ?? null,
-      content_object: contentObject ?? obj,
+      content_object: contentObject ?? {},
       tools: response.functionCalls?.map((tool: FunctionCall) => ({
         id: tool.name ?? "",
         type: "function",
@@ -359,16 +352,16 @@ export function convertToGeminiFunctions(tools?: ToolModel[]): Tool[] | undefine
                 description: value.description,
                 ...(value.type === "array"
                   ? {
-                      items: {
-                        type: SchemaType.STRING,
-                      },
-                    }
+                    items: {
+                      type: SchemaType.STRING,
+                    },
+                  }
                   : {}),
                 ...(value.type === "object"
                   ? {
-                      properties: {},
-                      required: [],
-                    }
+                    properties: {},
+                    required: [],
+                  }
                   : {}),
               },
             ]),
