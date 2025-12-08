@@ -90,7 +90,7 @@ export class GeminiProvider extends ProviderBase {
       config: {
         tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
         temperature: options.temperature ?? 0.7,
-        ...(thinkingConfig ?? {}),
+        thinkingConfig: thinkingConfig ?? { thinkingBudget: 0 },
         ...(systemPrompt ? { systemInstruction: { role: "user", parts: systemPrompt } } : {}),
         responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
         ...(options.responseFormat === "json_schema"
