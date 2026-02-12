@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import type { Langfuse } from "langfuse";
 import type { ChatOptions } from "./providers/_base.js";
 import { type AnthropicModels, AnthropicProvider } from "./providers/anthropic.js";
-import { CustomLLMProvider } from "./providers/customLLM.js";
+import { CustomLLMProvider } from "./providers/customLLM/index.js";
 import { type DeepSeekModels, DeepSeekProvider } from "./providers/deepseek.js";
 import { type GeminiModels, GeminiProvider } from "./providers/gemini.js";
 import { type GrokModels, GrokProvider } from "./providers/grok/index.js";
