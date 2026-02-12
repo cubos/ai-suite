@@ -5,7 +5,7 @@ import { type AnthropicModels, AnthropicProvider } from "./providers/anthropic.j
 import { CustomLLMProvider } from "./providers/customLLM.js";
 import { type DeepSeekModels, DeepSeekProvider } from "./providers/deepseek.js";
 import { type GeminiModels, GeminiProvider } from "./providers/gemini.js";
-import { type GrokModels, GrokProvider } from "./providers/grok.js";
+import { type GrokModels, GrokProvider } from "./providers/grok/index.js";
 import { type OpenAIModels, OpenAIProvider } from "./providers/openai.js";
 import type { MessageModel, ResultChatCompletion } from "./types/chat.js";
 
