@@ -4,7 +4,8 @@ import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import type { ChatCompletionCreateParamsBase, ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs";
 import type { ChatModel } from "openai/resources/index.mjs";
 import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../types/chat.js";
-import { BaseHook, type ChatOptions, ProviderBase } from "./_base.js";
+import { BaseHook, ProviderBase } from "./_base.js";
+import type { ChatOptions } from "./types/index.js";
 
 export type OpenAIModels = ChatModel;
 

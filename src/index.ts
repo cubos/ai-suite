@@ -1,12 +1,13 @@
 import dotenv from "dotenv";
 import type { Langfuse } from "langfuse";
-import type { ChatOptions } from "./providers/_base.js";
-import { type AnthropicModels, AnthropicProvider } from "./providers/anthropic.js";
+import { type AnthropicModels, AnthropicProvider } from "./providers/anthropic/index.js";
+
 import { CustomLLMProvider } from "./providers/customLLM/index.js";
 import { type DeepSeekModels, DeepSeekProvider } from "./providers/deepSeek/index.js";
 import { type GeminiModels, GeminiProvider } from "./providers/gemini.js";
 import { type GrokModels, GrokProvider } from "./providers/grok/index.js";
 import { type OpenAIModels, OpenAIProvider } from "./providers/openai.js";
+import type { ChatOptions } from "./providers/types/index.js";
 import type { MessageModel, ResultChatCompletion } from "./types/chat.js";
 
 dotenv.config();

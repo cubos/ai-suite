@@ -9,7 +9,8 @@ import {
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
 import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../types/chat.js";
-import { BaseHook, type ChatOptions, ProviderBase, type ToolModel } from "./_base.js";
+import { BaseHook, ProviderBase } from "./_base.js";
+import type { ChatOptions, ToolModel } from "./types/index.js";
 
 export type GeminiModels =
   | "gemini-2.5-pro"
