@@ -6,7 +6,8 @@ import { CustomLLMProvider } from "./providers/customLLM/index.js";
 import { type DeepSeekModels, DeepSeekProvider } from "./providers/deepSeek/index.js";
 import { type GeminiModels, GeminiProvider } from "./providers/gemini/index.js";
 import { type GrokModels, GrokProvider } from "./providers/grok/index.js";
-import { type OpenAIModels, OpenAIProvider } from "./providers/openai.js";
+import type { OpenAIModels } from "./providers/openai/index.js";
+import { OpenAIProvider } from "./providers/openai/openaiProvider.js";
 import type { ChatOptions } from "./providers/types/index.js";
 import type { MessageModel, ResultChatCompletion } from "./types/chat.js";
 
