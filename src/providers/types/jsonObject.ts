@@ -1,4 +1,4 @@
-import { ChatOptionsBase } from "./chatOptionsBase.js";
+import type { ChatOptionsBase } from "./chatOptionsBase.js";
 
 export interface JSONObject extends ChatOptionsBase {
   /**

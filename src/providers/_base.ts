@@ -1,7 +1,7 @@
 import { promisify } from "util";
-import type { ChatOptions } from "./types/index.js";
 import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../types/chat.js";
 import { AISuiteError } from "../utils.js";
+import type { ChatOptions } from "./types/index.js";
 
 const sleep = promisify(setTimeout);
 

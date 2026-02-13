@@ -1,5 +1,5 @@
-import { ZodType } from "zod";
-import { ChatOptionsBase } from "./chatOptionsBase.js";
+import type { ZodType } from "zod";
+import type { ChatOptionsBase } from "./chatOptionsBase.js";
 
 export interface JSONSchema<T = unknown> extends ChatOptionsBase {
   /**
