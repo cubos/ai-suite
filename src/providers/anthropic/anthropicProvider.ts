@@ -2,8 +2,9 @@ import { Anthropic } from "@anthropic-ai/sdk";
 import JSON5 from "json5";
 import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
 import { BaseHook, ProviderBase } from "../_base.js";
-import type { ChatOptions, ToolModel } from "../types/index.js";
+import type { ChatOptions } from "../types/index.js";
 import type { AnthropicContentBlock } from "./types/index.js";
+import { convertToAnthropicFunctions } from "./utils/convertToAnthropicFunctions.js";
 
 export class AnthropicProvider extends ProviderBase {
   private client: Anthropic;
@@ -325,22 +326,4 @@ export class AnthropicProvider extends ProviderBase {
       tag: "Unknown",
     };
   }
-}
-
-function convertToAnthropicFunctions(tools?: ToolModel[]): Anthropic.Messages.ToolUnion[] | undefined {
-  if (!tools) {
-    return undefined;
-  }
-
-  return tools.map((tool): Anthropic.Messages.ToolUnion => {
-    return {
-      name: tool.function.name,
-      description: tool.function.description,
-      input_schema: {
-        type: "object",
-        properties: tool.function.parameters.properties,
-        required: tool.function.parameters.required,
-      },
-    };
-  });
 }
