@@ -43,4 +43,4 @@ export type ErrorAISuite = ResultErrorAISuite & {
   success: false;
 };
 
-export type HandleErrorResponse = Pick<ErrorAISuite , "error" | "raw" | "tag">;
+export type HandleErrorResponse = Pick<ErrorAISuite, "error" | "raw" | "tag">;

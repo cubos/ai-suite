@@ -83,7 +83,7 @@ export abstract class ProviderBase {
   }
 
   async createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {
-    return this.retry(() => this._createEmbedding(embedding, options.metadata), options.retry);     
+    return this.retry(() => this._createEmbedding(embedding, options.metadata), options.retry);
   }
 }
 
