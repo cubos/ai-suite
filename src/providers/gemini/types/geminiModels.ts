@@ -7,3 +7,5 @@ export type GeminiModels =
   | "gemini-1.5-flash"
   | "gemini-1.5-flash-8b"
   | "gemini-1.5-pro";
+
+export type GeminiEmbeddingModels = "gemini-embedding-001" | "text-embedding-005" | "text-multilingual-embedding-002";

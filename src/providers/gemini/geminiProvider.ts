@@ -2,7 +2,7 @@ import { ApiError, type FunctionCall, type GenerateContentParameters, GoogleGenA
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
-import type { EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
+import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
@@ -170,11 +170,43 @@ export class GeminiProvider extends ProviderBase {
     return result;
   }
 
-  protected _createEmbedding(
-    embedding: EmbeddingRequest,
-    metadata?: Record<string, unknown>,
-  ): Promise<SuccessEmbedding> {
-    throw new Error("Method not implemented.");
+  protected async _createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {
+    const req = {
+      model: this.model,
+      contents: embedding.content,
+      config: {
+        outputDimensionality: options.dimensions,
+        taskType: options.taskType,
+      },
+    };
+    const response = await this.client.models.embedContent(req);
+
+    await this.hooks.handleRequest(req);
+
+    await this.hooks.handleResponse(req, response, options.metadata ?? {});
+
+    const embeddings = [];
+    let tokens = 0;
+    for (const embedding of response.embeddings || []) {
+      if (!embedding.values?.length) {
+        embeddings.push([]);
+      }
+      embeddings.push(embedding.values ?? []);
+      tokens += embedding.values?.length || 0;
+    }
+
+    return {
+      success: true,
+      created: Math.floor(Date.now() / 1000),
+      content: embeddings,
+      model: this.model,
+      object: "list",
+      usage: {
+        input_tokens: tokens,
+        output_tokens: 0,
+        total_tokens: tokens,
+      },
+    };
   }
 
   /**

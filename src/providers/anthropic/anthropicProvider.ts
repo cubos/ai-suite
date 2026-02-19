@@ -1,7 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk";
 import JSON5 from "json5";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
-import type { EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
+import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
@@ -149,10 +149,7 @@ export class AnthropicProvider extends ProviderBase {
     return result;
   }
 
-  protected _createEmbedding(
-    embedding: EmbeddingRequest,
-    metadata?: Record<string, unknown>,
-  ): Promise<SuccessEmbedding> {
+  protected _createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {
     throw new Error("Method not implemented.");
   }
 

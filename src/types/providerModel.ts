@@ -1,6 +1,6 @@
 import type { AnthropicModels } from "../providers/anthropic/index.js";
 import type { DeepSeekModels } from "../providers/deepSeek/index.js";
-import type { GeminiModels } from "../providers/gemini/index.js";
+import type { GeminiEmbeddingModels, GeminiModels } from "../providers/gemini/index.js";
 import type { GrokModels } from "../providers/grok/index.js";
 import type { OpenAIEmbeddingModels, OpenAIModels } from "../providers/openai/index.js";
 
@@ -14,4 +14,7 @@ export type ProviderChatModel<S extends string> =
   | `custom-llm/${S}`
   | `grok/${GrokModels}`;
 
-export type ProviderEmbeddingModel<S extends string> = `openai/${OpenAIEmbeddingModels}` | `custom-llm/${S}`;
+export type ProviderEmbeddingModel<S extends string> =
+  | `openai/${OpenAIEmbeddingModels}`
+  | `gemini/${GeminiEmbeddingModels}`
+  | `custom-llm/${S}`;

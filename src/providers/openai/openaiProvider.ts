@@ -3,7 +3,7 @@ import { OpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import type { ChatCompletionCreateParamsBase, ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
-import type { EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
+import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
@@ -143,22 +143,23 @@ export class OpenAIProvider extends ProviderBase {
     return result;
   }
 
-  async _createEmbedding(embedding: EmbeddingRequest, metadata?: Record<string, unknown>): Promise<SuccessEmbedding> {
+  async _createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {
     const request: OpenAI.Embeddings.EmbeddingCreateParams = {
       model: this.model,
       input: embedding.content,
-      encoding_format: embedding.encodingFormat,
-      dimensions: embedding.dimensions,
+      encoding_format: options.encodingFormat,
+      dimensions: options.dimensions,
     };
 
     await this.hooks.handleRequest(request);
 
     const response = await this.client.embeddings.create(request);
 
-    await this.hooks.handleResponse(request, response, metadata ?? {});
+    await this.hooks.handleResponse(request, response, options.metadata ?? {});
 
     return {
       success: true,
+      created: Math.floor(Date.now() / 1000),
       content: response.data.map(d => d.embedding),
       model: response.model,
       object: response.object,
