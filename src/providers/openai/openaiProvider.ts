@@ -2,7 +2,9 @@ import JSON5 from "json5";
 import { OpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import type { ChatCompletionCreateParamsBase, ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs";
-import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
+import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
+import type { EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
+import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 
@@ -141,6 +143,33 @@ export class OpenAIProvider extends ProviderBase {
     return result;
   }
 
+  async _createEmbedding(embedding: EmbeddingRequest, metadata?: Record<string, unknown>): Promise<SuccessEmbedding> {
+    const request: OpenAI.Embeddings.EmbeddingCreateParams = {
+      model: this.model,
+      input: embedding.content,
+      encoding_format: embedding.encodingFormat,
+      dimensions: embedding.dimensions,
+    };
+
+    await this.hooks.handleRequest(request);
+
+    const response = await this.client.embeddings.create(request);
+
+    await this.hooks.handleResponse(request, response, metadata ?? {});
+
+    return {
+      success: true,
+      content: response.data.map(d => d.embedding),
+      model: response.model,
+      object: response.object,
+      usage: {
+        input_tokens: response.usage?.prompt_tokens || 0,
+        output_tokens: 0,
+        total_tokens: response.usage?.total_tokens || 0,
+      },
+    };
+  }
+
   /**
    * Parses the input content into an OpenAI-compatible content part.
    * @param content The input content to parse.
@@ -193,7 +222,7 @@ export class OpenAIProvider extends ProviderBase {
     throw new Error("Unsupported content type");
   }
 
-  handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
+  handleError(error: Error): Pick<ErrorAISuite, "error" | "raw" | "tag"> {
     if (error instanceof OpenAI.APIError) {
       const status = error.status;
 

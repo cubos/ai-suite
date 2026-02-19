@@ -1,7 +1,9 @@
 import { ApiError, type FunctionCall, type GenerateContentParameters, GoogleGenAI } from "@google/genai";
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
-import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
+import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
+import type { EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
+import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import { notUseThinkingConfig } from "./constants/notUseThinkingConfig.js";
@@ -168,6 +170,13 @@ export class GeminiProvider extends ProviderBase {
     return result;
   }
 
+  protected _createEmbedding(
+    embedding: EmbeddingRequest,
+    metadata?: Record<string, unknown>,
+  ): Promise<SuccessEmbedding> {
+    throw new Error("Method not implemented.");
+  }
+
   /**
    * Parses the input content into a Gemini-compatible content part.
    * @param content The input content to parse.
@@ -225,7 +234,7 @@ export class GeminiProvider extends ProviderBase {
     throw new Error("Unsupported content type");
   }
 
-  handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
+  handleError(error: Error): Pick<ErrorAISuite, "error" | "raw" | "tag"> {
     if (error instanceof ApiError) {
       const status = error.status;
 

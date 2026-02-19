@@ -1,5 +1,14 @@
 import { promisify } from "util";
-import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../types/chat.js";
+import type {
+  EmbeddingOptions,
+  EmbeddingRequest,
+  HandleErrorResponse,
+  InputContent,
+  MessageModel,
+  RetryOptions,
+  SuccessChatCompletion,
+  SuccessEmbedding,
+} from "../types/index.js";
 import { AISuiteError } from "../utils.js";
 import type { ChatOptions } from "./types/index.js";
 
@@ -17,19 +26,24 @@ export abstract class ProviderBase {
   /**
    * Abstract method that must be implemented by each provider
    */
-  abstract handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag">;
+  protected abstract _createEmbedding(
+    embedding: EmbeddingRequest,
+    metadata?: Record<string, unknown>,
+  ): Promise<SuccessEmbedding>;
+
+  /**
+   * Abstract method that must be implemented by each provider
+   */
+  abstract handleError(error: Error): Pick<HandleErrorResponse, "error" | "raw" | "tag">;
 
   /**
    * Abstract method that must be implemented by each provider
    */
   abstract parseInputContent<T>(content: InputContent): T;
 
-  /**
-   * Public method that includes retry logic
-   */
-  async createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
-    const attempts = options.retry?.attempts || 1;
-    const delay = options.retry?.delay || (attempt => 2 ** attempt * 100);
+  private async retry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T> {
+    const attempts = options?.attempts || 1;
+    const delay = options?.delay || (attempt => 2 ** attempt * 100);
 
     const debug = false;
 
@@ -38,7 +52,7 @@ export abstract class ProviderBase {
         if (debug) {
           console.log(`Attempt ${i + 1} of ${attempts} with delay ${delay(i)}`);
         }
-        return await this._createChatCompletion(messages, options);
+        return await fn();
       } catch (error) {
         if (error instanceof AISuiteError) {
           if (debug) {
@@ -59,6 +73,17 @@ export abstract class ProviderBase {
     }
 
     throw new Error("Retry logic failed");
+  }
+
+  /**
+   * Public method that includes retry logic
+   */
+  async createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
+    return this.retry(() => this._createChatCompletion(messages, options), options.retry);
+  }
+
+  async createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {
+    return this.retry(() => this._createEmbedding(embedding, options.metadata), options.retry);     
   }
 }
 

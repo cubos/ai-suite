@@ -1,6 +1,8 @@
 import { Anthropic } from "@anthropic-ai/sdk";
 import JSON5 from "json5";
-import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
+import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
+import type { EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
+import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import type { AnthropicContentBlock } from "./types/index.js";
@@ -147,6 +149,13 @@ export class AnthropicProvider extends ProviderBase {
     return result;
   }
 
+  protected _createEmbedding(
+    embedding: EmbeddingRequest,
+    metadata?: Record<string, unknown>,
+  ): Promise<SuccessEmbedding> {
+    throw new Error("Method not implemented.");
+  }
+
   /**
    * Parses the input content into an Anthropic-compatible content part.
    * @param content The input content to parse.
@@ -235,7 +244,7 @@ export class AnthropicProvider extends ProviderBase {
     throw new Error("Unsupported content type");
   }
 
-  handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
+  handleError(error: Error): Pick<ErrorAISuite, "error" | "raw" | "tag"> {
     if (error instanceof Anthropic.APIError) {
       const status = error.status;
 
