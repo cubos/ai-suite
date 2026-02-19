@@ -1,15 +1,9 @@
+import type { OptionsBase } from "./optionsBase.js";
 import type { ReasoningConfig } from "./reasoningConfig.js";
 import type { ThinkingConfig } from "./thinkingConfig.js";
 import type { ToolModel } from "./toolModel.js";
 
-export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig {
-  /**
-   * The retry options
-   */
-  retry?: {
-    attempts: number;
-    delay?: (attempt: number) => number;
-  };
+export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig, OptionsBase {
   /**
    * Whether to stream the response
    */
@@ -30,17 +24,4 @@ export interface ChatOptionsBase extends ReasoningConfig, ThinkingConfig {
    * Anthropic max_tokens is set to 4096 by default
    */
   maxOutputTokens?: number;
-
-  /**
-   * The metadata to use
-   */
-  metadata?: Record<string, unknown> & {
-    langFuse?: {
-      userId?: string;
-      environment?: string;
-      sessionId?: string;
-      name?: string;
-      tags?: string[];
-    };
-  };
 }

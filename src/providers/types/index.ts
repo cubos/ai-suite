@@ -3,6 +3,7 @@ export * from "./chatOptionsBase.js";
 export * from "./iJsonSchema.js";
 export * from "./jsonObject.js";
 export * from "./jsonSchema.js";
+export * from "./optionsBase.js";
 export * from "./reasoningConfig.js";
 export * from "./text.js";
 export * from "./thinkingConfig.js";
