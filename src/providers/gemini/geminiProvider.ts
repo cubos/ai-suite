@@ -1,35 +1,12 @@
-import {
-  ApiError,
-  type FunctionCall,
-  type GenerateContentParameters,
-  GoogleGenAI,
-  Type as SchemaType,
-  type Tool,
-} from "@google/genai";
+import { ApiError, type FunctionCall, type GenerateContentParameters, GoogleGenAI } from "@google/genai";
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
-import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../types/chat.js";
-import { BaseHook, type ChatOptions, ProviderBase, type ToolModel } from "./_base.js";
-
-export type GeminiModels =
-  | "gemini-2.5-pro"
-  | "gemini-2.5-flash"
-  | "gemini-2.5-flash-lite"
-  | "gemini-2.0-flash"
-  | "gemini-2.0-flash-lite"
-  | "gemini-1.5-flash"
-  | "gemini-1.5-flash-8b"
-  | "gemini-1.5-pro";
-
-const onlyWorksWithThinking = ["gemini-2.5-pro"];
-
-const notUseThinkingConfig = [
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-8b",
-  "gemini-1.5-pro",
-];
+import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
+import { BaseHook, ProviderBase } from "../_base.js";
+import type { ChatOptions } from "../types/index.js";
+import { notUseThinkingConfig } from "./constants/notUseThinkingConfig.js";
+import { onlyWorksWithThinking } from "./constants/onlyWorksWithThinking.js";
+import { convertToGeminiFunctions } from "./utils/convertToGeminiFunctions.js";
 
 export class GeminiProvider extends ProviderBase {
   private client: GoogleGenAI;
@@ -323,52 +300,4 @@ export class GeminiProvider extends ProviderBase {
       tag: "Unknown",
     };
   }
-}
-
-export function convertToGeminiFunctions(tools?: ToolModel[]): Tool[] | undefined {
-  if (!tools) return undefined;
-
-  return [
-    {
-      functionDeclarations: tools.map(tool => ({
-        name: tool.function.name,
-        description: tool.function.description,
-        parameters: {
-          type: SchemaType.OBJECT,
-          properties: Object.fromEntries(
-            Object.entries(tool.function.parameters.properties).map(([key, value]) => [
-              key,
-              {
-                type:
-                  value.type === "string"
-                    ? SchemaType.STRING
-                    : value.type === "number"
-                      ? SchemaType.NUMBER
-                      : value.type === "boolean"
-                        ? SchemaType.BOOLEAN
-                        : value.type === "array"
-                          ? SchemaType.ARRAY
-                          : SchemaType.OBJECT,
-                description: value.description,
-                ...(value.type === "array"
-                  ? {
-                      items: {
-                        type: SchemaType.STRING,
-                      },
-                    }
-                  : {}),
-                ...(value.type === "object"
-                  ? {
-                      properties: {},
-                      required: [],
-                    }
-                  : {}),
-              },
-            ]),
-          ),
-          required: tool.function.parameters.required,
-        },
-      })),
-    },
-  ];
 }

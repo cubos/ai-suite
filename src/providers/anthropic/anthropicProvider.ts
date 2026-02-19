@@ -1,11 +1,10 @@
 import { Anthropic } from "@anthropic-ai/sdk";
-import type { Model } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
 import JSON5 from "json5";
-import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../types/chat.js";
-import type { IsLiteral } from "../types/utils.js";
-import { BaseHook, type ChatOptions, ProviderBase, type ToolModel } from "./_base.js";
-
-export type AnthropicModels = IsLiteral<Model>;
+import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
+import { BaseHook, ProviderBase } from "../_base.js";
+import type { ChatOptions } from "../types/index.js";
+import type { AnthropicContentBlock } from "./types/index.js";
+import { convertToAnthropicFunctions } from "./utils/convertToAnthropicFunctions.js";
 
 export class AnthropicProvider extends ProviderBase {
   private client: Anthropic;
@@ -30,13 +29,6 @@ export class AnthropicProvider extends ProviderBase {
   }
 
   async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
-    type AnthropicImageType = "image/png" | "image/jpeg" | "image/gif" | "image/webp";
-    type AnthropicDocumentType = "application/pdf";
-    type AnthropicContentBlock =
-      | { type: "text"; text: string }
-      | { type: "image"; source: { type: "base64"; media_type: AnthropicImageType; data: string } }
-      | { type: "document"; source: { type: "base64"; media_type: AnthropicDocumentType; data: string } };
-
     const mappedMessages = messages.map(
       (
         msg,
@@ -334,22 +326,4 @@ export class AnthropicProvider extends ProviderBase {
       tag: "Unknown",
     };
   }
-}
-
-function convertToAnthropicFunctions(tools?: ToolModel[]): Anthropic.Messages.ToolUnion[] | undefined {
-  if (!tools) {
-    return undefined;
-  }
-
-  return tools.map((tool): Anthropic.Messages.ToolUnion => {
-    return {
-      name: tool.function.name,
-      description: tool.function.description,
-      input_schema: {
-        type: "object",
-        properties: tool.function.parameters.properties,
-        required: tool.function.parameters.required,
-      },
-    };
-  });
 }
