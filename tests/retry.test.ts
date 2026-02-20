@@ -1,7 +1,8 @@
 import dotenv from "dotenv";
 import { beforeAll, describe, expect, it } from "vitest";
 import { AISuite } from "../src/index.js";
-import type { ErrorChatCompletion, SuccessChatCompletion } from "../src/types/chat.js";
+import type { SuccessChatCompletion } from "../src/types/chat.js";
+import type { ErrorAISuite } from "../src/types/handleErrorResponse.js";
 import { AISuiteError } from "../src/utils.js";
 
 dotenv.config();
@@ -26,8 +27,8 @@ describe("Retry Logic - Integration Tests", () => {
     });
 
     expect(result.success).toBe(false);
-    expect((result as ErrorChatCompletion).error).toBe("Unauthorized");
-    expect((result as ErrorChatCompletion).tag).toBe("InvalidAuth");
+    expect((result as ErrorAISuite).error).toBe("Unauthorized");
+    expect((result as ErrorAISuite).tag).toBe("InvalidAuth");
   }, 15000);
 
   it("should exhaust all retry attempts with network error (invalid URL)", async () => {
@@ -55,7 +56,7 @@ describe("Retry Logic - Integration Tests", () => {
     const totalTime = endTime - startTime;
 
     expect(result.success).toBe(false);
-    expect((result as ErrorChatCompletion).error).toBeDefined();
+    expect((result as ErrorAISuite).error).toBeDefined();
     // Should have taken at least 100ms (2 retries * 50ms delay)
     expect(totalTime).toBeGreaterThanOrEqual(100);
   });
