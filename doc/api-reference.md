@@ -93,21 +93,149 @@ Parameters:
 Returns:
 - `Promise<ResultChatCompletion[]>`: Array of results (one per provider, in same order)
 
+#### createEmbedding
+
+```typescript
+async createEmbedding(
+  provider: ProviderEmbeddingModel<S>,
+  embedding: EmbeddingRequest,
+  options?: EmbeddingOptions
+): Promise<ResultEmbedding>
+```
+
+Create text embeddings using the specified provider.
+
+Parameters:
+- `provider`: The embedding provider and model to use (e.g., `'openai/text-embedding-3-small'`, `'gemini/gemini-embedding-001'`)
+- `embedding`: Object containing the text content to embed:
+  - `content`: A single text string or array of text strings to embed
+- `options`: (Optional) Additional options for the request:
+  - `dimensions`: Number of dimensions for the embedding (e.g., 256, 512) - supported by OpenAI
+  - `encodingFormat`: Encoding format for the embedding - supported by OpenAI
+  - `taskType`: Task type for embeddings - supported by Gemini
+  - `metadata`: Custom metadata to attach to the request
+
+Returns:
+- `Promise<ResultEmbedding>`: The embedding result containing:
+  - `success`: Boolean indicating success or failure
+  - `content`: Array of embedding vectors (each is an array of numbers)
+  - `model`: The model used for the embedding
+  - `object`: Always "list"
+  - `usage`: Token usage information
+  - `metadata`: Any metadata provided in the request
+
+Example:
+
+```typescript
+// Single text embedding
+const result = await aiSuite.createEmbedding(
+  'openai/text-embedding-3-small',
+  { content: 'Hello, world!' }
+);
+
+if (result.success) {
+  console.log('Embedding:', result.content[0]);
+  console.log('Dimensions:', result.content[0].length);
+}
+
+// Multiple text embeddings
+const result = await aiSuite.createEmbedding(
+  'openai/text-embedding-3-small',
+  { content: ['Text 1', 'Text 2', 'Text 3'] }
+);
+
+if (result.success) {
+  result.content.forEach((embedding, index) => {
+    console.log(`Embedding ${index}:`, embedding);
+  });
+}
+
+// With custom dimensions (OpenAI)
+const result = await aiSuite.createEmbedding(
+  'openai/text-embedding-3-large',
+  { content: 'Hello, world!' },
+  { dimensions: 256 }
+);
+
+if (result.success) {
+  console.log('Custom dimension embedding:', result.content[0].length); // 256
+}
+
+// With task type (Gemini)
+const result = await aiSuite.createEmbedding(
+  'gemini/gemini-embedding-001',
+  { content: 'Search query text' },
+  { taskType: 'SEARCH_QUERY' }
+);
+
+if (result.success) {
+  console.log('Embedding:', result.content[0]);
+}
+```
+
 ## Types
 
 ### ProviderModel
 
 ```typescript
-type ProviderModel<S extends string = string> =
+type ProviderModel<S extends string> = ProviderChatModel<S> | ProviderEmbeddingModel<S>;
+```
+
+A generic type that represents any provider model (chat or embedding operations). It's a union of `ProviderChatModel` and `ProviderEmbeddingModel`.
+
+**Example:**
+```typescript
+const chatModel: ProviderModel = 'openai/gpt-4';
+const embeddingModel: ProviderModel = 'openai/text-embedding-3-small';
+```
+
+### ProviderChatModel
+
+```typescript
+type ProviderChatModel<S extends string> =
   | `openai/${OpenAIModels}`
   | `anthropic/${AnthropicModels}`
   | `gemini/${GeminiModels}`
   | `deepseek/${DeepSeekModels}`
-  | `grok/${GrokModels}`
+  | `custom-llm/${S}`
+  | `grok/${GrokModels}`;
+```
+
+A string representation of a chat provider and model, in the format `provider/model`. Supports the following providers:
+
+- **OpenAI**: `openai/gpt-4`, `openai/gpt-4o`, `openai/gpt-3.5-turbo`, etc.
+- **Anthropic**: `anthropic/claude-3-5-sonnet-20241022`, `anthropic/claude-3-opus-20240229`, etc.
+- **Google Gemini**: `gemini/gemini-2.5-pro`, `gemini/gemini-2.0-flash`, etc.
+- **DeepSeek**: `deepseek/deepseek-chat`, `deepseek/deepseek-reasoner`, etc.
+- **Grok**: `grok/grok-2-1212`, `grok/grok-vision-beta`, etc.
+- **Custom LLM**: `custom-llm/{your-custom-model-id}`
+
+**Example:**
+```typescript
+const model: ProviderChatModel<string> = 'openai/gpt-4o';
+```
+
+### ProviderEmbeddingModel
+
+```typescript
+type ProviderEmbeddingModel<S extends string> =
+  | `openai/${OpenAIEmbeddingModels}`
+  | `gemini/${GeminiEmbeddingModels}`
+  | `deepseek/${DeepSeekEmbeddingModels}`
   | `custom-llm/${S}`;
 ```
 
-A string representation of a provider and model, in the format `provider/model`.
+A string representation of an embedding provider and model, in the format `provider/model`. Supports the following providers for text embeddings:
+
+- **OpenAI**: `openai/text-embedding-3-large`, `openai/text-embedding-3-small`, etc.
+- **Google Gemini**: `gemini/gemini-embedding-001`.
+- **DeepSeek**: `deepseek/deepseek-embedding`.
+- **Custom LLM**: `custom-llm/{your-custom-model-id}`
+
+**Example:**
+```typescript
+const embeddingModel: ProviderEmbeddingModel<string> = 'openai/text-embedding-3-small';
+```
 
 ### MessageModel
 
@@ -129,7 +257,7 @@ Represents a message in a conversation.
 ### ResultChatCompletion
 
 ```typescript
-type ResultChatCompletion = SuccessChatCompletion | ErrorChatCompletion;
+type ResultChatCompletion = SuccessChatCompletion | ErrorAISuite;
 ```
 
 The result of a chat completion request can be either a success or error.
