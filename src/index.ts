@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import type { Langfuse } from "langfuse";
+import { Batch } from "./batch.js";
 import { AnthropicProvider } from "./providers/anthropic/index.js";
-
 import { CustomLLMProvider } from "./providers/customLLM/index.js";
 import { DeepSeekProvider } from "./providers/deepSeek/index.js";
 import { GeminiProvider } from "./providers/gemini/index.js";
@@ -31,6 +31,7 @@ export class AISuite<S extends string = string> {
     handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
     failOnError?: boolean;
   };
+  protected batch = new Batch(this.getProvider, this.resultWhithObservation);
 
   constructor(
     keys: {
@@ -170,6 +171,8 @@ export class AISuite<S extends string = string> {
   ): Promise<ResultEmbedding> {
     const start = Date.now();
     const p = this.getProvider(provider);
+
+    p.batch.create();
 
     return this.resultWhithObservation(
       () => p.createEmbedding(embedding, options ?? {}),

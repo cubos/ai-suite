@@ -7,11 +7,13 @@ import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../..
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
+import { BatchOpenAI } from "./batch/index.js";
 
 export class OpenAIProvider extends ProviderBase {
   private client: OpenAI;
   private model: string;
   private hooks: BaseHook;
+  batch: BatchOpenAI = new BatchOpenAI(this);
 
   constructor(
     apiKey: string,

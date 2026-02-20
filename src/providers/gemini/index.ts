@@ -1,3 +1,4 @@
+export * from "./batch/index.js";
 export * from "./constants/index.js";
 export * from "./geminiProvider.js";
 export * from "./types/index.js";

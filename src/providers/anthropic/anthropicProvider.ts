@@ -5,6 +5,7 @@ import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../..
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
+import { BatchAnthropic } from "./batch/index.js";
 import type { AnthropicContentBlock } from "./types/index.js";
 import { convertToAnthropicFunctions } from "./utils/convertToAnthropicFunctions.js";
 
@@ -12,6 +13,7 @@ export class AnthropicProvider extends ProviderBase {
   private client: Anthropic;
   private model: string;
   private hooks: BaseHook;
+  batch: BatchAnthropic = new BatchAnthropic(this);
 
   constructor(
     apiKey: string,

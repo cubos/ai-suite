@@ -10,11 +10,14 @@ import type {
   SuccessEmbedding,
 } from "../types/index.js";
 import { AISuiteError } from "../utils.js";
+import type { BatchProviderBase } from "./batchProviderBase.js";
 import type { ChatOptions } from "./types/index.js";
 
 const sleep = promisify(setTimeout);
 
 export abstract class ProviderBase {
+  public abstract batch: BatchProviderBase;
+
   /**
    * Abstract method that must be implemented by each provider
    */
