@@ -4,6 +4,7 @@ import type {
   FileResponse,
   ListFileOptions,
   SuccessCreateFile,
+  SuccessDeleteFile,
   SuccessListFile,
   SuccessRetrieveFile,
 } from "../../../types/file.js";
@@ -101,7 +102,25 @@ export class FileGemini extends FileProviderBase<GeminiProvider> {
       model: this.provider.model,
     };
   }
-  delete(): Promise<void> {
-    throw new Error("Method not implemented.");
+
+  async delete(id: string, options: OptionsBase): Promise<SuccessDeleteFile> {
+    const request = {
+      name: id,
+    };
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.files.delete(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+      content: {
+        id: id,
+        object: "file",
+      },
+      model: this.provider.model,
+    };
   }
 }

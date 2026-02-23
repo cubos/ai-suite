@@ -3,6 +3,7 @@ import type {
   CreateFileOptions,
   ListFileOptions,
   SuccessCreateFile,
+  SuccessDeleteFile,
   SuccessListFile,
   SuccessRetrieveFile,
 } from "../../../types/file.js";
@@ -85,7 +86,22 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
     };
   }
 
-  delete(): Promise<void> {
-    throw new Error("Method not implemented.");
+  async delete(id: string, options: OptionsBase): Promise<SuccessDeleteFile> {
+        const request = id;
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.beta.files.delete(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+      content: {
+        id: response.id,
+        object: "file",
+      },
+      model: this.provider.model,
+    };
   }
 }

@@ -1,8 +1,8 @@
 import type { AnthropicProvider } from "./providers/anthropic/anthropicProvider.js";
 import type { GeminiProvider } from "./providers/gemini/geminiProvider.js";
 import type { OpenAIProvider } from "./providers/openai/openaiProvider.js";
-import type { LangfuseData } from "./providers/types/optionsBase.js";
-import type { CreateFileOptions, ListFileOptions, ResultCreateFile, ResultListFile } from "./types/file.js";
+import type { LangfuseData, OptionsBase } from "./providers/types/optionsBase.js";
+import type { CreateFileOptions, ListFileOptions, ResultCreateFile, ResultDeleteFile, ResultListFile } from "./types/file.js";
 import type { ErrorAISuite } from "./types/handleErrorResponse.js";
 import type { ProviderFileType, ProviderModel } from "./types/providerModel.js";
 import type { ResponseBase } from "./types/responseBase.js";
@@ -69,7 +69,7 @@ export class File<S extends string = string> {
     );
   }
 
-  async retrieve(provider: ProviderFileType, id: string, options: ListFileOptions): Promise<ResultCreateFile> {
+  async retrieve(provider: ProviderFileType, id: string, options: OptionsBase): Promise<ResultCreateFile> {
     const start = Date.now();
     const p = this.getProvider(provider);
 
@@ -88,7 +88,22 @@ export class File<S extends string = string> {
     );
   }
 
-  async delete(): Promise<void> {
-    console.log("File delete not implemented for provider");
+  async delete(provider: ProviderFileType, id: string, options: OptionsBase): Promise<ResultDeleteFile> {
+    const start = Date.now();
+    const p = this.getProvider(provider);
+
+    return this.resultWhithObservation(
+      () => p.file.delete(id, options),
+      {
+        langfuseData: {
+          name: "delete-file",
+          tags: ["file", provider],
+        },
+        model: p.model,
+        input: id,
+      },
+      p,
+      start,
+    );
   }
 }

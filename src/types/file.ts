@@ -53,8 +53,12 @@ export interface SuccessListFile extends ResultBase<FileResponse[]> {
 
 export interface SuccessRetrieveFile extends ResultBase<FileResponse> {}
 
+export interface SuccessDeleteFile extends ResultBase<{ id: string; object: "file" }> {}
+
 export type ResultCreateFile = SuccessCreateFile | ErrorAISuite;
 
 export type ResultListFile = SuccessListFile | ErrorAISuite;
 
 export type ResultRetrieveFile = SuccessRetrieveFile | ErrorAISuite;
+
+export type ResultDeleteFile = SuccessDeleteFile | ErrorAISuite;
