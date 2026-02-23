@@ -47,13 +47,16 @@ export interface FileResponse {
 }
 
 
-export interface SuccessCreateFile extends ResultBase, FileResponse {}
+export interface SuccessCreateFile extends ResultBase<FileResponse> {}
 
 export interface SuccessListFile extends ResultBase<FileResponse[]> {
-
   has_next_page: boolean;
 }
+
+export interface SuccessRetrieveFile extends ResultBase<FileResponse> {}
 
 export type ResultCreateFile = SuccessCreateFile | ErrorAISuite;
 
 export type ResultListFile = SuccessListFile | ErrorAISuite;
+
+export type ResultRetrieveFile = SuccessRetrieveFile | ErrorAISuite;

@@ -1,7 +1,8 @@
 import type { FileCreateParams } from "openai/resources";
 import type { FileListParams } from "openai/resources.js";
-import type { CreateFileOptions, ListFileOptions, SuccessCreateFile, SuccessListFile } from "../../../types/file.js";
+import type { CreateFileOptions, ListFileOptions, SuccessCreateFile, SuccessListFile, SuccessRetrieveFile } from "../../../types/file.js";
 import { FileProviderBase } from "../../fileProviderBase.js";
+import type { OptionsBase } from "../../types/optionsBase.js";
 import type { OpenAIProvider } from "../openaiProvider.js";
 
 export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
@@ -21,15 +22,16 @@ export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
     await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
 
     return {
-      id: response.id,
-      bytes: response.bytes,
-      created_at: response.created_at,
-      filename: response.filename,
-      object: "file",
       success: true,
-      content: file,
+      content: {
+        id: response.id,
+        bytes: response.bytes,
+        created_at: response.created_at,
+        filename: response.filename,
+        object: "file",
+        expires_at: response.expires_at,
+      },
       model: this.provider.model,
-      expires_at: response.expires_at,
     };
   }
 
@@ -47,21 +49,40 @@ export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
     return {
       success: true,
       model: this.provider.model,
-      content: response.data.map((file) => ({
+      content: response.data.map(file => ({
         id: file.id,
         bytes: file.bytes,
         created_at: file.created_at,
         filename: file.filename,
-        object:  "file",
-        expires_at: file.expires_at, 
+        object: "file",
+        expires_at: file.expires_at,
       })),
       has_next_page: response.has_more,
     };
   }
-    
-  
-  retrieve(): Promise<void> {
-    throw new Error("Method not implemented.");
+
+  async retrieve(id: string, options: OptionsBase): Promise<SuccessRetrieveFile> {
+    const request = id;
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.files.retrieve(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+      content: {
+        id: response.id,
+        bytes: response.bytes,
+        created_at: response.created_at,
+        filename: response.filename,
+        object: "file",
+        expires_at: response.expires_at,
+      },
+      model: this.provider.model,
+    }
+
   }
   delete(): Promise<void> {
     throw new Error("Method not implemented.");

@@ -1,5 +1,6 @@
-import type { CreateFileOptions, ListFileOptions, SuccessCreateFile, SuccessListFile } from "../types/file.js";
+import type { CreateFileOptions, ListFileOptions, SuccessCreateFile, SuccessListFile, SuccessRetrieveFile } from "../types/file.js";
 import type { ProviderBase } from "./_base.js";
+import type { OptionsBase } from "./types/optionsBase.js";
 
 export abstract class FileProviderBase<T extends ProviderBase = ProviderBase> {
   constructor(protected provider: T) {
@@ -8,7 +9,7 @@ export abstract class FileProviderBase<T extends ProviderBase = ProviderBase> {
 
   abstract create(file: Blob, options: CreateFileOptions): Promise<SuccessCreateFile>;
   abstract list(options: ListFileOptions): Promise<SuccessListFile>;
-  abstract retrieve(): Promise<void>;
+  abstract retrieve(id: string, options: OptionsBase): Promise<SuccessRetrieveFile>;
   abstract delete(): Promise<void>;
 
   checkFileSupport(file: File): void {
