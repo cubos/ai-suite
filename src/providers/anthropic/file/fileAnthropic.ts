@@ -1,9 +1,10 @@
-import type { FileOptions, SuccessCreateFile } from "../../../types/file.js";
+import type { FileListParams } from "@anthropic-ai/sdk/resources/beta.mjs";
+import type { CreateFileOptions, ListFileOptions, SuccessCreateFile, SuccessListFile } from "../../../types/file.js";
 import { FileProviderBase } from "../../fileProviderBase.js";
 import type { AnthropicProvider } from "../index.js";
 
 export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
-  async create(file: File, options: FileOptions): Promise<SuccessCreateFile> {
+  async create(file: File, options: CreateFileOptions): Promise<SuccessCreateFile> {
     this.checkFileSupport(file);
 
     const request = {
@@ -28,8 +29,30 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
     };
   }
 
-  list(): Promise<void> {
-    throw new Error("Method not implemented.");
+  async list(options: ListFileOptions): Promise<SuccessListFile> {
+    const request: FileListParams = {
+      after_id: options.after,
+      limit: options.limit ?? 10,
+    };
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.beta.files.list(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {  
+      success: true,
+      model: this.provider.model,
+      content: response.data.map((file) => ({
+        id: file.id,
+        bytes: file.size_bytes,
+        created_at: file.created_at ? Math.floor(new Date(file.created_at).getTime() / 1000) : 0,
+        filename: file.filename,
+        object: "file",
+      })),
+      has_next_page: response.has_more,
+    };
   }
   retrieve(): Promise<void> {
     throw new Error("Method not implemented.");
