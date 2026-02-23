@@ -2,7 +2,7 @@ import type { AnthropicProvider } from "./providers/anthropic/anthropicProvider.
 import type { GeminiProvider } from "./providers/gemini/geminiProvider.js";
 import type { OpenAIProvider } from "./providers/openai/openaiProvider.js";
 import type { LangfuseData } from "./providers/types/optionsBase.js";
-import type { CreateFileOptions, ResultCreateFile } from "./types/file.js";
+import type { CreateFileOptions, ListFileOptions, ResultCreateFile, ResultListFile } from "./types/file.js";
 import type { ErrorAISuite } from "./types/handleErrorResponse.js";
 import type { ProviderFileType, ProviderModel } from "./types/providerModel.js";
 import type { ResponseBase } from "./types/responseBase.js";
@@ -46,8 +46,23 @@ export class File<S extends string = string> {
     );
   }
 
-  async list(): Promise<void> {
-    console.log("File list not implemented for provider");
+  async list(provider: ProviderFileType,options: ListFileOptions): Promise<ResultListFile> {
+    const start = Date.now();
+    const p = this.getProvider(provider);
+
+    return this.resultWhithObservation(
+      () => p.file.list(options),
+      {
+        langfuseData: {
+          name: "list-files",
+          tags: ["file", provider],
+        },
+        model: p.model,
+        input: { after: options.after, limit: options.limit },
+      },
+      p,
+      start,
+    );
   }
 
   async retrieve(): Promise<void> {

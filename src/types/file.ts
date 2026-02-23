@@ -55,3 +55,5 @@ export interface SuccessListFile extends ResultBase<FileResponse[]> {
 }
 
 export type ResultCreateFile = SuccessCreateFile | ErrorAISuite;
+
+export type ResultListFile = SuccessListFile | ErrorAISuite;
