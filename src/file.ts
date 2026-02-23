@@ -2,11 +2,15 @@ import type { AnthropicProvider } from "./providers/anthropic/anthropicProvider.
 import type { GeminiProvider } from "./providers/gemini/geminiProvider.js";
 import type { OpenAIProvider } from "./providers/openai/openaiProvider.js";
 import type { LangfuseData } from "./providers/types/optionsBase.js";
+import type { FileOptions, ResultCreateFile } from "./types/file.js";
 import type { ErrorAISuite } from "./types/handleErrorResponse.js";
-import type { ProviderModel } from "./types/providerModel.js";
+import type { ProviderFileType, ProviderModel } from "./types/providerModel.js";
 import type { ResponseBase } from "./types/responseBase.js";
 import type { ResultBase } from "./types/resultBase.js";
-
+/**
+ * The File class provides an interface for managing file resources across different AI providers.
+ * only batch file uploads are supported as of now.
+ */
 export class File<S extends string = string> {
   constructor(
     protected getProvider: (provider: ProviderModel<S>) => OpenAIProvider | AnthropicProvider | GeminiProvider,
@@ -21,8 +25,28 @@ export class File<S extends string = string> {
     this.resultWhithObservation = resultWhithObservation;
   }
 
-  async create(): Promise<void> {
-    console.log("File create not implemented for provider");
+  /**
+   *  Creates a file resource on the provider's platform.
+   * @param file file to be uploaded, must be a Blob (e.g., File) and of supported type (e.g., "text/jsonl").
+   * @param options  options for file creation, including optional expiration time.
+   */
+  async create(provider: ProviderFileType, file: globalThis.File, options: FileOptions): Promise<ResultCreateFile> {
+    const start = Date.now();
+    const p = this.getProvider(provider);
+
+    return this.resultWhithObservation(
+      () => p.file.create(file, options),
+      {
+        langfuseData: {
+          name: "create-file",
+          tags: ["file", provider],
+        },
+        model: p.model,
+        input: file,
+      },
+      p,
+      start,
+    );
   }
 
   async list(): Promise<void> {

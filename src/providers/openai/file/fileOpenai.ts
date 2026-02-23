@@ -1,10 +1,10 @@
 import type { FileCreateParams } from "openai/resources";
-import type { FileOptions } from "../../../types/file.js";
+import type { FileOptions, SuccessCreateFile } from "../../../types/file.js";
 import { FileProviderBase } from "../../fileProviderBase.js";
 import type { OpenAIProvider } from "../openaiProvider.js";
 
 export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
-  async create(file: File, options: FileOptions): Promise<void> {
+  async create(file: File, options: FileOptions): Promise<SuccessCreateFile> {
     this.checkFileSupport(file);
 
     const request: FileCreateParams = {
@@ -18,6 +18,18 @@ export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
     const response = await this.provider.client.files.create(request);
 
     await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      id: response.id,
+      bytes: response.bytes,
+      created_at: response.created_at,
+      filename: response.filename,
+      object: "file",
+      success: true,
+      content: file,
+      model: this.provider.model,
+      expires_at: options.expires_after ? response.created_at + options.expires_after.seconds : undefined,
+    };
   }
 
   list(): Promise<void> {
