@@ -1,5 +1,6 @@
 export * from "./chat.js";
 export * from "./embed.js";
+export * from "./file.js";
 export * from "./handleErrorResponse.js";
 export * from "./providerModel.js";
 export * from "./resultBase.js";

@@ -1,3 +1,6 @@
+import type { Anthropic } from "@anthropic-ai/sdk";
+import type { GoogleGenAI } from "@google/genai";
+import type OpenAI from "openai";
 import { promisify } from "util";
 import type {
   EmbeddingOptions,
@@ -17,6 +20,9 @@ import type { ChatOptions } from "./types/index.js";
 const sleep = promisify(setTimeout);
 
 export abstract class ProviderBase {
+  public abstract client: OpenAI | Anthropic | GoogleGenAI;
+  public abstract model: string;
+  public abstract hooks: BaseHook;
   public abstract batch: BatchProviderBase;
   public abstract file: FileProviderBase;
 

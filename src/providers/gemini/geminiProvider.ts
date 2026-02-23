@@ -13,9 +13,9 @@ import { FileGemini } from "./file/index.js";
 import { convertToGeminiFunctions } from "./utils/convertToGeminiFunctions.js";
 
 export class GeminiProvider extends ProviderBase {
-  private client: GoogleGenAI;
-  private model: string;
-  private hooks: BaseHook;
+  public client: GoogleGenAI;
+  public model: string;
+  public hooks: BaseHook;
   batch: BatchGemini = new BatchGemini(this);
   file: FileGemini = new FileGemini(this);
 

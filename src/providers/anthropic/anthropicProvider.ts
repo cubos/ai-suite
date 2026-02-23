@@ -11,9 +11,9 @@ import type { AnthropicContentBlock } from "./types/index.js";
 import { convertToAnthropicFunctions } from "./utils/convertToAnthropicFunctions.js";
 
 export class AnthropicProvider extends ProviderBase {
-  private client: Anthropic;
-  private model: string;
-  private hooks: BaseHook;
+  public client: Anthropic;
+  public model: string;
+  public hooks: BaseHook;
   batch: BatchAnthropic = new BatchAnthropic(this);
   file: FileAnthropic = new FileAnthropic(this);
 

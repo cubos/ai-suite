@@ -11,9 +11,9 @@ import { BatchOpenAI } from "./batch/index.js";
 import { FileOpenAI } from "./file/index.js";
 
 export class OpenAIProvider extends ProviderBase {
-  private client: OpenAI;
-  private model: string;
-  private hooks: BaseHook;
+  public client: OpenAI;
+  public model: string;
+  public hooks: BaseHook;
   batch: BatchOpenAI = new BatchOpenAI(this);
   file: FileOpenAI = new FileOpenAI(this);
 
