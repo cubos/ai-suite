@@ -5,8 +5,10 @@ import type {
   ListFileOptions,
   SuccessCreateFile,
   SuccessListFile,
+  SuccessRetrieveFile,
 } from "../../../types/file.js";
 import { FileProviderBase } from "../../fileProviderBase.js";
+import type { OptionsBase } from "../../types/optionsBase.js";
 import type { GeminiProvider } from "../geminiProvider.js";
 
 export class FileGemini extends FileProviderBase<GeminiProvider> {
@@ -24,15 +26,16 @@ export class FileGemini extends FileProviderBase<GeminiProvider> {
     await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
 
     return {
-      id: response.name || "",
-      bytes: response.sizeBytes ? Number(response.sizeBytes) : 0,
-      created_at: response.createTime ? Math.floor(new Date(response.createTime!).getTime() / 1000) : 0,
-      filename: response.name || "",
-      object: "file",
       success: true,
-      content: file,
+      content: {
+        id: response.name || "",
+        bytes: response.sizeBytes ? Number(response.sizeBytes) : 0,
+        created_at: response.createTime ? Math.floor(new Date(response.createTime!).getTime() / 1000) : 0,
+        filename: response.name || "",
+        object: "file",
+        expires_at: response.expirationTime ? Math.floor(new Date(response.expirationTime).getTime() / 1000) : undefined,
+      },
       model: this.provider.model,
-      expires_at: response.expirationTime ? Math.floor(new Date(response.expirationTime).getTime() / 1000) : undefined,
     };
   }
   async list(options: ListFileOptions): Promise<SuccessListFile> {
@@ -69,8 +72,30 @@ export class FileGemini extends FileProviderBase<GeminiProvider> {
       has_next_page: response.hasNextPage(),
     };
   }
-  retrieve(): Promise<void> {
-    throw new Error("Method not implemented.");
+
+  async retrieve(id: string, options: OptionsBase): Promise<SuccessRetrieveFile> {
+    const request = {
+      name: id,
+    };
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.files.get(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+      content: {
+        id: response.name || "",
+        bytes: response.sizeBytes ? Number(response.sizeBytes) : 0,
+        created_at: response.createTime ? Math.floor(new Date(response.createTime!).getTime() / 1000) : 0,
+        filename: response.name || "",
+        object: "file",
+        expires_at: response.expirationTime ? Math.floor(new Date(response.expirationTime).getTime() / 1000) : undefined,
+      },
+      model: this.provider.model,
+    };
   }
   delete(): Promise<void> {
     throw new Error("Method not implemented.");
