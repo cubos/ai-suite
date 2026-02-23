@@ -32,8 +32,12 @@ export class AISuite<S extends string = string> {
     handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
     failOnError?: boolean;
   };
-  protected batch = new Batch(this.getProvider, this.resultWhithObservation);
-  protected file = new File(this.getProvider, this.resultWhithObservation);
+  public batch = new Batch(this.getProvider, this.resultWhithObservation);
+  /**
+   * The File class provides an interface for managing file resources across different AI providers.
+   * only batch file uploads are supported as of now.
+   */
+  public file = new File(this.getProvider, this.resultWhithObservation);
 
   constructor(
     keys: {
