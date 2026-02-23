@@ -33,7 +33,9 @@ export class FileGemini extends FileProviderBase<GeminiProvider> {
         created_at: response.createTime ? Math.floor(new Date(response.createTime!).getTime() / 1000) : 0,
         filename: response.name || "",
         object: "file",
-        expires_at: response.expirationTime ? Math.floor(new Date(response.expirationTime).getTime() / 1000) : undefined,
+        expires_at: response.expirationTime
+          ? Math.floor(new Date(response.expirationTime).getTime() / 1000)
+          : undefined,
       },
       model: this.provider.model,
     };
@@ -92,7 +94,9 @@ export class FileGemini extends FileProviderBase<GeminiProvider> {
         created_at: response.createTime ? Math.floor(new Date(response.createTime!).getTime() / 1000) : 0,
         filename: response.name || "",
         object: "file",
-        expires_at: response.expirationTime ? Math.floor(new Date(response.expirationTime).getTime() / 1000) : undefined,
+        expires_at: response.expirationTime
+          ? Math.floor(new Date(response.expirationTime).getTime() / 1000)
+          : undefined,
       },
       model: this.provider.model,
     };

@@ -27,7 +27,11 @@ export class File<S extends string = string> {
    * @param file file to be uploaded, must be a Blob (e.g., File) and of supported type (e.g., "text/jsonl").
    * @param options  options for file creation, including optional expiration time.
    */
-  async create(provider: ProviderFileType, file: globalThis.File, options: CreateFileOptions): Promise<ResultCreateFile> {
+  async create(
+    provider: ProviderFileType,
+    file: globalThis.File,
+    options: CreateFileOptions,
+  ): Promise<ResultCreateFile> {
     const start = Date.now();
     const p = this.getProvider(provider);
 
@@ -46,7 +50,7 @@ export class File<S extends string = string> {
     );
   }
 
-  async list(provider: ProviderFileType,options: ListFileOptions): Promise<ResultListFile> {
+  async list(provider: ProviderFileType, options: ListFileOptions): Promise<ResultListFile> {
     const start = Date.now();
     const p = this.getProvider(provider);
 
@@ -65,8 +69,23 @@ export class File<S extends string = string> {
     );
   }
 
-  async retrieve(): Promise<void> {
-    console.log("File retrieve  not implemented for provider");
+  async retrieve(provider: ProviderFileType, id: string, options: ListFileOptions): Promise<ResultCreateFile> {
+    const start = Date.now();
+    const p = this.getProvider(provider);
+
+    return this.resultWhithObservation(
+      () => p.file.retrieve(id, options),
+      {
+        langfuseData: {
+          name: "retrieve-file",
+          tags: ["file", provider],
+        },
+        model: p.model,
+        input: id,
+      },
+      p,
+      start,
+    );
   }
 
   async delete(): Promise<void> {

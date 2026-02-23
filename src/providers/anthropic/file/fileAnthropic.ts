@@ -1,5 +1,11 @@
 import type { FileListParams } from "@anthropic-ai/sdk/resources/beta.mjs";
-import type { CreateFileOptions, ListFileOptions, SuccessCreateFile, SuccessListFile, SuccessRetrieveFile } from "../../../types/file.js";
+import type {
+  CreateFileOptions,
+  ListFileOptions,
+  SuccessCreateFile,
+  SuccessListFile,
+  SuccessRetrieveFile,
+} from "../../../types/file.js";
 import { FileProviderBase } from "../../fileProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
 import type { AnthropicProvider } from "../index.js";
@@ -25,7 +31,7 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
         bytes: response.size_bytes,
         created_at: response.created_at ? Math.floor(new Date(response.created_at).getTime() / 1000) : 0,
         filename: response.filename,
-        object: "file", 
+        object: "file",
       },
       model: this.provider.model,
     };
@@ -56,7 +62,7 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
       has_next_page: response.has_more,
     };
   }
-  
+
   async retrieve(id: string, options: OptionsBase): Promise<SuccessRetrieveFile> {
     const request = id;
 
@@ -73,7 +79,7 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
         bytes: response.size_bytes,
         created_at: response.created_at ? Math.floor(new Date(response.created_at).getTime() / 1000) : 0,
         filename: response.filename,
-        object: "file", 
+        object: "file",
       },
       model: this.provider.model,
     };

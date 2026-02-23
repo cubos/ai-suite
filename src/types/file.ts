@@ -12,16 +12,15 @@ export interface CreateFileOptions extends OptionsBase {
   };
 }
 
-
 export interface ListFileOptions extends OptionsBase {
-  /** 
-   * The cursor for pagination, returned in the previous response's `after` field. 
+  /**
+   * The cursor for pagination, returned in the previous response's `after` field.
    */
   after?: string;
 
   /**
    * The maximum number of files to return. Defaults to 10.
-    */
+   */
   limit?: number;
 }
 
@@ -45,7 +44,6 @@ export interface FileResponse {
    */
   expires_at?: number;
 }
-
 
 export interface SuccessCreateFile extends ResultBase<FileResponse> {}
 

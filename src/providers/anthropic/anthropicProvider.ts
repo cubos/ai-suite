@@ -156,7 +156,7 @@ export class AnthropicProvider extends ProviderBase {
   /**
    * Anthropic does not have a dedicated embedding endpoint, so this method is not implemented.
    */
-  protected _createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {
+  protected _createEmbedding(_embedding: EmbeddingRequest, _options: EmbeddingOptions): Promise<SuccessEmbedding> {
     throw new Error("Method not implemented.");
   }
 

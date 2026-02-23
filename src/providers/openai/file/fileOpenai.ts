@@ -1,6 +1,12 @@
 import type { FileCreateParams } from "openai/resources";
 import type { FileListParams } from "openai/resources.js";
-import type { CreateFileOptions, ListFileOptions, SuccessCreateFile, SuccessListFile, SuccessRetrieveFile } from "../../../types/file.js";
+import type {
+  CreateFileOptions,
+  ListFileOptions,
+  SuccessCreateFile,
+  SuccessListFile,
+  SuccessRetrieveFile,
+} from "../../../types/file.js";
 import { FileProviderBase } from "../../fileProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
 import type { OpenAIProvider } from "../openaiProvider.js";
@@ -81,8 +87,7 @@ export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
         expires_at: response.expires_at,
       },
       model: this.provider.model,
-    }
-
+    };
   }
   delete(): Promise<void> {
     throw new Error("Method not implemented.");

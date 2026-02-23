@@ -1,4 +1,10 @@
-import type { CreateFileOptions, ListFileOptions, SuccessCreateFile, SuccessListFile, SuccessRetrieveFile } from "../types/file.js";
+import type {
+  CreateFileOptions,
+  ListFileOptions,
+  SuccessCreateFile,
+  SuccessListFile,
+  SuccessRetrieveFile,
+} from "../types/file.js";
 import type { ProviderBase } from "./_base.js";
 import type { OptionsBase } from "./types/optionsBase.js";
 
