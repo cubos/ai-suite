@@ -17,7 +17,7 @@ export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
 
     const response = await this.provider.client.files.create(request);
 
-    await this.provider.hooks.handleResponse("request", response, options.metadata ?? {});
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
   }
 
   list(): Promise<void> {

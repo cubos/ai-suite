@@ -1,13 +1,20 @@
+import type { FileOptions } from "../../../types/file.js";
 import { FileProviderBase } from "../../fileProviderBase.js";
 import type { GeminiProvider } from "../geminiProvider.js";
 
 export class FileGemini extends FileProviderBase<GeminiProvider> {
-  async create(file: File): Promise<void> {
+  async create(file: File, options: FileOptions): Promise<void> {
     this.checkFileSupport(file);
-    this.provider.client.files.upload({
+
+    const request = {
       file: file,
-    });
-    throw new Error("Method not implemented.");
+    };
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.files.upload(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
   }
   list(): Promise<void> {
     throw new Error("Method not implemented.");
