@@ -8,12 +8,14 @@ import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import { BatchOpenAI } from "./batch/index.js";
+import { FileOpenAI } from "./file/index.js";
 
 export class OpenAIProvider extends ProviderBase {
   private client: OpenAI;
   private model: string;
   private hooks: BaseHook;
   batch: BatchOpenAI = new BatchOpenAI(this);
+  file: FileOpenAI = new FileOpenAI(this);
 
   constructor(
     apiKey: string,

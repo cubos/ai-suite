@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import type { Langfuse } from "langfuse";
 import { Batch } from "./batch.js";
+import { File } from "./file.js";
 import { AnthropicProvider } from "./providers/anthropic/index.js";
 import { CustomLLMProvider } from "./providers/customLLM/index.js";
 import { DeepSeekProvider } from "./providers/deepSeek/index.js";
@@ -32,6 +33,7 @@ export class AISuite<S extends string = string> {
     failOnError?: boolean;
   };
   protected batch = new Batch(this.getProvider, this.resultWhithObservation);
+  protected file = new File(this.getProvider, this.resultWhithObservation);
 
   constructor(
     keys: {

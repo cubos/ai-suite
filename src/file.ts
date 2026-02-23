@@ -7,7 +7,7 @@ import type { ProviderModel } from "./types/providerModel.js";
 import type { ResponseBase } from "./types/responseBase.js";
 import type { ResultBase } from "./types/resultBase.js";
 
-export class Batch<S extends string = string> {
+export class File<S extends string = string> {
   constructor(
     protected getProvider: (provider: ProviderModel<S>) => OpenAIProvider | AnthropicProvider | GeminiProvider,
     protected resultWhithObservation: <R extends ResultBase>(
@@ -22,18 +22,18 @@ export class Batch<S extends string = string> {
   }
 
   async create(): Promise<void> {
-    console.log("Batch create not implemented for provider");
+    console.log("File create not implemented for provider");
   }
 
   async list(): Promise<void> {
-    console.log("Batch list not implemented for provider");
+    console.log("File list not implemented for provider");
   }
 
   async retrieve(): Promise<void> {
-    console.log("Batch retrieve not implemented for provider");
+    console.log("File retrieve  not implemented for provider");
   }
 
-  async cancel(): Promise<void> {
-    console.log("Batch cancel not implemented for provider");
+  async delete(): Promise<void> {
+    console.log("File delete not implemented for provider");
   }
 }

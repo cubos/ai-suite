@@ -6,6 +6,7 @@ import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import { BatchAnthropic } from "./batch/index.js";
+import { FileAnthropic } from "./file/index.js";
 import type { AnthropicContentBlock } from "./types/index.js";
 import { convertToAnthropicFunctions } from "./utils/convertToAnthropicFunctions.js";
 
@@ -14,6 +15,7 @@ export class AnthropicProvider extends ProviderBase {
   private model: string;
   private hooks: BaseHook;
   batch: BatchAnthropic = new BatchAnthropic(this);
+  file: FileAnthropic = new FileAnthropic(this);
 
   constructor(
     apiKey: string,

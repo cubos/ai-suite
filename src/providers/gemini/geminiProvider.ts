@@ -9,6 +9,7 @@ import type { ChatOptions } from "../types/index.js";
 import { BatchGemini } from "./batch/index.js";
 import { notUseThinkingConfig } from "./constants/notUseThinkingConfig.js";
 import { onlyWorksWithThinking } from "./constants/onlyWorksWithThinking.js";
+import { FileGemini } from "./file/index.js";
 import { convertToGeminiFunctions } from "./utils/convertToGeminiFunctions.js";
 
 export class GeminiProvider extends ProviderBase {
@@ -16,6 +17,7 @@ export class GeminiProvider extends ProviderBase {
   private model: string;
   private hooks: BaseHook;
   batch: BatchGemini = new BatchGemini(this);
+  file: FileGemini = new FileGemini(this);
 
   constructor(
     apiKey: string,
