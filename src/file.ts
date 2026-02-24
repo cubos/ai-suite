@@ -90,7 +90,7 @@ export class File<S extends string = string> {
    * @param provider the AI provider to use for file management (e.g., "openai", "anthropic", "gemini").
    * @param options options for listing files, including pagination parameters and metadata for hooks.
    * @return a promise that resolves to the result of the file listing operation, including success status, list of files, and provider information.
-   */       
+   */
   async list(provider: ProviderFileType, options: ListFileOptions): Promise<ResultListFile> {
     const start = Date.now();
     const p = this.getProvider(provider);

@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
 import { beforeAll, describe, expect, it } from "vitest";
-import { AISuite } from "../src/index.js";
-import type { SuccessChatCompletion } from "../src/types/chat.js";
-import type { ErrorAISuite } from "../src/types/handleErrorResponse.js";
-import { AISuiteError } from "../src/utils.js";
+import { AISuite } from "../../src/index.js";
+import type { SuccessChatCompletion } from "../../src/types/chat.js";
+import type { ErrorAISuite } from "../../src/types/handleErrorResponse.js";
+import { AISuiteError } from "../../src/utils.js";
 
 dotenv.config();
 

@@ -71,7 +71,7 @@ Below are examples showing how to list uploaded files, retrieve file metadata an
 
 ```typescript
 // List files (pagination optional)
-const listResult = await aiSuite.file.list('gemini', { limit: 20 }, {});
+const listResult = await aiSuite.file.list('gemini', { limit: 20 });
 if (listResult.success) {
   console.log('Files:');
   for (const f of listResult.content) {

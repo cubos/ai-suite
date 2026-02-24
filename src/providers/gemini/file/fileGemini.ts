@@ -19,7 +19,7 @@ export class FileGemini extends FileProviderBase<GeminiProvider> {
     const request: UploadFileParameters = {
       file: file,
       config: {
-        displayName: file.name,   
+        displayName: file.name,
       },
     };
 

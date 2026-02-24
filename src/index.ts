@@ -33,7 +33,7 @@ export class AISuite<S extends string = string> {
     failOnError?: boolean;
   };
   public batch = new Batch(this.getProvider, this.resultWhithObservation);
-   /**
+  /**
    * The File class provides an interface for managing file resources across different AI providers.
    * only batch file uploads are supported as of now.
    */
@@ -66,18 +66,21 @@ export class AISuite<S extends string = string> {
     this.customLLMKey = keys.customLLMKey || "";
     this.langFuse = options?.langFuse;
     this.hooks = options?.hooks;
-    
-    this.file = new File({
-      openaiKey: this.openaiKey,
-      anthropicKey: this.anthropicKey,
-      geminiKey: this.geminiKey,
-      deepseekKey: this.deepseekKey,
-      grokKey: this.grokKey,
-      customURL: this.customURL,
-      customLLMKey: this.customLLMKey,
-    },this.getProvider, this.resultWhithObservation);
-  }
 
+    this.file = new File(
+      {
+        openaiKey: this.openaiKey,
+        anthropicKey: this.anthropicKey,
+        geminiKey: this.geminiKey,
+        deepseekKey: this.deepseekKey,
+        grokKey: this.grokKey,
+        customURL: this.customURL,
+        customLLMKey: this.customLLMKey,
+      },
+      this.getProvider,
+      this.resultWhithObservation,
+    );
+  }
 
   /**
    * Create a chat completion with multiple providers

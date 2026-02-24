@@ -87,7 +87,7 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
   }
 
   async delete(id: string, options: OptionsBase): Promise<SuccessDeleteFile> {
-        const request = id;
+    const request = id;
 
     await this.provider.hooks.handleRequest(request);
 
