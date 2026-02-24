@@ -13,7 +13,7 @@ import type { AnthropicProvider } from "../index.js";
 
 export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
   async create(file: File, options: CreateFileOptions): Promise<SuccessCreateFile> {
-    this.checkFileSupport(file);
+    await this.checkFileSupport(file);
 
     const request = {
       file: file,

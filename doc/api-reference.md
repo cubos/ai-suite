@@ -37,6 +37,10 @@ constructor(
   }
 )
 ```
+  ## File Uploads
+
+  For details on uploading JSONL files (Node and Browser examples, validation rules and error messages), see the file upload guide: [Usage — File Upload](doc/usage-file-upload.md).
+
 
 Parameters:
 - `keys`: API keys and configuration for various providers

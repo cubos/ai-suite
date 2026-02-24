@@ -14,7 +14,7 @@ import type { OpenAIProvider } from "../openaiProvider.js";
 
 export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
   async create(file: File, options: CreateFileOptions): Promise<SuccessCreateFile> {
-    this.checkFileSupport(file);
+    await this.checkFileSupport(file);
 
     const request: FileCreateParams = {
       file: file,

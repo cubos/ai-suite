@@ -14,7 +14,7 @@ import type { GeminiProvider } from "../geminiProvider.js";
 
 export class FileGemini extends FileProviderBase<GeminiProvider> {
   async create(file: File, options: CreateFileOptions): Promise<SuccessCreateFile> {
-    this.checkFileSupport(file);
+    await this.checkFileSupport(file);
 
     const request: UploadFileParameters = {
       file: file,
