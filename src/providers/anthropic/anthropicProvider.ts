@@ -14,12 +14,14 @@ export class AnthropicProvider extends ProviderBase {
   public client: Anthropic;
   public model: string;
   public hooks: BaseHook;
+  public providerName: string;
   batch: BatchAnthropic = new BatchAnthropic(this);
   file: FileAnthropic = new FileAnthropic(this);
 
   constructor(
     apiKey: string,
     model: string,
+    provideName: string,
     hooks?: {
       handleRequest?: (req: unknown) => Promise<void>;
       handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
@@ -32,6 +34,7 @@ export class AnthropicProvider extends ProviderBase {
       apiKey: apiKey,
     });
     this.model = model;
+    this.providerName = provideName;
   }
 
   async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {

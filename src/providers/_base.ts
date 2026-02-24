@@ -22,6 +22,7 @@ const sleep = promisify(setTimeout);
 export abstract class ProviderBase {
   public abstract client: OpenAI | Anthropic | GoogleGenAI;
   public abstract model: string;
+  public abstract providerName: string;
   public abstract hooks: BaseHook;
   public abstract batch: BatchProviderBase;
   public abstract file: FileProviderBase;

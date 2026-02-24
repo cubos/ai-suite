@@ -34,7 +34,7 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
         filename: response.filename,
         object: "file",
       },
-      model: this.provider.model,
+      model: this.provider.providerName,
     };
   }
 
@@ -52,7 +52,7 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
 
     return {
       success: true,
-      model: this.provider.model,
+      model: this.provider.providerName,
       content: response.data.map(file => ({
         id: file.id,
         bytes: file.size_bytes,
@@ -82,7 +82,7 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
         filename: response.filename,
         object: "file",
       },
-      model: this.provider.model,
+      model: this.provider.providerName,
     };
   }
 
@@ -101,7 +101,7 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
         id: response.id,
         object: "file",
       },
-      model: this.provider.model,
+      model: this.provider.providerName,
     };
   }
 }

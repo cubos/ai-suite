@@ -13,6 +13,7 @@ import { FileOpenAI } from "./file/index.js";
 export class OpenAIProvider extends ProviderBase {
   public client: OpenAI;
   public model: string;
+  public providerName: string;
   public hooks: BaseHook;
   batch: BatchOpenAI = new BatchOpenAI(this);
   file: FileOpenAI = new FileOpenAI(this);
@@ -20,6 +21,7 @@ export class OpenAIProvider extends ProviderBase {
   constructor(
     apiKey: string,
     model: string,
+    provideName: string,
     customURL?: string,
     hooks?: {
       handleRequest?: (req: unknown) => Promise<void>;
@@ -34,6 +36,7 @@ export class OpenAIProvider extends ProviderBase {
       ...(customURL ? { baseURL: customURL } : {}),
     });
     this.model = model;
+    this.providerName = provideName;
   }
 
   async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {

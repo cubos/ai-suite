@@ -38,7 +38,7 @@ export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
         object: "file",
         expires_at: response.expires_at,
       },
-      model: this.provider.model,
+      model: this.provider.providerName,
     };
   }
 
@@ -55,7 +55,7 @@ export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
 
     return {
       success: true,
-      model: this.provider.model,
+      model: this.provider.providerName,
       content: response.data.map(file => ({
         id: file.id,
         bytes: file.bytes,
@@ -87,7 +87,7 @@ export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
         object: "file",
         expires_at: response.expires_at,
       },
-      model: this.provider.model,
+      model: this.provider.providerName,
     };
   }
   async delete(id: string, options: OptionsBase): Promise<SuccessDeleteFile> {
@@ -105,7 +105,7 @@ export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
         id: response.id,
         object: "file",
       },
-      model: this.provider.model,
+      model: this.provider.providerName,
     };
   }
 }

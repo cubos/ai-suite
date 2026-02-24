@@ -15,6 +15,7 @@ import { convertToGeminiFunctions } from "./utils/convertToGeminiFunctions.js";
 export class GeminiProvider extends ProviderBase {
   public client: GoogleGenAI;
   public model: string;
+  public providerName: string;
   public hooks: BaseHook;
   batch: BatchGemini = new BatchGemini(this);
   file: FileGemini = new FileGemini(this);
@@ -22,6 +23,7 @@ export class GeminiProvider extends ProviderBase {
   constructor(
     apiKey: string,
     model: string,
+    provideName: string,
     hooks?: {
       handleRequest?: (req: unknown) => Promise<void>;
       handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
@@ -34,6 +36,7 @@ export class GeminiProvider extends ProviderBase {
       apiKey: apiKey,
     });
     this.model = model;
+    this.providerName = provideName;
   }
 
   async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
