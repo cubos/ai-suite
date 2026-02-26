@@ -1,3 +1,4 @@
+import type Langfuse from "langfuse";
 import type { AnthropicProvider } from "./providers/anthropic/anthropicProvider.js";
 import type { GeminiProvider } from "./providers/gemini/geminiProvider.js";
 import type { OpenAIProvider } from "./providers/openai/openaiProvider.js";
@@ -8,7 +9,25 @@ import type { ResponseBase } from "./types/responseBase.js";
 import type { ResultBase } from "./types/resultBase.js";
 
 export class Batch<S extends string = string> {
+  protected openaiKey: string;
+  protected anthropicKey: string;
+  protected geminiKey: string;
+  protected deepseekKey: string;
+  protected grokKey: string;
+  protected customURL?: string;
+  protected customLLMKey?: string;
+  protected langFuse?: Langfuse;
   constructor(
+    keys: {
+      openaiKey?: string;
+      anthropicKey?: string;
+      geminiKey?: string;
+      deepseekKey?: string;
+      grokKey?: string;
+      customURL?: string;
+      customLLMKey?: string;
+      langFuse?: Langfuse;
+    },
     protected getProvider: (provider: ProviderModel<S>) => OpenAIProvider | AnthropicProvider | GeminiProvider,
     protected resultWhithObservation: <R extends ResultBase>(
       func: () => Promise<R>,
@@ -17,6 +36,14 @@ export class Batch<S extends string = string> {
       start: number,
     ) => Promise<(R & ResponseBase) | (ErrorAISuite & ResponseBase)>,
   ) {
+    this.openaiKey = keys.openaiKey || "";
+    this.anthropicKey = keys.anthropicKey || "";
+    this.geminiKey = keys.geminiKey || "";
+    this.deepseekKey = keys.deepseekKey || "";
+    this.grokKey = keys.grokKey || "";
+    this.customURL = keys.customURL || "";
+    this.customLLMKey = keys.customLLMKey || "";
+    this.langFuse = keys.langFuse;
     this.getProvider = getProvider;
     this.resultWhithObservation = resultWhithObservation;
   }
