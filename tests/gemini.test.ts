@@ -160,4 +160,42 @@ describe("GeminiProvider", () => {
     expect((result as SuccessChatCompletion).content_object).toHaveProperty("title");
     expect((result as SuccessChatCompletion).content_object.title).toBe("ARQUIVO PDF DE TESTE");
   });
+
+  it("should return a response using gemini-3-flash-preview with thinking level", async () => {
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not defined");
+    }
+
+    const gemini = new AISuite({
+      geminiKey: apiKey,
+    });
+
+    const result = await gemini.createChatCompletion(
+      "gemini/gemini-3-flash-preview",
+      [
+        {
+          role: "user",
+          content: "Return a JSON object with a field 'message' containing 'Hello, world!'",
+        },
+      ],
+      {
+        stream: false,
+        zodSchema: z.object({
+          message: z.string(),
+        }),
+        responseFormat: "json_schema",
+        thinking: { level: "minimal", output: false },
+      },
+    );
+
+    if (!result.success) {
+      console.log("Gemini 3 Flash error:", result);
+    }
+
+    expect(result.success).toBe(true);
+    expect((result as SuccessChatCompletion).content).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toHaveProperty("message");
+    expect((result as SuccessChatCompletion).content_object.message).toBe("Hello, world!");
+  });
 });
