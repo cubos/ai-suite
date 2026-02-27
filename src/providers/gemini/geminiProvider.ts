@@ -9,6 +9,7 @@ import type { ChatOptions } from "../types/index.js";
 import { BatchGemini } from "./batch/index.js";
 import { notUseThinkingConfig } from "./constants/notUseThinkingConfig.js";
 import { onlyWorksWithThinking } from "./constants/onlyWorksWithThinking.js";
+import { useThinkingLevel } from "./constants/useThinkingLevel.js";
 import { FileGemini } from "./file/index.js";
 import { convertToGeminiFunctions } from "./utils/convertToGeminiFunctions.js";
 
@@ -54,11 +55,17 @@ export class GeminiProvider extends ProviderBase {
       : null;
 
     let thinkingConfig: {
-      thinkingBudget: number;
+      thinkingBudget?: number;
+      thinkingLevel?: string;
       includeThoughts: boolean;
     } | null = null;
 
-    if (onlyWorksWithThinking.includes(this.model)) {
+    if (useThinkingLevel.includes(this.model)) {
+      thinkingConfig = {
+        thinkingLevel: options.thinking?.level ?? "high",
+        includeThoughts: options.thinking?.output ?? false,
+      };
+    } else if (onlyWorksWithThinking.includes(this.model)) {
       thinkingConfig = {
         thinkingBudget: options.thinking?.budget ?? 128,
         includeThoughts: options.thinking?.output ?? false,
