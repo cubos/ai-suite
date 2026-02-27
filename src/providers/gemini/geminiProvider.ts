@@ -1,4 +1,4 @@
-import { ApiError, type FunctionCall, type GenerateContentParameters, GoogleGenAI } from "@google/genai";
+import { ApiError, type FunctionCall, type GenerateContentParameters, GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
 import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
@@ -45,15 +45,22 @@ export class GeminiProvider extends ProviderBase {
           ]
       : null;
 
+    const thinkingLevelMap: Record<string, ThinkingLevel> = {
+      minimal: ThinkingLevel.MINIMAL,
+      low: ThinkingLevel.LOW,
+      medium: ThinkingLevel.MEDIUM,
+      high: ThinkingLevel.HIGH,
+    };
+
     let thinkingConfig: {
       thinkingBudget?: number;
-      thinkingLevel?: string;
+      thinkingLevel?: ThinkingLevel;
       includeThoughts: boolean;
     } | null = null;
 
     if (useThinkingLevel.includes(this.model)) {
       thinkingConfig = {
-        thinkingLevel: options.thinking?.level ?? "high",
+        thinkingLevel: thinkingLevelMap[options.thinking?.level ?? "high"],
         includeThoughts: options.thinking?.output ?? false,
       };
     } else if (onlyWorksWithThinking.includes(this.model)) {

@@ -10,7 +10,6 @@
     "test": "vitest",
     "docs:start": "eleventy --serve --input=./doc --config=./doc/.eleventy.cjs",
     "docs:build": "eleventy --input=./doc --config=./doc/.eleventy.cjs"
-
   },
   "type": "module",
   "module": "./dist/index.js",
@@ -26,22 +25,22 @@
   "description": "All ai providers in one place",
   "packageManager": "pnpm@10.4.1",
   "devDependencies": {
-    "@biomejs/biome": "2.2.4",
-    "@cubos/eslint-config": "^2.2.0",
-    "globals": "^16.3.0",
-    "tsx": "^4.20.3",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.35.1",
-    "vitest": "^3.2.4",
     "@11ty/eleventy": "^2.0.1",
     "@11ty/eleventy-navigation": "^0.3.5",
     "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.0",
+    "@biomejs/biome": "2.2.4",
+    "@cubos/eslint-config": "^2.2.0",
+    "globals": "^16.3.0",
     "markdown-it": "^14.0.0",
-    "markdown-it-anchor": "^8.6.7"
+    "markdown-it-anchor": "^8.6.7",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.35.1",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.70.0",
-    "@google/genai": "^1.30.0",
+    "@google/genai": "^1.43.0",
     "@types/node": "^22.15.18",
     "dotenv": "^16.5.0",
     "gemini-zod": "^0.1.2",
