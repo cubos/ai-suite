@@ -1,10 +1,19 @@
 import type { BatchCreateParams } from "openai/resources";
 import type { CreateBatchOptions, CreateBatchRequest, SuccessCreateBatch } from "../../../types/batch.js";
+import { AISuiteError } from "../../../utils.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OpenAIProvider } from "../openaiProvider.js";
 
 export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
   async create(batch: CreateBatchRequest, options: CreateBatchOptions): Promise<SuccessCreateBatch> {
+    if (!batch.inputFileId) {
+      throw new AISuiteError("Openai needs a file ID.");
+    }
+
+    if (batch.batch) {
+      throw new AISuiteError("OpenAI only allows batch processing with files.");
+    }
+
     const request: BatchCreateParams = {
       output_expires_after: options?.outputExpiresAfter
         ? {
@@ -42,14 +51,16 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
       finalizingAt: response.finalizing_at,
       inProgressAt: response.in_progress_at,
       outputFileId: response.output_file_id,
-      usage: response.usage ? {
-        input_tokens: response.usage?.input_tokens || 0,
-        output_tokens: response.usage?.output_tokens || 0,
-        total_tokens: response.usage?.total_tokens || 0,
-        cached_tokens: response.usage?.input_tokens_details?.cached_tokens || 0,
-        reasoning_tokens: response.usage.output_tokens_details?.reasoning_tokens || 0,
-        thoughts_tokens: 0,
-      } : undefined,
+      usage: response.usage
+        ? {
+            input_tokens: response.usage?.input_tokens || 0,
+            output_tokens: response.usage?.output_tokens || 0,
+            total_tokens: response.usage?.total_tokens || 0,
+            cached_tokens: response.usage?.input_tokens_details?.cached_tokens || 0,
+            reasoning_tokens: response.usage.output_tokens_details?.reasoning_tokens || 0,
+            thoughts_tokens: 0,
+          }
+        : undefined,
     };
   }
 

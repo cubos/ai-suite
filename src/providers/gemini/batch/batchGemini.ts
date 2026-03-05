@@ -1,9 +1,9 @@
 import type { BatchJob, CompletionStats } from "@google/genai";
+import { JobState } from "@google/genai";
+import type { BatchRequestCounts } from "openai/resources";
 import type { BatchStatus, CreateBatchOptions, CreateBatchRequest, SuccessCreateBatch } from "../../../types/batch.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { GeminiProvider } from "../geminiProvider.js";
-import { BatchRequestCounts } from "openai/resources";
-import { JobState } from "@google/genai";
 
 export class BatchGemini extends BatchProviderBase<GeminiProvider> {
   async create(batch: CreateBatchRequest, options: CreateBatchOptions): Promise<SuccessCreateBatch> {
@@ -16,7 +16,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
 
     await this.provider.hooks.handleRequest(request);
 
-    let response : BatchJob
+    let response: BatchJob;
     if (batch.endpoint === "chat/completions") {
       response = await this.provider.client.batches.create(request);
     } else {
@@ -25,7 +25,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
 
     await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
 
-      return {
+    return {
       ...response,
       success: true,
       content: null,
@@ -46,10 +46,10 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
     const completed = completionStats?.successfulCount ? Number(completionStats.successfulCount) : 0;
     const failed = completionStats?.failedCount ? Number(completionStats.failedCount) : 0;
     const total = completed + failed + (completionStats?.incompleteCount ? Number(completionStats.incompleteCount) : 0);
-      return {
-        completed,
-        failed,
-        total,
+    return {
+      completed,
+      failed,
+      total,
     };
   }
 
@@ -63,7 +63,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
         return "validating";
       case JobState.JOB_STATE_PENDING:
       case JobState.JOB_STATE_PARTIALLY_SUCCEEDED:
-        case JobState.JOB_STATE_RUNNING:
+      case JobState.JOB_STATE_RUNNING:
         return "in_progress";
       case JobState.JOB_STATE_SUCCEEDED:
         return "completed";
@@ -88,9 +88,11 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
   list(): Promise<void> {
     throw new Error("Method not implemented.");
   }
+
   retrieve(): Promise<void> {
     throw new Error("Method not implemented.");
   }
+
   cancel(): Promise<void> {
     throw new Error("Method not implemented.");
   }
