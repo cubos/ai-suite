@@ -1,7 +1,8 @@
-import type { BatchJob, CompletionStats } from "@google/genai";
+import type { BatchJob, CompletionStats, ListBatchJobsParameters } from "@google/genai";
 import { JobState } from "@google/genai";
 import type { BatchRequestCounts } from "openai/resources";
 import type {
+  Batch,
   BatchStatus,
   CreateBatchOptions,
   CreateBatchRequest,
@@ -93,7 +94,42 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
   }
 
   async list(options: ListBatchOptions): Promise<SuccessListBatch> {
-    throw new Error("Method not implemented.");
+    const request: ListBatchJobsParameters = {
+      config: {
+        pageSize: options.limit,
+        pageToken: options.after,
+      },
+    };
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.batches.list(request);
+
+    const batches: Batch[] = [];
+
+    for await (const batch of response) {
+      batches.push({
+        ...response,
+        createdAt: Math.floor(new Date(batch.createTime!).getTime() / 1000),
+        endpoint: /embeddings/.test(batch.model || "") ? "embeddings" : "chat/completions",
+        inputFileId: batch.src?.fileName || "",
+        completedAt: batch.endTime ? Math.floor(new Date(batch.endTime).getTime() / 1000) : undefined,
+        requestCounts: this.getRequestCounts(batch.completionStats),
+        outputFileId: batch.dest?.fileName || undefined,
+        id: response.name || "",
+        object: "batch",
+        status: this.getStatus(batch.state),
+      });
+    }
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+      model: this.provider.providerName,
+      content: batches,
+      has_next_page: response.hasNextPage(),
+    };
   }
 
   retrieve(): Promise<void> {
