@@ -21,3 +21,11 @@ export type ProviderEmbeddingModel<S extends string> =
   | `custom-llm/${S}`;
 
 export type ProviderFileType = "openai" | "anthropic" | "gemini" | "deepseek" | "custom-llm" | "grok";
+
+export type ProviderBatchType =
+  | "openai"
+  | `anthropic/${AnthropicModels}`
+  | "gemini"
+  | "deepseek"
+  | "custom-llm"
+  | "grok";

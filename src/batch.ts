@@ -3,8 +3,9 @@ import type { AnthropicProvider } from "./providers/anthropic/anthropicProvider.
 import type { GeminiProvider } from "./providers/gemini/geminiProvider.js";
 import type { OpenAIProvider } from "./providers/openai/openaiProvider.js";
 import type { LangfuseData } from "./providers/types/optionsBase.js";
+import type { CreateBatchOptions, CreateBatchRequest, ResultCreateBatch } from "./types/batch.js";
 import type { ErrorAISuite } from "./types/handleErrorResponse.js";
-import type { ProviderModel } from "./types/providerModel.js";
+import type { ProviderBatchType, ProviderModel } from "./types/providerModel.js";
 import type { ResponseBase } from "./types/responseBase.js";
 import type { ResultBase } from "./types/resultBase.js";
 
@@ -48,8 +49,34 @@ export class Batch<S extends string = string> {
     this.resultWhithObservation = resultWhithObservation;
   }
 
-  async create(): Promise<void> {
-    console.log("Batch create not implemented for provider");
+  /**
+   *  Creates a batch resource on the provider's platform.
+   * @partam provider the AI provider to use for file management (e.g., "openai", "anthropic", "gemini").
+   * @param batch batch object.
+   * @param options options for batch creation, including optional expiration time and metadata for hooks.
+   * @return a promise that resolves to the result of the batch creation operation, including status and provider information.
+   */
+  async create(
+    provider: ProviderBatchType,
+    batch: CreateBatchRequest,
+    options: CreateBatchOptions,
+  ): Promise<ResultCreateBatch> {
+    const start = Date.now();
+    const p = this.getProvider(provider);
+
+    return this.resultWhithObservation(
+      () => p.batch.create(batch, options),
+      {
+        langfuseData: {
+          name: "create-batch",
+          tags: ["batch", provider],
+        },
+        model: p.model,
+        input: batch,
+      },
+      p,
+      start,
+    );
   }
 
   async list(): Promise<void> {
