@@ -3,6 +3,8 @@ import type { OptionsBase } from "../providers/types/optionsBase.js";
 import type { ErrorAISuite } from "./handleErrorResponse.js";
 import type { ResultBase } from "./resultBase.js";
 import { MessageModel } from "./chat.js";
+import { ChatOptionsBase } from "../providers/types/chatOptionsBase.js";
+import { ToolModel } from "../providers/types/toolModel.js";
 
 type Endpoint = "chat/completions" | "embeddings";
 
@@ -18,6 +20,31 @@ export interface CreateBatchRequest {
 }
 
 export interface CreateBatchOptions extends OptionsBase {
+
+   /**
+   * Whether to stream the response
+   */
+   stream?: boolean;
+   /**
+    * The temperature
+    */
+   temperature?: number;
+ 
+   /**
+    * The tools to use
+    */
+   tools?: ToolModel[];
+ 
+   /**
+    * Maximum number of output tokens
+    *
+    * Anthropic max_tokens is set to 4096 by default
+    */
+   maxOutputTokens?: number;
+
+  /**
+   * The output expires after (only for OpenAI)
+   */
   outputExpiresAfter?: {
     anchor: "created_at";
     seconds: number;
