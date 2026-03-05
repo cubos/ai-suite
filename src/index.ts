@@ -32,7 +32,12 @@ export class AISuite<S extends string = string> {
     handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
     failOnError?: boolean;
   };
-  public batch = new Batch(this.getProvider, this.resultWhithObservation);
+
+  /**
+   * The Batch class provides an interface for managing file resources across different AI providers.
+   */
+  public batch: Batch<S>;
+
   /**
    * The File class provides an interface for managing file resources across different AI providers.
    * only batch file uploads are supported as of now.
@@ -67,6 +72,19 @@ export class AISuite<S extends string = string> {
     this.langFuse = options?.langFuse;
     this.hooks = options?.hooks;
 
+    this.batch = new Batch(
+      {
+        openaiKey: this.openaiKey,
+        anthropicKey: this.anthropicKey,
+        geminiKey: this.geminiKey,
+        deepseekKey: this.deepseekKey,
+        grokKey: this.grokKey,
+        customURL: this.customURL,
+        customLLMKey: this.customLLMKey,
+      },
+      this.getProvider,
+      this.resultWhithObservation,
+    );
     this.file = new File(
       {
         openaiKey: this.openaiKey,
@@ -190,8 +208,6 @@ export class AISuite<S extends string = string> {
   ): Promise<ResultEmbedding> {
     const start = Date.now();
     const p = this.getProvider(provider);
-
-    p.batch.create();
 
     return this.resultWhithObservation(
       () => p.createEmbedding(embedding, options ?? {}),

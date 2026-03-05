@@ -1,46 +1,41 @@
-import type { Usage } from "@anthropic-ai/sdk/resources";
 import type { OptionsBase } from "../providers/types/optionsBase.js";
+import type { ToolModel } from "../providers/types/toolModel.js";
+import type { MessageModel } from "./chat.js";
 import type { ErrorAISuite } from "./handleErrorResponse.js";
 import type { ResultBase } from "./resultBase.js";
-import { MessageModel } from "./chat.js";
-import { ChatOptionsBase } from "../providers/types/chatOptionsBase.js";
-import { ToolModel } from "../providers/types/toolModel.js";
 
 type Endpoint = "chat/completions" | "embeddings";
 
 export interface CreateBatchRequest {
-  inputFileId: string;
+  inputFileId?: string;
   endpoint: Endpoint;
 
   batch?: {
-    model: string;
-    mensagens: MessageModel[];
-
-  };
+    customId: string;
+    params: {
+      model: string;
+      mensagens: MessageModel[];
+    };
+  }[];
 }
 
 export interface CreateBatchOptions extends OptionsBase {
-
-   /**
-   * Whether to stream the response
+  /**
+   * The temperature
    */
-   stream?: boolean;
-   /**
-    * The temperature
-    */
-   temperature?: number;
- 
-   /**
-    * The tools to use
-    */
-   tools?: ToolModel[];
- 
-   /**
-    * Maximum number of output tokens
-    *
-    * Anthropic max_tokens is set to 4096 by default
-    */
-   maxOutputTokens?: number;
+  temperature?: number;
+
+  /**
+   * The tools to use
+   */
+  tools?: ToolModel[];
+
+  /**
+   * Maximum number of output tokens
+   *
+   * Anthropic max_tokens is set to 4096 by default
+   */
+  maxOutputTokens?: number;
 
   /**
    * The output expires after (only for OpenAI)
@@ -48,6 +43,14 @@ export interface CreateBatchOptions extends OptionsBase {
   outputExpiresAfter?: {
     anchor: "created_at";
     seconds: number;
+  };
+
+  /**
+   * The thinking to use (only for Gemini) default is 0 and output is false
+   */
+  thinking?: {
+    budget: number;
+    output: boolean;
   };
 }
 
@@ -71,7 +74,17 @@ export interface BatchRequestCounts {
   total: number;
 }
 
-export type BatchStatus = "validating" | "failed" | "in_progress" | "finalizing" | "completed" | "expired" | "cancelling" | "cancelled" | "paused" | "updating";
+export type BatchStatus =
+  | "validating"
+  | "failed"
+  | "in_progress"
+  | "finalizing"
+  | "completed"
+  | "expired"
+  | "cancelling"
+  | "cancelled"
+  | "paused"
+  | "updating";
 
 export interface Batch {
   id: string;
@@ -88,8 +101,15 @@ export interface Batch {
 
   /**
    * The ID of the input file for the batch.
+   * (Only Gemini and OpenAI)
    */
-  inputFileId: string;
+  inputFileId?: string;
+
+  /**
+   * The url to file for the batch.
+   * (Only Anthropic)
+   */
+  resultsUrl?: string;
 
   /**
    * The object type, which is always `batch`.
