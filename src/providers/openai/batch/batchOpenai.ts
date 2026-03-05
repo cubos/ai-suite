@@ -1,5 +1,13 @@
 import type { BatchCreateParams } from "openai/resources";
-import type { CreateBatchOptions, CreateBatchRequest, SuccessCreateBatch } from "../../../types/batch.js";
+import type { BatchListParams } from "openai/resources.js";
+import type {
+  BatchStatus,
+  CreateBatchOptions,
+  CreateBatchRequest,
+  ListBatchOptions,
+  SuccessCreateBatch,
+  SuccessListBatch,
+} from "../../../types/batch.js";
 import { AISuiteError } from "../../../utils.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OpenAIProvider } from "../openaiProvider.js";
@@ -64,8 +72,54 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
     };
   }
 
-  list(): Promise<void> {
-    throw new Error("Method not implemented.");
+  async list(options: ListBatchOptions): Promise<SuccessListBatch> {
+    const request: BatchListParams = {
+      after: options.after,
+      limit: options.limit,
+    };
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.batches.list(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+      model: this.provider.providerName,
+      content: response.data.map(res => {
+        return {
+          id: res.id,
+          createdAt: res.created_at,
+          endpoint: /embeddings/.test(res.endpoint) ? "embeddings" : "chat/completions",
+          object: "batch",
+          status: res.status as BatchStatus,
+          inputFileId: res.input_file_id,
+          cancelledAt: res.cancelled_at,
+          cancellingAt: res.cancelling_at,
+          completedAt: res.completed_at,
+          errorFileId: res.error_file_id,
+          expiredAt: res.expired_at,
+          expiresAt: res.expires_at,
+          requestCounts: res.request_counts,
+          failedAt: res.failed_at,
+          finalizingAt: res.finalizing_at,
+          inProgressAt: res.in_progress_at,
+          outputFileId: res.output_file_id,
+          usage: res.usage
+            ? {
+                input_tokens: res.usage?.input_tokens || 0,
+                output_tokens: res.usage?.output_tokens || 0,
+                total_tokens: res.usage?.total_tokens || 0,
+                cached_tokens: res.usage?.input_tokens_details?.cached_tokens || 0,
+                reasoning_tokens: res.usage.output_tokens_details?.reasoning_tokens || 0,
+                thoughts_tokens: 0,
+              }
+            : undefined,
+        };
+      }),
+      has_next_page: response.has_more,
+    };
   }
   retrieve(): Promise<void> {
     throw new Error("Method not implemented.");

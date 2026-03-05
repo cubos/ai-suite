@@ -4,7 +4,7 @@ import type { MessageModel } from "./chat.js";
 import type { ErrorAISuite } from "./handleErrorResponse.js";
 import type { ResultBase } from "./resultBase.js";
 
-type Endpoint = "chat/completions" | "embeddings";
+export type Endpoint = "chat/completions" | "embeddings";
 
 export interface CreateBatchRequest {
   inputFileId?: string;
@@ -17,6 +17,18 @@ export interface CreateBatchRequest {
       mensagens: MessageModel[];
     };
   }[];
+}
+
+export interface ListBatchOptions extends OptionsBase {
+  /**
+   * The cursor for pagination, returned in the previous response's `after` field.
+   */
+  after?: string;
+
+  /**
+   * The maximum number of files to return. Defaults to 10.
+   */
+  limit?: number;
 }
 
 export interface CreateBatchOptions extends OptionsBase {
@@ -182,3 +194,8 @@ export interface Batch {
 export interface SuccessCreateBatch extends ResultBase<null>, Batch {}
 
 export type ResultCreateBatch = SuccessCreateBatch | ErrorAISuite;
+
+export interface SuccessListBatch extends ResultBase<Batch[]> {
+  has_next_page: boolean;
+}
+export type ResultListBatch = SuccessListBatch | ErrorAISuite;

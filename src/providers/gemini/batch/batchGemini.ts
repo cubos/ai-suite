@@ -1,7 +1,14 @@
 import type { BatchJob, CompletionStats } from "@google/genai";
 import { JobState } from "@google/genai";
 import type { BatchRequestCounts } from "openai/resources";
-import type { BatchStatus, CreateBatchOptions, CreateBatchRequest, SuccessCreateBatch } from "../../../types/batch.js";
+import type {
+  BatchStatus,
+  CreateBatchOptions,
+  CreateBatchRequest,
+  ListBatchOptions,
+  SuccessCreateBatch,
+  SuccessListBatch,
+} from "../../../types/batch.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { GeminiProvider } from "../geminiProvider.js";
 
@@ -85,7 +92,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
     }
   }
 
-  list(): Promise<void> {
+  async list(options: ListBatchOptions): Promise<SuccessListBatch> {
     throw new Error("Method not implemented.");
   }
 

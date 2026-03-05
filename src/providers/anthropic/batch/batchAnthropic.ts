@@ -5,7 +5,9 @@ import type {
   BatchStatus,
   CreateBatchOptions,
   CreateBatchRequest,
+  ListBatchOptions,
   SuccessCreateBatch,
+  SuccessListBatch,
 } from "../../../types/batch.js";
 import { AISuiteError } from "../../../utils.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
@@ -91,7 +93,7 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
     }
   }
 
-  list(): Promise<void> {
+  async list(options: ListBatchOptions): Promise<SuccessListBatch> {
     throw new Error("Method not implemented.");
   }
   retrieve(): Promise<void> {
