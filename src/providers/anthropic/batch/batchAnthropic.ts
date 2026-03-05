@@ -1,3 +1,4 @@
+import type { BatchListParams } from "@anthropic-ai/sdk/resources/beta/messages.mjs";
 import type { MessageBatchRequestCounts } from "@anthropic-ai/sdk/resources/messages.js";
 import type { BatchCreateParams } from "@anthropic-ai/sdk/resources/messages.mjs";
 import type {
@@ -60,9 +61,12 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
       success: true,
       content: null,
       model: this.provider.model,
-      createdAt: Math.floor(Date.now() / 1000),
+      createdAt: Math.floor(new Date(response.created_at).getTime() / 1000),
       endpoint: batch.endpoint,
       inProgressAt: response.created_at ? Math.floor(new Date(response.created_at).getTime() / 1000) : undefined,
+      cancelledAt: response.cancel_initiated_at
+        ? Math.floor(new Date(response.cancel_initiated_at).getTime() / 1000)
+        : undefined,
       requestCounts: this.getRequestCounts(response.request_counts),
       id: response.id,
       object: "batch",
@@ -94,7 +98,35 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
   }
 
   async list(options: ListBatchOptions): Promise<SuccessListBatch> {
-    throw new Error("Method not implemented.");
+    const request: BatchListParams = {
+      limit: options.limit,
+      after_id: options.after,
+    };
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.messages.batches.list(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+      model: this.provider.providerName,
+      content: response.data.map(batch => ({
+        createdAt: Math.floor(new Date(batch.created_at).getTime() / 1000),
+        endpoint: "chat/completions",
+        inProgressAt: Math.floor(new Date(batch.created_at).getTime() / 1000),
+        cancelledAt: batch.cancel_initiated_at
+          ? Math.floor(new Date(batch.cancel_initiated_at).getTime() / 1000)
+          : undefined,
+        completedAt: batch.ended_at ? Math.floor(new Date(batch.ended_at).getTime() / 1000) : undefined,
+        requestCounts: this.getRequestCounts(batch.request_counts),
+        id: batch.id,
+        object: "batch",
+        status: this.getStatus(batch.processing_status),
+      })),
+      has_next_page: response.has_more,
+    };
   }
   retrieve(): Promise<void> {
     throw new Error("Method not implemented.");
