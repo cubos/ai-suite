@@ -7,7 +7,7 @@ import type {
 } from "../types/batch.js";
 import type { ProviderBase } from "./_base.js";
 
-export abstract class BatchProviderBase<T extends ProviderBase> {
+export abstract class BatchProviderBase<T extends ProviderBase = ProviderBase> {
   constructor(protected provider: T) {
     this.provider = provider;
   }
