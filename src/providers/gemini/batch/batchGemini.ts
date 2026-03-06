@@ -184,6 +184,8 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
 
     return {
       success: true,
+      content: null,
+      model: this.provider.providerName,
     };
   }
 }

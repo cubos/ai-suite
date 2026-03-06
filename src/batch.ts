@@ -2,8 +2,16 @@ import type Langfuse from "langfuse";
 import type { AnthropicProvider } from "./providers/anthropic/anthropicProvider.js";
 import type { GeminiProvider } from "./providers/gemini/geminiProvider.js";
 import type { OpenAIProvider } from "./providers/openai/openaiProvider.js";
-import type { LangfuseData } from "./providers/types/optionsBase.js";
-import type { CreateBatchOptions, CreateBatchRequest, ResultCreateBatch } from "./types/batch.js";
+import type { LangfuseData, OptionsBase } from "./providers/types/optionsBase.js";
+import type {
+  CreateBatchOptions,
+  CreateBatchRequest,
+  ListBatchOptions,
+  ResultCancelBatch,
+  ResultCreateBatch,
+  ResultListBatch,
+  ResultRetrieveBatch,
+} from "./types/batch.js";
 import type { ErrorAISuite } from "./types/handleErrorResponse.js";
 import type { ProviderBatchType, ProviderModel } from "./types/providerModel.js";
 import type { ResponseBase } from "./types/responseBase.js";
@@ -79,15 +87,60 @@ export class Batch<S extends string = string> {
     );
   }
 
-  async list(): Promise<void> {
-    console.log("Batch list not implemented for provider");
+  async list(provider: ProviderBatchType, options: ListBatchOptions): Promise<ResultListBatch> {
+    const start = Date.now();
+    const p = this.getProvider(provider);
+
+    return this.resultWhithObservation(
+      () => p.batch.list(options),
+      {
+        langfuseData: {
+          name: "list-batch",
+          tags: ["batch", provider],
+        },
+        model: p.model,
+        input: options,
+      },
+      p,
+      start,
+    );
   }
 
-  async retrieve(): Promise<void> {
-    console.log("Batch retrieve not implemented for provider");
+  async retrieve(provider: ProviderBatchType, id: string, options: OptionsBase): Promise<ResultRetrieveBatch> {
+    const start = Date.now();
+    const p = this.getProvider(provider);
+
+    return this.resultWhithObservation(
+      () => p.batch.retrieve(id, options),
+      {
+        langfuseData: {
+          name: "retrieve-batch",
+          tags: ["batch", provider],
+        },
+        model: p.model,
+        input: id,
+      },
+      p,
+      start,
+    );
   }
 
-  async cancel(): Promise<void> {
-    console.log("Batch cancel not implemented for provider");
+  async cancel(provider: ProviderBatchType, id: string, options: OptionsBase): Promise<ResultCancelBatch> {
+    const start = Date.now();
+    const p = this.getProvider(provider);
+
+    return this.resultWhithObservation(
+      () => p.batch.cancel(id, options),
+      {
+        langfuseData: {
+          name: "cancel-batch",
+          tags: ["batch", provider],
+        },
+        model: p.model,
+        input: id,
+      },
+      p,
+      start,
+    );
   }
 }

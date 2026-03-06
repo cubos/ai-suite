@@ -168,6 +168,8 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
 
     return {
       success: true,
+      content: null,
+      model: this.provider.providerName,
     };
   }
 }

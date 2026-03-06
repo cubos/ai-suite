@@ -156,6 +156,8 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
 
     return {
       success: true,
+      content: null,
+      model: this.provider.providerName,
     };
   }
 }
