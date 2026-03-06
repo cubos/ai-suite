@@ -7,6 +7,7 @@ import type {
   CreateBatchOptions,
   CreateBatchRequest,
   ListBatchOptions,
+  SuccessCancelBatch,
   SuccessCreateBatch,
   SuccessListBatch,
   SuccessRetrieveBatch,
@@ -157,7 +158,16 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
     };
   }
 
-  cancel(): Promise<void> {
-    throw new Error("Method not implemented.");
+  async cancel(id: string, options: OptionsBase): Promise<SuccessCancelBatch> {
+    const request = id;
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.messages.batches.cancel(id);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+    };
   }
 }

@@ -5,6 +5,7 @@ import type {
   CreateBatchOptions,
   CreateBatchRequest,
   ListBatchOptions,
+  SuccessCancelBatch,
   SuccessCreateBatch,
   SuccessListBatch,
   SuccessRetrieveBatch,
@@ -144,7 +145,17 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
     };
   }
 
-  cancel(): Promise<void> {
-    throw new Error("Method not implemented.");
+  async cancel(id: string, options: OptionsBase): Promise<SuccessCancelBatch> {
+    const request = id;
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.batches.cancel(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+    };
   }
 }

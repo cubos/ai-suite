@@ -2,6 +2,7 @@ import type {
   CreateBatchOptions,
   CreateBatchRequest,
   ListBatchOptions,
+  SuccessCancelBatch,
   SuccessCreateBatch,
   SuccessListBatch,
   SuccessRetrieveBatch,
@@ -17,5 +18,5 @@ export abstract class BatchProviderBase<T extends ProviderBase = ProviderBase> {
   abstract create(batch: CreateBatchRequest, options: CreateBatchOptions): Promise<SuccessCreateBatch>;
   abstract list(options: ListBatchOptions): Promise<SuccessListBatch>;
   abstract retrieve(id: string, options: OptionsBase): Promise<SuccessRetrieveBatch>;
-  abstract cancel(): Promise<void>;
+  abstract cancel(id: string, options: OptionsBase): Promise<SuccessCancelBatch>;
 }

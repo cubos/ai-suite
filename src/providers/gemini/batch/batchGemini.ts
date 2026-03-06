@@ -1,4 +1,10 @@
-import type { BatchJob, CompletionStats, GetBatchJobParameters, ListBatchJobsParameters } from "@google/genai";
+import type {
+  BatchJob,
+  CancelBatchJobParameters,
+  CompletionStats,
+  GetBatchJobParameters,
+  ListBatchJobsParameters,
+} from "@google/genai";
 import { JobState } from "@google/genai";
 import type { BatchRequestCounts } from "openai/resources";
 import type {
@@ -7,6 +13,7 @@ import type {
   CreateBatchOptions,
   CreateBatchRequest,
   ListBatchOptions,
+  SuccessCancelBatch,
   SuccessCreateBatch,
   SuccessListBatch,
   SuccessRetrieveBatch,
@@ -164,7 +171,19 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
     };
   }
 
-  cancel(): Promise<void> {
-    throw new Error("Method not implemented.");
+  async cancel(id: string, options: OptionsBase): Promise<SuccessCancelBatch> {
+    const request: CancelBatchJobParameters = {
+      name: id,
+    };
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.batches.cancel(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+    };
   }
 }

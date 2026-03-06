@@ -202,3 +202,11 @@ export type ResultListBatch = SuccessListBatch | ErrorAISuite;
 
 export interface SuccessRetrieveBatch extends ResultBase<Batch> {}
 export type ResultRetrieveBatch = SuccessRetrieveBatch | ErrorAISuite;
+
+export interface SuccessCancelBatch {
+  /**
+   * Whether the request was successful
+   */
+  success: boolean;
+}
+export type ResultCancelBatch = SuccessCancelBatch | ErrorAISuite;
