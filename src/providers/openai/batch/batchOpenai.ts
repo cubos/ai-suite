@@ -7,9 +7,11 @@ import type {
   ListBatchOptions,
   SuccessCreateBatch,
   SuccessListBatch,
+  SuccessRetrieveBatch,
 } from "../../../types/batch.js";
 import { AISuiteError } from "../../../utils.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
+import type { OptionsBase } from "../../types/optionsBase.js";
 import type { OpenAIProvider } from "../openaiProvider.js";
 
 export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
@@ -41,34 +43,28 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
     await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
 
     return {
-      ...response,
       success: true,
-      content: null,
+      content: {
+        id: response.id,
+        createdAt: response.created_at,
+        endpoint: batch.endpoint,
+        inputFileId: response.input_file_id,
+        cancelledAt: response.cancelled_at,
+        cancellingAt: response.cancelling_at,
+        completedAt: response.completed_at,
+        errorFileId: response.error_file_id,
+        expiredAt: response.expired_at,
+        expiresAt: response.expires_at,
+        requestCounts: response.request_counts,
+        failedAt: response.failed_at,
+        finalizingAt: response.finalizing_at,
+        inProgressAt: response.in_progress_at,
+        outputFileId: response.output_file_id,
+        object: "batch",
+        status: response.status as BatchStatus,
+        errors: response.errors,
+      },
       model: response.model || "",
-      createdAt: response.created_at,
-      endpoint: batch.endpoint,
-      inputFileId: response.input_file_id,
-      cancelledAt: response.cancelled_at,
-      cancellingAt: response.cancelling_at,
-      completedAt: response.completed_at,
-      errorFileId: response.error_file_id,
-      expiredAt: response.expired_at,
-      expiresAt: response.expires_at,
-      requestCounts: response.request_counts,
-      failedAt: response.failed_at,
-      finalizingAt: response.finalizing_at,
-      inProgressAt: response.in_progress_at,
-      outputFileId: response.output_file_id,
-      usage: response.usage
-        ? {
-            input_tokens: response.usage?.input_tokens || 0,
-            output_tokens: response.usage?.output_tokens || 0,
-            total_tokens: response.usage?.total_tokens || 0,
-            cached_tokens: response.usage?.input_tokens_details?.cached_tokens || 0,
-            reasoning_tokens: response.usage.output_tokens_details?.reasoning_tokens || 0,
-            thoughts_tokens: 0,
-          }
-        : undefined,
     };
   }
 
@@ -106,24 +102,48 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
           finalizingAt: res.finalizing_at,
           inProgressAt: res.in_progress_at,
           outputFileId: res.output_file_id,
-          usage: res.usage
-            ? {
-                input_tokens: res.usage?.input_tokens || 0,
-                output_tokens: res.usage?.output_tokens || 0,
-                total_tokens: res.usage?.total_tokens || 0,
-                cached_tokens: res.usage?.input_tokens_details?.cached_tokens || 0,
-                reasoning_tokens: res.usage.output_tokens_details?.reasoning_tokens || 0,
-                thoughts_tokens: 0,
-              }
-            : undefined,
+          errors: res.errors,
         };
       }),
       has_next_page: response.has_more,
     };
   }
-  retrieve(): Promise<void> {
-    throw new Error("Method not implemented.");
+
+  async retrieve(id: string, options: OptionsBase): Promise<SuccessRetrieveBatch> {
+    const request = id;
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.batches.retrieve(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+      model: this.provider.providerName,
+      content:{
+          id: response.id,
+          createdAt: response.created_at,
+          endpoint: /embeddings/.test(response.endpoint) ? "embeddings" : "chat/completions",
+          object: "batch",
+          status: response.status as BatchStatus,
+          inputFileId: response.input_file_id,
+          cancelledAt: response.cancelled_at,
+          cancellingAt: response.cancelling_at,
+          completedAt: response.completed_at,
+          errorFileId: response.error_file_id,
+          expiredAt: response.expired_at,
+          expiresAt: response.expires_at,
+          requestCounts: response.request_counts,
+          failedAt: response.failed_at,
+          finalizingAt: response.finalizing_at,
+          inProgressAt: response.in_progress_at,
+          outputFileId: response.output_file_id,
+          errors: response.errors,
+      }
+    };
   }
+
   cancel(): Promise<void> {
     throw new Error("Method not implemented.");
   }

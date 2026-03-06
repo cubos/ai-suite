@@ -191,7 +191,7 @@ export interface Batch {
   requestCounts?: BatchRequestCounts;
 }
 
-export interface SuccessCreateBatch extends ResultBase<null>, Batch {}
+export interface SuccessCreateBatch extends ResultBase<Batch> {}
 
 export type ResultCreateBatch = SuccessCreateBatch | ErrorAISuite;
 
@@ -199,3 +199,6 @@ export interface SuccessListBatch extends ResultBase<Batch[]> {
   has_next_page: boolean;
 }
 export type ResultListBatch = SuccessListBatch | ErrorAISuite;
+
+export interface SuccessRetrieveBatch extends ResultBase<Batch> {}
+export type ResultRetrieveBatch = SuccessRetrieveBatch | ErrorAISuite;
