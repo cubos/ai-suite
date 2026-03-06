@@ -9,9 +9,11 @@ import type {
   ListBatchOptions,
   SuccessCreateBatch,
   SuccessListBatch,
+  SuccessRetrieveBatch,
 } from "../../../types/batch.js";
 import { AISuiteError } from "../../../utils.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
+import type { OptionsBase } from "../../types/optionsBase.js";
 import type { AnthropicProvider } from "../index.js";
 import { convertToAnthropicFunctions } from "../utils/convertToAnthropicFunctions.js";
 
@@ -57,20 +59,20 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
     await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
 
     return {
-      ...response,
       success: true,
-      content: null,
       model: this.provider.model,
-      createdAt: Math.floor(new Date(response.created_at).getTime() / 1000),
-      endpoint: batch.endpoint,
-      inProgressAt: response.created_at ? Math.floor(new Date(response.created_at).getTime() / 1000) : undefined,
-      cancelledAt: response.cancel_initiated_at
-        ? Math.floor(new Date(response.cancel_initiated_at).getTime() / 1000)
-        : undefined,
-      requestCounts: this.getRequestCounts(response.request_counts),
-      id: response.id,
-      object: "batch",
-      status: this.getStatus(response.processing_status),
+      content: {
+        createdAt: Math.floor(new Date(response.created_at).getTime() / 1000),
+        endpoint: batch.endpoint,
+        inProgressAt: response.created_at ? Math.floor(new Date(response.created_at).getTime() / 1000) : undefined,
+        cancelledAt: response.cancel_initiated_at
+          ? Math.floor(new Date(response.cancel_initiated_at).getTime() / 1000)
+          : undefined,
+        requestCounts: this.getRequestCounts(response.request_counts),
+        id: response.id,
+        object: "batch",
+        status: this.getStatus(response.processing_status),
+      },
     };
   }
 
@@ -128,9 +130,33 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
       has_next_page: response.has_more,
     };
   }
-  retrieve(): Promise<void> {
-    throw new Error("Method not implemented.");
+
+  async retrieve(id: string, options: OptionsBase): Promise<SuccessRetrieveBatch> {
+    const request = id;
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.messages.batches.retrieve(id);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+      model: this.provider.model,
+      content: {
+        createdAt: Math.floor(new Date(response.created_at).getTime() / 1000),
+        endpoint: "chat/completions",
+        inProgressAt: response.created_at ? Math.floor(new Date(response.created_at).getTime() / 1000) : undefined,
+        cancelledAt: response.cancel_initiated_at
+          ? Math.floor(new Date(response.cancel_initiated_at).getTime() / 1000)
+          : undefined,
+        requestCounts: this.getRequestCounts(response.request_counts),
+        id: response.id,
+        object: "batch",
+        status: this.getStatus(response.processing_status),
+      },
+    };
   }
+
   cancel(): Promise<void> {
     throw new Error("Method not implemented.");
   }
