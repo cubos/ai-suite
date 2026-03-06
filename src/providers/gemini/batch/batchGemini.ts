@@ -1,4 +1,4 @@
-import type { BatchJob, CompletionStats, ListBatchJobsParameters } from "@google/genai";
+import type { BatchJob, CompletionStats, GetBatchJobParameters, ListBatchJobsParameters } from "@google/genai";
 import { JobState } from "@google/genai";
 import type { BatchRequestCounts } from "openai/resources";
 import type {
@@ -9,8 +9,10 @@ import type {
   ListBatchOptions,
   SuccessCreateBatch,
   SuccessListBatch,
+  SuccessRetrieveBatch,
 } from "../../../types/batch.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
+import type { OptionsBase } from "../../types/optionsBase.js";
 import type { GeminiProvider } from "../geminiProvider.js";
 
 export class BatchGemini extends BatchProviderBase<GeminiProvider> {
@@ -34,19 +36,20 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
     await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
 
     return {
-      ...response,
       success: true,
-      content: null,
       model: response.model || "",
-      createdAt: Math.floor(new Date(response.createTime!).getTime() / 1000),
-      endpoint: batch.endpoint,
-      inputFileId: response.src?.fileName || "",
-      completedAt: response.endTime ? Math.floor(new Date(response.endTime).getTime() / 1000) : undefined,
-      requestCounts: this.getRequestCounts(response.completionStats),
-      outputFileId: response.dest?.fileName || undefined,
-      id: response.name || "",
-      object: "batch",
-      status: this.getStatus(response.state),
+      content: {
+        createdAt: Math.floor(new Date(response.createTime!).getTime() / 1000),
+        endpoint: batch.endpoint,
+        inputFileId: response.src?.fileName || "",
+        completedAt: response.endTime ? Math.floor(new Date(response.endTime).getTime() / 1000) : undefined,
+        requestCounts: this.getRequestCounts(response.completionStats),
+        outputFileId: response.dest?.fileName || undefined,
+        id: response.name || "",
+        object: "batch",
+        status: this.getStatus(response.state),
+        errors: response.error,
+      },
     };
   }
 
@@ -109,7 +112,6 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
 
     for await (const batch of response) {
       batches.push({
-        ...response,
         createdAt: Math.floor(new Date(batch.createTime!).getTime() / 1000),
         endpoint: /embeddings/.test(batch.model || "") ? "embeddings" : "chat/completions",
         inputFileId: batch.src?.fileName || "",
@@ -119,6 +121,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
         id: response.name || "",
         object: "batch",
         status: this.getStatus(batch.state),
+        errors: batch.error,
       });
     }
 
@@ -132,8 +135,33 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
     };
   }
 
-  retrieve(): Promise<void> {
-    throw new Error("Method not implemented.");
+  async retrieve(id: string, options: OptionsBase): Promise<SuccessRetrieveBatch> {
+    const request: GetBatchJobParameters = {
+      name: id,
+    };
+
+    await this.provider.hooks.handleRequest(request);
+
+    const response = await this.provider.client.batches.get(request);
+
+    await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
+
+    return {
+      success: true,
+      model: response.model || "",
+      content: {
+        createdAt: Math.floor(new Date(response.createTime!).getTime() / 1000),
+        endpoint: /embeddings/.test(response.model || "") ? "embeddings" : "chat/completions",
+        inputFileId: response.src?.fileName || "",
+        completedAt: response.endTime ? Math.floor(new Date(response.endTime).getTime() / 1000) : undefined,
+        requestCounts: this.getRequestCounts(response.completionStats),
+        outputFileId: response.dest?.fileName || undefined,
+        id: response.name || "",
+        object: "batch",
+        status: this.getStatus(response.state),
+        errors: response.error,
+      },
+    };
   }
 
   cancel(): Promise<void> {
