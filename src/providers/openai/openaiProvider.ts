@@ -2,6 +2,8 @@ import JSON5 from "json5";
 import { OpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import type { ChatCompletionCreateParamsBase, ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs";
+export type { ChatCompletionMessageParam };
+
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
 import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
@@ -40,44 +42,7 @@ export class OpenAIProvider extends ProviderBase {
   }
 
   async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
-    const mappedMessages: ChatCompletionMessageParam[] = messages.map(msg => {
-      const content = Array.isArray(msg.content) ? msg.content : [msg.content];
-      const parsedContent = content.map(c =>
-        this.parseInputContent<OpenAI.Chat.Completions.ChatCompletionContentPart>(c),
-      );
-
-      if (msg.role === "developer") {
-        return {
-          role: "user",
-          content: parsedContent,
-        };
-      }
-      if (msg.role === "tool") {
-        return {
-          role: "function",
-          content: parsedContent.map(c => (c.type === "text" ? c.text : "")).join(""),
-          name: msg.name || "default_tool",
-        };
-      }
-      if (msg.role === "assistant") {
-        const textContent = parsedContent
-          .filter((c: OpenAI.Chat.Completions.ChatCompletionContentPart) => c.type === "text")
-          .map((c: OpenAI.Chat.Completions.ChatCompletionContentPartText) => c.text)
-          .join("");
-
-        return {
-          role: "assistant",
-          content: textContent || null,
-        };
-      }
-      if (msg.role === "user") {
-        return {
-          role: "user",
-          content: parsedContent,
-        };
-      }
-      throw new Error(`Unsupported role: ${msg.role}`);
-    });
+    const mappedMessages = this.mapMessages(messages);
 
     let response_format: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming["response_format"];
 
@@ -228,6 +193,37 @@ export class OpenAIProvider extends ProviderBase {
     }
 
     throw new Error("Unsupported content type");
+  }
+
+  mapMessages(messages: MessageModel[]): ChatCompletionMessageParam[] {
+    return messages.map(msg => {
+      const content = Array.isArray(msg.content) ? msg.content : [msg.content];
+      const parsedContent = content.map(c =>
+        this.parseInputContent<OpenAI.Chat.Completions.ChatCompletionContentPart>(c),
+      );
+
+      if (msg.role === "developer") {
+        return { role: "user", content: parsedContent };
+      }
+      if (msg.role === "tool") {
+        return {
+          role: "function",
+          content: parsedContent.map(c => (c.type === "text" ? c.text : "")).join(""),
+          name: msg.name || "default_tool",
+        };
+      }
+      if (msg.role === "assistant") {
+        const textContent = parsedContent
+          .filter((c: OpenAI.Chat.Completions.ChatCompletionContentPart) => c.type === "text")
+          .map((c: OpenAI.Chat.Completions.ChatCompletionContentPartText) => c.text)
+          .join("");
+        return { role: "assistant", content: textContent || null };
+      }
+      if (msg.role === "user") {
+        return { role: "user", content: parsedContent };
+      }
+      throw new Error(`Unsupported role: ${msg.role}`);
+    });
   }
 
   handleError(error: Error): Pick<ErrorAISuite, "error" | "raw" | "tag"> {

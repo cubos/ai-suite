@@ -17,12 +17,34 @@ import type { OpenAIProvider } from "../openaiProvider.js";
 
 export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
   async create(batch: CreateBatchRequest, options: CreateBatchOptions): Promise<SuccessCreateBatch> {
-    if (!batch.inputFileId) {
-      throw new AISuiteError("Openai needs a file ID.");
+    if (!batch.inputFileId && !batch.batch) {
+      throw new AISuiteError("OpenAI requires either a file ID or a batch array.");
     }
 
+    let inputFileId = batch.inputFileId;
+
     if (batch.batch) {
-      throw new AISuiteError("OpenAI only allows batch processing with files.");
+      const jsonl = batch.batch
+        .map(item => {
+          const messages = this.provider.mapMessages(item.params.mensagens);
+
+          return JSON.stringify({
+            custom_id: item.customId,
+            method: "POST",
+            url: `/v1/${batch.endpoint}`,
+            body: { model: item.params.model, messages },
+          });
+        })
+        .join("\n");
+
+      const fileBlob = new File([jsonl], "batch.jsonl", { type: "application/jsonl" });
+
+      const uploadedFile = await this.provider.client.files.create({
+        file: fileBlob,
+        purpose: "batch",
+      });
+
+      inputFileId = uploadedFile.id;
     }
 
     const request: BatchCreateParams = {
@@ -32,7 +54,7 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
             seconds: options?.outputExpiresAfter.seconds,
           }
         : undefined,
-      input_file_id: batch.inputFileId,
+      input_file_id: inputFileId!,
       endpoint: `/v1/${batch.endpoint}`,
       completion_window: "24h",
     };
