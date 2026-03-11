@@ -36,18 +36,14 @@ describe("Anthropic File API", () => {
 
     // small JSONL content
     const content = new File(
-      [
-        JSON.stringify(
-          JSON.stringify({ id: 1, text: "hello" }) + "\n" + JSON.stringify({ id: 2, text: "world" }) + "\n",
-        ),
-      ],
+      [`${JSON.stringify({ id: 1, text: "hello" })}\n${JSON.stringify({ id: 2, text: "world" })}\n`],
       "test.jsonl",
+      { type: "text/jsonl" },
     );
 
     // create
     const createResult = await ai.file.create("anthropic", content, {});
 
-    console.log("Create file result:", createResult);
     expect(createResult.success).toBe(true);
     const fileId = (createResult as SuccessCreateFile).content.id;
     expect(fileId).toBeDefined();

@@ -120,7 +120,7 @@ describe("GeminiProvider", () => {
       geminiKey: apiKey,
     });
 
-    const file = readFileSync(`${__dirname}/assets/teste.pdf`);
+    const file = readFileSync(`${__dirname}/../assets/teste.pdf`);
 
     const base64File = file.toString("base64");
 

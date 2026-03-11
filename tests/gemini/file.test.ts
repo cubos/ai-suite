@@ -48,7 +48,6 @@ describe("Gemini File API", () => {
     // create
     const createResult = await ai.file.create("gemini", content, {});
 
-    console.log("Create file result:", createResult);
     expect(createResult.success).toBe(true);
     const fileId = (createResult as SuccessCreateFile).content.id;
     expect(fileId).toBeDefined();
