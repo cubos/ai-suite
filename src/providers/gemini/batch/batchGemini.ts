@@ -24,9 +24,33 @@ import type { GeminiProvider } from "../geminiProvider.js";
 
 export class BatchGemini extends BatchProviderBase<GeminiProvider> {
   async create(batch: CreateBatchRequest, options: CreateBatchOptions): Promise<SuccessCreateBatch> {
+    let inputFileId = batch.inputFileId;
+
+    if (batch.batch) {
+      const jsonl = batch.batch
+        .map(item => {
+          const messages = this.provider.mapMessages(item.params.mensagens);
+
+          return JSON.stringify({
+            key: item.customId,
+            request: { model: item.params.model, contents: messages },
+          });
+        })
+        .join("\n");
+
+      const fileBlob = new File([jsonl], "batch.jsonl", { type: "application/jsonl" });
+
+      const uploadedFile = await this.provider.client.files.upload({
+        file: fileBlob,
+        config: { displayName: "batch.jsonl" },
+      });
+
+      inputFileId = uploadedFile.name;
+    }
+
     const request = {
       src: {
-        fileName: batch.inputFileId,
+        fileName: inputFileId,
       },
       model: this.provider.model,
     };

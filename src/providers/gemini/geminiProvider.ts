@@ -1,4 +1,4 @@
-import { ApiError, type FunctionCall, type GenerateContentParameters, GoogleGenAI } from "@google/genai";
+import { ApiError, type Content, type FunctionCall, type GenerateContentParameters, GoogleGenAI } from "@google/genai";
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
@@ -86,46 +86,7 @@ export class GeminiProvider extends ProviderBase {
           : {}),
         ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
       },
-      contents: messages.slice(systemMessage ? 1 : 0, messages.length).map(msg => {
-        const content = Array.isArray(msg.content) ? msg.content : [msg.content];
-        const parsedContent = content.map(c =>
-          this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(c),
-        );
-
-        if (msg.role === "user" || msg.role === "developer") {
-          return {
-            role: "user",
-            parts: parsedContent,
-          };
-        }
-        if (msg.role === "assistant") {
-          const textContent = parsedContent
-            .filter(c => c.text !== undefined)
-            .map(c => c.text!)
-            .join("");
-
-          return {
-            role: "model",
-            parts: [{ text: textContent }],
-          };
-        }
-        if (msg.role === "tool") {
-          const textContent = parsedContent
-            .filter(c => c.text !== undefined)
-            .map(c => c.text!)
-            .join("");
-
-          return {
-            role: "user",
-            parts: [
-              {
-                text: `Tool Response (${msg.name || "default_tool"}): ${textContent}`,
-              },
-            ],
-          };
-        }
-        throw new Error(`Unsupported role: ${msg.role}`);
-      }),
+      contents: this.mapMessages(messages.slice(systemMessage ? 1 : 0)),
       model: this.model,
     };
 
@@ -271,6 +232,49 @@ export class GeminiProvider extends ProviderBase {
     }
 
     throw new Error("Unsupported content type");
+  }
+
+  mapMessages(messages: MessageModel[]): Content[] {
+    return messages.map(msg => {
+      const content = Array.isArray(msg.content) ? msg.content : [msg.content];
+      const parsedContent = content.map(c =>
+        this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(c),
+      );
+
+      if (msg.role === "user" || msg.role === "developer") {
+        return {
+          role: "user",
+          parts: parsedContent,
+        };
+      }
+      if (msg.role === "assistant") {
+        const textContent = parsedContent
+          .filter(c => c.text !== undefined)
+          .map(c => c.text!)
+          .join("");
+
+        return {
+          role: "model",
+          parts: [{ text: textContent }],
+        };
+      }
+      if (msg.role === "tool") {
+        const textContent = parsedContent
+          .filter(c => c.text !== undefined)
+          .map(c => c.text!)
+          .join("");
+
+        return {
+          role: "user",
+          parts: [
+            {
+              text: `Tool Response (${msg.name || "default_tool"}): ${textContent}`,
+            },
+          ],
+        };
+      }
+      throw new Error(`Unsupported role: ${msg.role}`);
+    });
   }
 
   handleError(error: Error): Pick<ErrorAISuite, "error" | "raw" | "tag"> {
