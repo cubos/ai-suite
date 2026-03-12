@@ -1,20 +1,42 @@
+import type { AnthropicModels } from "../providers/anthropic/index.js";
+import type { DeepSeekEmbeddingModels, DeepSeekModels } from "../providers/deepSeek/index.js";
+import type { GeminiEmbeddingModels, GeminiModels } from "../providers/gemini/index.js";
+import type { GrokModels } from "../providers/grok/index.js";
+import type { OpenAIEmbeddingModels, OpenAIModels } from "../providers/openai/index.js";
 import type { ChatOptions } from "../providers/types/chatOptions.js";
 import type { OptionsBase } from "../providers/types/optionsBase.js";
 import type { MessageModel } from "./chat.js";
 import type { ErrorAISuite } from "./handleErrorResponse.js";
 import type { EmbeddingOptions } from "./index.js";
+import type { ProviderBatchType } from "./providerModel.js";
 import type { ResultBase } from "./resultBase.js";
 
 export type Endpoint = "chat/completions" | "embeddings";
 
-export type CreateBatchRequest =
+export type BatchChatModel<P extends ProviderBatchType, S extends string = string> =
+  P extends "openai" ? OpenAIModels :
+  P extends "anthropic" ? AnthropicModels :
+  P extends "gemini" ? GeminiModels :
+  P extends "deepseek" ? DeepSeekModels :
+  P extends "grok" ? GrokModels :
+  P extends "custom-llm" ? S :
+  never;
+
+export type BatchEmbeddingModel<P extends ProviderBatchType, S extends string = string> =
+  P extends "openai" ? OpenAIEmbeddingModels :
+  P extends "gemini" ? GeminiEmbeddingModels :
+  P extends "deepseek" ? DeepSeekEmbeddingModels :
+  P extends "custom-llm" ? S :
+  never;
+
+export type CreateBatchRequest<P extends ProviderBatchType = ProviderBatchType, S extends string = string> =
   | {
       inputFileId?: string;
       endpoint: "chat/completions";
       batch?: {
         customId: string;
         params: {
-          model: string;
+          model: BatchChatModel<P, S>;
           mensagens: MessageModel[];
         };
       }[];
@@ -25,7 +47,7 @@ export type CreateBatchRequest =
       batch?: {
         customId: string;
         params: {
-          model: string;
+          model: BatchEmbeddingModel<P, S>;
           content: string | string[];
         };
       }[];

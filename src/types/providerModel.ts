@@ -24,7 +24,7 @@ export type ProviderFileType = "openai" | "anthropic" | "gemini" | "deepseek" | 
 
 export type ProviderBatchType =
   | "openai"
-  | `anthropic/${AnthropicModels}`
+  | "anthropic"
   | "gemini"
   | "deepseek"
   | "custom-llm"

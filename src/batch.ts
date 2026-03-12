@@ -64,9 +64,9 @@ export class Batch<S extends string = string> {
    * @param options options for batch creation, including optional expiration time and metadata for hooks.
    * @return a promise that resolves to the result of the batch creation operation, including status and provider information.
    */
-  async create(
-    provider: ProviderBatchType,
-    batch: CreateBatchRequest,
+  async create<P extends ProviderBatchType>(
+    provider: P,
+    batch: CreateBatchRequest<P>,
     options: CreateBatchOptions,
   ): Promise<ResultCreateBatch> {
     const start = Date.now();
