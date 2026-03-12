@@ -1,57 +1,29 @@
-import type { AnthropicModels } from "../providers/anthropic/index.js";
-import type { DeepSeekEmbeddingModels, DeepSeekModels } from "../providers/deepSeek/index.js";
-import type { GeminiEmbeddingModels, GeminiModels } from "../providers/gemini/index.js";
-import type { GrokModels } from "../providers/grok/index.js";
-import type { OpenAIEmbeddingModels, OpenAIModels } from "../providers/openai/index.js";
 import type { ChatOptions } from "../providers/types/chatOptions.js";
 import type { OptionsBase } from "../providers/types/optionsBase.js";
 import type { MessageModel } from "./chat.js";
 import type { ErrorAISuite } from "./handleErrorResponse.js";
 import type { EmbeddingOptions } from "./index.js";
-import type { ProviderBatchType } from "./providerModel.js";
 import type { ResultBase } from "./resultBase.js";
 
 export type Endpoint = "chat/completions" | "embeddings";
 
-export type BatchChatModel<P extends ProviderBatchType, S extends string = string> =
-  P extends "openai" ? OpenAIModels :
-  P extends "anthropic" ? AnthropicModels :
-  P extends "gemini" ? GeminiModels :
-  P extends "deepseek" ? DeepSeekModels :
-  P extends "grok" ? GrokModels :
-  P extends "custom-llm" ? S :
-  never;
+export type ChatBatchRequest = {
+  inputFileId?: string;
+  batch?: {
+    customId: string;
+    params: { mensagens: MessageModel[] };
+  }[];
+};
 
-export type BatchEmbeddingModel<P extends ProviderBatchType, S extends string = string> =
-  P extends "openai" ? OpenAIEmbeddingModels :
-  P extends "gemini" ? GeminiEmbeddingModels :
-  P extends "deepseek" ? DeepSeekEmbeddingModels :
-  P extends "custom-llm" ? S :
-  never;
+export type EmbeddingBatchRequest = {
+  inputFileId?: string;
+  batch?: {
+    customId: string;
+    params: { content: string | string[] };
+  }[];
+};
 
-export type CreateBatchRequest<P extends ProviderBatchType = ProviderBatchType, S extends string = string> =
-  | {
-      inputFileId?: string;
-      endpoint: "chat/completions";
-      batch?: {
-        customId: string;
-        params: {
-          model: BatchChatModel<P, S>;
-          mensagens: MessageModel[];
-        };
-      }[];
-    }
-  | {
-      inputFileId?: string;
-      endpoint: "embeddings";
-      batch?: {
-        customId: string;
-        params: {
-          model: BatchEmbeddingModel<P, S>;
-          content: string | string[];
-        };
-      }[];
-    };
+export type CreateBatchRequest = ChatBatchRequest | EmbeddingBatchRequest;
 
 export interface ListBatchOptions extends OptionsBase {
   /**
@@ -65,15 +37,7 @@ export interface ListBatchOptions extends OptionsBase {
   limit?: number;
 }
 
-export type CreateBatchOptionsBase  = EmbeddingOptions & { type: "embedding"} | ChatOptions  & { type: "chat/completions"}
-export type  CreateBatchOptions  = {
-  /**
-   * Maximum number of output tokens
-   *
-   * Anthropic max_tokens is set to 4096 by default
-   */
-  maxOutputTokens?: number;
-
+export type ChatBatchOptions = ChatOptions & {
   /**
    * The output expires after (only for OpenAI)
    */
@@ -81,7 +45,17 @@ export type  CreateBatchOptions  = {
     anchor: "created_at";
     seconds: number;
   };
-} & CreateBatchOptionsBase ;
+};
+
+export type CreateBatchOptions = EmbeddingOptions | ChatBatchOptions;
+
+/**
+ * Discriminated union that binds endpoint, batch request and options together,
+ * allowing TypeScript to narrow all three automatically inside provider implementations.
+ */
+export type CreateBatchArgs =
+  | { endpoint: "chat/completions"; batch: ChatBatchRequest; options: ChatBatchOptions }
+  | { endpoint: "embeddings"; batch: EmbeddingBatchRequest; options: EmbeddingOptions };
 
 /**
  * The request counts for different statuses within the batch.

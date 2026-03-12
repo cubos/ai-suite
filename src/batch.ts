@@ -4,16 +4,22 @@ import type { GeminiProvider } from "./providers/gemini/geminiProvider.js";
 import type { OpenAIProvider } from "./providers/openai/openaiProvider.js";
 import type { LangfuseData, OptionsBase } from "./providers/types/optionsBase.js";
 import type {
+  ChatBatchOptions,
+  ChatBatchRequest,
+  CreateBatchArgs,
   CreateBatchOptions,
   CreateBatchRequest,
+  EmbeddingBatchRequest,
+  Endpoint,
   ListBatchOptions,
   ResultCancelBatch,
   ResultCreateBatch,
   ResultListBatch,
   ResultRetrieveBatch,
 } from "./types/batch.js";
+import type { EmbeddingOptions } from "./types/embed.js";
 import type { ErrorAISuite } from "./types/handleErrorResponse.js";
-import type { ProviderBatchType, ProviderModel } from "./types/providerModel.js";
+import type { ProviderBatchModel, ProviderChatModel, ProviderEmbeddingModel, ProviderModel } from "./types/providerModel.js";
 import type { ResponseBase } from "./types/responseBase.js";
 import type { ResultBase } from "./types/resultBase.js";
 
@@ -64,16 +70,30 @@ export class Batch<S extends string = string> {
    * @param options options for batch creation, including optional expiration time and metadata for hooks.
    * @return a promise that resolves to the result of the batch creation operation, including status and provider information.
    */
-  async create<P extends ProviderBatchType>(
-    provider: P,
-    batch: CreateBatchRequest<P>,
+  async create(
+    provider: ProviderEmbeddingModel<S>,
+    endpoint: "embeddings",
+    batch: EmbeddingBatchRequest,
+    options: EmbeddingOptions,
+  ): Promise<ResultCreateBatch>;
+  async create(
+    provider: ProviderChatModel<S>,
+    endpoint: "chat/completions",
+    batch: ChatBatchRequest,
+    options: ChatBatchOptions,
+  ): Promise<ResultCreateBatch>;
+  async create(
+    provider: ProviderBatchModel<S>,
+    endpoint: Endpoint,
+    batch: CreateBatchRequest,
     options: CreateBatchOptions,
   ): Promise<ResultCreateBatch> {
     const start = Date.now();
     const p = this.getProvider(provider);
+    const args = { endpoint, batch, options } as CreateBatchArgs;
 
     return this.resultWhithObservation(
-      () => p.batch.create(batch, options),
+      () => p.batch.create(args),
       {
         langfuseData: {
           name: "create-batch",
@@ -87,7 +107,7 @@ export class Batch<S extends string = string> {
     );
   }
 
-  async list(provider: ProviderBatchType, options: ListBatchOptions): Promise<ResultListBatch> {
+  async list(provider: ProviderBatchModel<S>, options: ListBatchOptions): Promise<ResultListBatch> {
     const start = Date.now();
     const p = this.getProvider(provider);
 
@@ -106,7 +126,7 @@ export class Batch<S extends string = string> {
     );
   }
 
-  async retrieve(provider: ProviderBatchType, id: string, options: OptionsBase): Promise<ResultRetrieveBatch> {
+  async retrieve(provider: ProviderBatchModel<S>, id: string, options: OptionsBase): Promise<ResultRetrieveBatch> {
     const start = Date.now();
     const p = this.getProvider(provider);
 
@@ -125,7 +145,7 @@ export class Batch<S extends string = string> {
     );
   }
 
-  async cancel(provider: ProviderBatchType, id: string, options: OptionsBase): Promise<ResultCancelBatch> {
+  async cancel(provider: ProviderBatchModel<S>, id: string, options: OptionsBase): Promise<ResultCancelBatch> {
     const start = Date.now();
     const p = this.getProvider(provider);
 

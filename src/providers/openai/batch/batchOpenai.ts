@@ -4,14 +4,14 @@ import type { BatchCreateParams } from "openai/resources";
 import type { BatchListParams } from "openai/resources.js";
 import type {
   BatchStatus,
-  CreateBatchOptions,
-  CreateBatchRequest,
+  CreateBatchArgs,
   ListBatchOptions,
   SuccessCancelBatch,
   SuccessCreateBatch,
   SuccessListBatch,
   SuccessRetrieveBatch,
 } from "../../../types/batch.js";
+
 import { AISuiteError } from "../../../utils.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
@@ -20,7 +20,9 @@ import type { OpenAIBatchChatCompletionCreateParams } from "../types/openAIBatch
 import type { OpenAIBatchEmbeddingCreateParams } from "../types/openAIBatchEmbeddingCreateParams.js";
 
 export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
-  async create(batch: CreateBatchRequest, options: CreateBatchOptions): Promise<SuccessCreateBatch> {
+  async create(args: CreateBatchArgs): Promise<SuccessCreateBatch> {
+    const { endpoint, batch, options } = args;
+
     if (!batch.inputFileId && !batch.batch) {
       throw new AISuiteError("OpenAI requires either a file ID or a batch array.");
     }
@@ -29,19 +31,15 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
     if (batch.batch) {
       let jsonl: string;
 
-      if (batch.endpoint === "embeddings") {
-        if (options.type !== "embedding") {
-          throw new AISuiteError("options.type must be 'embedding' when endpoint is 'embeddings'.");
-        }
-
+      if (endpoint === "embeddings") {
         jsonl = batch.batch
           .map(item =>
             JSON.stringify({
               custom_id: item.customId,
               method: "POST",
-              url: `/v1/${batch.endpoint}`,
+              url: `/v1/embeddings` as const,
               body: {
-                model: item.params.model,
+                model: this.provider.model,
                 input: item.params.content,
                 dimensions: options.dimensions,
                 encoding_format: options.encodingFormat,
@@ -50,10 +48,6 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
           )
           .join("\n");
       } else {
-        if (options.type !== "chat/completions") {
-          throw new AISuiteError("options.type must be 'chat/completions' when endpoint is 'chat/completions'.");
-        }
-
         let response_format: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming["response_format"];
 
         if (options.responseFormat === "text") {
@@ -69,9 +63,9 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
             JSON.stringify({
               custom_id: item.customId,
               method: "POST",
-              url: `/v1/${batch.endpoint}`,
+              url: `/v1/chat/completions` as const,
               body: {
-                model: item.params.model,
+                model: this.provider.model,
                 messages: this.provider.mapMessages(item.params.mensagens),
                 temperature: options.temperature,
                 response_format,
@@ -94,14 +88,15 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
     }
 
     const request: BatchCreateParams = {
-      output_expires_after: options?.outputExpiresAfter
-        ? {
-            anchor: options.outputExpiresAfter.anchor,
-            seconds: options?.outputExpiresAfter.seconds,
-          }
-        : undefined,
+      output_expires_after:
+        endpoint === "chat/completions" && options.outputExpiresAfter
+          ? {
+              anchor: options.outputExpiresAfter.anchor,
+              seconds: options.outputExpiresAfter.seconds,
+            }
+          : undefined,
       input_file_id: inputFileId!,
-      endpoint: `/v1/${batch.endpoint}`,
+      endpoint: endpoint === "embeddings" ? "/v1/embeddings" : "/v1/chat/completions",
       completion_window: "24h",
     };
 
@@ -116,7 +111,7 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
       content: {
         id: response.id,
         createdAt: response.created_at,
-        endpoint: batch.endpoint,
+        endpoint: endpoint,
         inputFileId: response.input_file_id,
         cancelledAt: response.cancelled_at,
         cancellingAt: response.cancelling_at,

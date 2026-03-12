@@ -4,8 +4,7 @@ import type { BatchCreateParams } from "@anthropic-ai/sdk/resources/messages.mjs
 import type {
   BatchRequestCounts,
   BatchStatus,
-  CreateBatchOptions,
-  CreateBatchRequest,
+  CreateBatchArgs,
   ListBatchOptions,
   SuccessCancelBatch,
   SuccessCreateBatch,
@@ -19,10 +18,12 @@ import type { AnthropicProvider } from "../index.js";
 import { convertToAnthropicFunctions } from "../utils/convertToAnthropicFunctions.js";
 
 export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
-  async create(batch: CreateBatchRequest, options: CreateBatchOptions): Promise<SuccessCreateBatch> {
-    if (batch.endpoint === "embeddings") {
+  async create(args: CreateBatchArgs): Promise<SuccessCreateBatch> {
+    if (args.endpoint === "embeddings") {
       throw new AISuiteError("Anthropic does not have embedding.");
     }
+
+    const { batch, endpoint, options } = args;
 
     if (batch.inputFileId) {
       throw new AISuiteError("Anthropic does not use files for batch.");
@@ -37,7 +38,7 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
         custom_id: req.customId,
         params: {
           messages: this.provider.mapMessagesToChat(req.params.mensagens),
-          model: req.params.model,
+          model: this.provider.model,
           ...(options.maxOutputTokens ? { max_tokens: options.maxOutputTokens } : { max_tokens: 4096 }),
           tools: convertToAnthropicFunctions(options.tools),
           thinking: {
@@ -64,7 +65,7 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
       model: this.provider.model,
       content: {
         createdAt: Math.floor(new Date(response.created_at).getTime() / 1000),
-        endpoint: batch.endpoint,
+        endpoint: endpoint,
         inProgressAt: response.created_at ? Math.floor(new Date(response.created_at).getTime() / 1000) : undefined,
         cancelledAt: response.cancel_initiated_at
           ? Math.floor(new Date(response.cancel_initiated_at).getTime() / 1000)
@@ -73,6 +74,8 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
         id: response.id,
         object: "batch",
         status: this.getStatus(response.processing_status),
+        completedAt: response.ended_at ? Math.floor(new Date(response.ended_at).getTime() / 1000) : undefined,
+        resultsUrl: response.results_url ?? undefined,
       },
     };
   }
@@ -127,6 +130,7 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
         id: batch.id,
         object: "batch",
         status: this.getStatus(batch.processing_status),
+        resultsUrl: batch.results_url ?? undefined,
       })),
       has_next_page: response.has_more,
     };
@@ -154,6 +158,8 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
         id: response.id,
         object: "batch",
         status: this.getStatus(response.processing_status),
+        completedAt: response.ended_at ? Math.floor(new Date(response.ended_at).getTime() / 1000) : undefined,
+        resultsUrl: response.results_url ?? undefined,
       },
     };
   }

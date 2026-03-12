@@ -11,80 +11,80 @@ import type { BatchRequestCounts } from "openai/resources";
 import type {
   Batch,
   BatchStatus,
-  CreateBatchOptions,
-  CreateBatchRequest,
+  CreateBatchArgs,
   ListBatchOptions,
   SuccessCancelBatch,
   SuccessCreateBatch,
   SuccessListBatch,
   SuccessRetrieveBatch,
 } from "../../../types/batch.js";
-import { AISuiteError } from "../../../utils.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
 import { notUseThinkingConfig } from "../constants/notUseThinkingConfig.js";
 import { onlyWorksWithThinking } from "../constants/onlyWorksWithThinking.js";
-import { convertToGeminiFunctions } from "../utils/convertToGeminiFunctions.js";
 import type { GeminiProvider } from "../geminiProvider.js";
+import { convertToGeminiFunctions } from "../utils/convertToGeminiFunctions.js";
 
 export class BatchGemini extends BatchProviderBase<GeminiProvider> {
-  async create(batch: CreateBatchRequest, options: CreateBatchOptions): Promise<SuccessCreateBatch> {
+  async create(args: CreateBatchArgs): Promise<SuccessCreateBatch> {
+    const { endpoint, batch, options } = args;
     let inputFileId = batch.inputFileId;
+    let config = null;
 
     if (batch.batch) {
       let jsonl: string;
 
-      if (batch.endpoint === "embeddings") {
-        if (options.type !== "embedding") {
-          throw new AISuiteError("options.type must be 'embedding' when endpoint is 'embeddings'.");
-        }
+      if (endpoint === "embeddings") {
+        config = {
+          outputDimensionality: options.dimensions,
+          taskType: options.taskType,
+        };
 
         jsonl = batch.batch
           .map(item =>
             JSON.stringify({
               key: item.customId,
               request: {
-                model: item.params.model,
                 content: {
                   parts: Array.isArray(item.params.content)
-                    ? item.params.content.map(text => ({ text }))
+                    ? item.params.content.map((text: string) => ({ text }))
                     : [{ text: item.params.content }],
-                },
-                config: {
-                  outputDimensionality: options.dimensions,
-                  taskType: options.taskType,
                 },
               },
             }),
           )
           .join("\n");
       } else {
-        if (options.type !== "chat/completions") {
-          throw new AISuiteError("options.type must be 'chat/completions' when endpoint is 'chat/completions'.");
-        }
-
         let thinkingConfig: { thinkingBudget: number; includeThoughts: boolean } | null = null;
         if (onlyWorksWithThinking.includes(this.provider.model)) {
-          thinkingConfig = { thinkingBudget: options.thinking?.budget ?? 128, includeThoughts: options.thinking?.output ?? false };
+          thinkingConfig = {
+            thinkingBudget: options.thinking?.budget ?? 128,
+            includeThoughts: options.thinking?.output ?? false,
+          };
         } else if (!notUseThinkingConfig.includes(this.provider.model)) {
-          thinkingConfig = { thinkingBudget: options.thinking?.budget ?? 0, includeThoughts: options.thinking?.output ?? false };
+          thinkingConfig = {
+            thinkingBudget: options.thinking?.budget ?? 0,
+            includeThoughts: options.thinking?.output ?? false,
+          };
         }
+
+        config = {
+          tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
+          temperature: options.temperature ?? 0.7,
+          thinkingConfig: thinkingConfig ?? { thinkingBudget: 0 },
+          responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
+          ...(options.responseFormat === "json_schema"
+            ? { responseSchema: toGeminiSchema(options.zodSchema) }
+            : {}),
+          ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
+        };
 
         jsonl = batch.batch
           .map(item =>
             JSON.stringify({
               key: item.customId,
               request: {
-                model: item.params.model,
                 contents: this.provider.mapMessages(item.params.mensagens),
-                config: {
-                  tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
-                  temperature: options.temperature ?? 0.7,
-                  thinkingConfig: thinkingConfig ?? { thinkingBudget: 0 },
-                  responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
-                  ...(options.responseFormat === "json_schema" ? { responseSchema: toGeminiSchema(options.zodSchema) } : {}),
-                  ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
-                },
               },
             }),
           )
@@ -95,23 +95,23 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
 
       const uploadedFile = await this.provider.client.files.upload({
         file: fileBlob,
-        config: { displayName: "batch.jsonl" },
+        config: { displayName: "batch.jsonl", ...config },
       });
 
       inputFileId = uploadedFile.name;
     }
 
     const request = {
+      model: this.provider.model,
       src: {
         fileName: inputFileId,
       },
-      model: this.provider.model,
     };
 
     await this.provider.hooks.handleRequest(request);
 
     let response: BatchJob;
-    if (batch.endpoint === "chat/completions") {
+    if (endpoint === "chat/completions") {
       response = await this.provider.client.batches.create(request);
     } else {
       response = await this.provider.client.batches.createEmbeddings(request);
@@ -124,7 +124,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
       model: response.model || "",
       content: {
         createdAt: Math.floor(new Date(response.createTime!).getTime() / 1000),
-        endpoint: batch.endpoint,
+        endpoint: endpoint,
         inputFileId: response.src?.fileName || "",
         completedAt: response.endTime ? Math.floor(new Date(response.endTime).getTime() / 1000) : undefined,
         requestCounts: this.getRequestCounts(response.completionStats),
