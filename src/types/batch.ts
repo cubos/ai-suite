@@ -1,23 +1,35 @@
+import type { ChatOptions } from "../providers/types/chatOptions.js";
 import type { OptionsBase } from "../providers/types/optionsBase.js";
-import type { ToolModel } from "../providers/types/toolModel.js";
 import type { MessageModel } from "./chat.js";
 import type { ErrorAISuite } from "./handleErrorResponse.js";
+import type { EmbeddingOptions } from "./index.js";
 import type { ResultBase } from "./resultBase.js";
 
 export type Endpoint = "chat/completions" | "embeddings";
 
-export interface CreateBatchRequest {
-  inputFileId?: string;
-  endpoint: Endpoint;
-
-  batch?: {
-    customId: string;
-    params: {
-      model: string;
-      mensagens: MessageModel[];
+export type CreateBatchRequest =
+  | {
+      inputFileId?: string;
+      endpoint: "chat/completions";
+      batch?: {
+        customId: string;
+        params: {
+          model: string;
+          mensagens: MessageModel[];
+        };
+      }[];
+    }
+  | {
+      inputFileId?: string;
+      endpoint: "embeddings";
+      batch?: {
+        customId: string;
+        params: {
+          model: string;
+          content: string | string[];
+        };
+      }[];
     };
-  }[];
-}
 
 export interface ListBatchOptions extends OptionsBase {
   /**
@@ -31,17 +43,8 @@ export interface ListBatchOptions extends OptionsBase {
   limit?: number;
 }
 
-export interface CreateBatchOptions extends OptionsBase {
-  /**
-   * The temperature
-   */
-  temperature?: number;
-
-  /**
-   * The tools to use
-   */
-  tools?: ToolModel[];
-
+export type CreateBatchOptionsBase  = EmbeddingOptions & { type: "embedding"} | ChatOptions  & { type: "chat/completions"}
+export type  CreateBatchOptions  = {
   /**
    * Maximum number of output tokens
    *
@@ -56,15 +59,7 @@ export interface CreateBatchOptions extends OptionsBase {
     anchor: "created_at";
     seconds: number;
   };
-
-  /**
-   * The thinking to use (only for Gemini) default is 0 and output is false
-   */
-  thinking?: {
-    budget: number;
-    output: boolean;
-  };
-}
+} & CreateBatchOptionsBase ;
 
 /**
  * The request counts for different statuses within the batch.

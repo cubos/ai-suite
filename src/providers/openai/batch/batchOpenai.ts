@@ -1,3 +1,5 @@
+import type OpenAI from "openai";
+import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import type { BatchCreateParams } from "openai/resources";
 import type { BatchListParams } from "openai/resources.js";
 import type {
@@ -14,6 +16,8 @@ import { AISuiteError } from "../../../utils.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
 import type { OpenAIProvider } from "../openaiProvider.js";
+import type { OpenAIBatchChatCompletionCreateParams } from "../types/openAIBatchChatCompletionCreateParams.js";
+import type { OpenAIBatchEmbeddingCreateParams } from "../types/openAIBatchEmbeddingCreateParams.js";
 
 export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
   async create(batch: CreateBatchRequest, options: CreateBatchOptions): Promise<SuccessCreateBatch> {
@@ -22,20 +26,62 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
     }
 
     let inputFileId = batch.inputFileId;
-
     if (batch.batch) {
-      const jsonl = batch.batch
-        .map(item => {
-          const messages = this.provider.mapMessages(item.params.mensagens);
+      let jsonl: string;
 
-          return JSON.stringify({
-            custom_id: item.customId,
-            method: "POST",
-            url: `/v1/${batch.endpoint}`,
-            body: { model: item.params.model, messages },
-          });
-        })
-        .join("\n");
+      if (batch.endpoint === "embeddings") {
+        if (options.type !== "embedding") {
+          throw new AISuiteError("options.type must be 'embedding' when endpoint is 'embeddings'.");
+        }
+
+        jsonl = batch.batch
+          .map(item =>
+            JSON.stringify({
+              custom_id: item.customId,
+              method: "POST",
+              url: `/v1/${batch.endpoint}`,
+              body: {
+                model: item.params.model,
+                input: item.params.content,
+                dimensions: options.dimensions,
+                encoding_format: options.encodingFormat,
+              },
+            } as OpenAIBatchEmbeddingCreateParams),
+          )
+          .join("\n");
+      } else {
+        if (options.type !== "chat/completions") {
+          throw new AISuiteError("options.type must be 'chat/completions' when endpoint is 'chat/completions'.");
+        }
+
+        let response_format: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming["response_format"];
+
+        if (options.responseFormat === "text") {
+          response_format = undefined;
+        } else if (options.responseFormat === "json_schema") {
+          response_format = zodResponseFormat(options.zodSchema, "default");
+        } else {
+          response_format = { type: options.responseFormat };
+        }
+
+        jsonl = batch.batch
+          .map(item =>
+            JSON.stringify({
+              custom_id: item.customId,
+              method: "POST",
+              url: `/v1/${batch.endpoint}`,
+              body: {
+                model: item.params.model,
+                messages: this.provider.mapMessages(item.params.mensagens),
+                temperature: options.temperature,
+                response_format,
+                tools: options.tools,
+                ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
+              },
+            } as OpenAIBatchChatCompletionCreateParams),
+          )
+          .join("\n");
+      }
 
       const fileBlob = new File([jsonl], "batch.jsonl", { type: "application/jsonl" });
 

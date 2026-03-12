@@ -6,6 +6,7 @@ import type {
   ListBatchJobsParameters,
 } from "@google/genai";
 import { JobState } from "@google/genai";
+import { toGeminiSchema } from "gemini-zod";
 import type { BatchRequestCounts } from "openai/resources";
 import type {
   Batch,
@@ -18,8 +19,12 @@ import type {
   SuccessListBatch,
   SuccessRetrieveBatch,
 } from "../../../types/batch.js";
+import { AISuiteError } from "../../../utils.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
+import { notUseThinkingConfig } from "../constants/notUseThinkingConfig.js";
+import { onlyWorksWithThinking } from "../constants/onlyWorksWithThinking.js";
+import { convertToGeminiFunctions } from "../utils/convertToGeminiFunctions.js";
 import type { GeminiProvider } from "../geminiProvider.js";
 
 export class BatchGemini extends BatchProviderBase<GeminiProvider> {
@@ -27,16 +32,64 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
     let inputFileId = batch.inputFileId;
 
     if (batch.batch) {
-      const jsonl = batch.batch
-        .map(item => {
-          const messages = this.provider.mapMessages(item.params.mensagens);
+      let jsonl: string;
 
-          return JSON.stringify({
-            key: item.customId,
-            request: { model: item.params.model, contents: messages },
-          });
-        })
-        .join("\n");
+      if (batch.endpoint === "embeddings") {
+        if (options.type !== "embedding") {
+          throw new AISuiteError("options.type must be 'embedding' when endpoint is 'embeddings'.");
+        }
+
+        jsonl = batch.batch
+          .map(item =>
+            JSON.stringify({
+              key: item.customId,
+              request: {
+                model: item.params.model,
+                content: {
+                  parts: Array.isArray(item.params.content)
+                    ? item.params.content.map(text => ({ text }))
+                    : [{ text: item.params.content }],
+                },
+                config: {
+                  outputDimensionality: options.dimensions,
+                  taskType: options.taskType,
+                },
+              },
+            }),
+          )
+          .join("\n");
+      } else {
+        if (options.type !== "chat/completions") {
+          throw new AISuiteError("options.type must be 'chat/completions' when endpoint is 'chat/completions'.");
+        }
+
+        let thinkingConfig: { thinkingBudget: number; includeThoughts: boolean } | null = null;
+        if (onlyWorksWithThinking.includes(this.provider.model)) {
+          thinkingConfig = { thinkingBudget: options.thinking?.budget ?? 128, includeThoughts: options.thinking?.output ?? false };
+        } else if (!notUseThinkingConfig.includes(this.provider.model)) {
+          thinkingConfig = { thinkingBudget: options.thinking?.budget ?? 0, includeThoughts: options.thinking?.output ?? false };
+        }
+
+        jsonl = batch.batch
+          .map(item =>
+            JSON.stringify({
+              key: item.customId,
+              request: {
+                model: item.params.model,
+                contents: this.provider.mapMessages(item.params.mensagens),
+                config: {
+                  tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
+                  temperature: options.temperature ?? 0.7,
+                  thinkingConfig: thinkingConfig ?? { thinkingBudget: 0 },
+                  responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
+                  ...(options.responseFormat === "json_schema" ? { responseSchema: toGeminiSchema(options.zodSchema) } : {}),
+                  ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
+                },
+              },
+            }),
+          )
+          .join("\n");
+      }
 
       const fileBlob = new File([jsonl], "batch.jsonl", { type: "application/jsonl" });
 
