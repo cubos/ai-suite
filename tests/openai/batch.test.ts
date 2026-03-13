@@ -57,17 +57,17 @@ describe("OpenAI Batch API", () => {
     expect((createResult as SuccessCreateBatch).content.endpoint).toBe("chat/completions");
 
     // list
-    const listResult = await ai.batch.list("openai/gpt-4o-mini", { limit: 10 });
+    const listResult = await ai.batch.list("openai", { limit: 10 });
     expect(listResult.success).toBe(true);
     expect(Array.isArray((listResult as SuccessListBatch).content)).toBe(true);
 
     // retrieve
-    const retrieveResult = await ai.batch.retrieve("openai/gpt-4o-mini", batchId, {});
+    const retrieveResult = await ai.batch.retrieve("openai", batchId, {});
     expect(retrieveResult.success).toBe(true);
     expect((retrieveResult as SuccessRetrieveBatch).content.id).toBe(batchId);
 
     // cancel
-    const cancelResult = await ai.batch.cancel("openai/gpt-4o-mini", batchId, {});
+    const cancelResult = await ai.batch.cancel("openai", batchId, {});
     expect(cancelResult.success).toBe(true);
     expect((cancelResult as SuccessCancelBatch).content).toBeNull();
   }, 30000);

@@ -47,17 +47,17 @@ describe("Gemini Batch API", () => {
     expect((createResult as SuccessCreateBatch).content.endpoint).toBe("chat/completions");
 
     // list
-    const listResult = await ai.batch.list("gemini/gemini-1.5-flash", { limit: 10 });
+    const listResult = await ai.batch.list("gemini", { limit: 10 });
     expect(listResult.success).toBe(true);
     expect(Array.isArray((listResult as SuccessListBatch).content)).toBe(true);
 
     // retrieve
-    const retrieveResult = await ai.batch.retrieve("gemini/gemini-1.5-flash", batchId, {});
+    const retrieveResult = await ai.batch.retrieve("gemini", batchId, {});
     expect(retrieveResult.success).toBe(true);
     expect((retrieveResult as SuccessRetrieveBatch).content.id).toBe(batchId);
 
     // cancel
-    const cancelResult = await ai.batch.cancel("gemini/gemini-1.5-flash", batchId, {});
+    const cancelResult = await ai.batch.cancel("gemini", batchId, {});
     expect(cancelResult.success).toBe(true);
     expect((cancelResult as SuccessCancelBatch).content).toBeNull();
   }, 30000);

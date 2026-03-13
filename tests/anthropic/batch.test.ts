@@ -77,17 +77,17 @@ describe("Anthropic Batch API", () => {
     expect((createResult as SuccessCreateBatch).content.endpoint).toBe("chat/completions");
 
     // list
-    const listResult = await ai.batch.list("anthropic/claude-haiku-4-5-20251001", { limit: 10 });
+    const listResult = await ai.batch.list("anthropic", { limit: 10 });
     expect(listResult.success).toBe(true);
     expect(Array.isArray((listResult as SuccessListBatch).content)).toBe(true);
 
     // retrieve
-    const retrieveResult = await ai.batch.retrieve("anthropic/claude-haiku-4-5-20251001", batchId, {});
+    const retrieveResult = await ai.batch.retrieve("anthropic", batchId, {});
     expect(retrieveResult.success).toBe(true);
     expect((retrieveResult as SuccessRetrieveBatch).content.id).toBe(batchId);
 
     // cancel
-    const cancelResult = await ai.batch.cancel("anthropic/claude-haiku-4-5-20251001", batchId, {});
+    const cancelResult = await ai.batch.cancel("anthropic", batchId, {});
     expect(cancelResult.success).toBe(true);
     expect((cancelResult as SuccessCancelBatch).content).toBeNull();
   }, 30000);
