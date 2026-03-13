@@ -1,25 +1,21 @@
 import dotenv from "dotenv";
 import type { Langfuse } from "langfuse";
-import { type AnthropicModels, AnthropicProvider } from "./providers/anthropic/index.js";
+import { AnthropicProvider } from "./providers/anthropic/index.js";
 
 import { CustomLLMProvider } from "./providers/customLLM/index.js";
-import { type DeepSeekModels, DeepSeekProvider } from "./providers/deepSeek/index.js";
-import { type GeminiModels, GeminiProvider } from "./providers/gemini/index.js";
-import { type GrokModels, GrokProvider } from "./providers/grok/index.js";
-import type { OpenAIModels } from "./providers/openai/index.js";
+import { DeepSeekProvider } from "./providers/deepSeek/index.js";
+import { GeminiProvider } from "./providers/gemini/index.js";
+import { GrokProvider } from "./providers/grok/index.js";
 import { OpenAIProvider } from "./providers/openai/openaiProvider.js";
-import type { ChatOptions } from "./providers/types/index.js";
+import type { ChatOptions, LangfuseData } from "./providers/types/index.js";
 import type { MessageModel, ResultChatCompletion } from "./types/chat.js";
+import type { EmbeddingOptions, EmbeddingRequest, ResultEmbedding } from "./types/embed.js";
+import type { ErrorAISuite } from "./types/handleErrorResponse.js";
+import type { ProviderChatModel, ProviderEmbeddingModel, ProviderModel } from "./types/providerModel.js";
+import type { ResponseBase } from "./types/responseBase.js";
+import type { ResultBase } from "./types/resultBase.js";
 
 dotenv.config();
-
-export type ProviderModel<S extends string> =
-  | `openai/${OpenAIModels}`
-  | `anthropic/${AnthropicModels}`
-  | `gemini/${GeminiModels}`
-  | `deepseek/${DeepSeekModels}`
-  | `custom-llm/${S}`
-  | `grok/${GrokModels}`;
 
 export class AISuite<S extends string = string> {
   private openaiKey: string;
@@ -73,7 +69,7 @@ export class AISuite<S extends string = string> {
    * @param options - The options to use
    * @returns The chat completion
    */
-  async createChatCompletionMultiResult<T extends ProviderModel<S>>(
+  async createChatCompletionMultiResult<T extends ProviderChatModel<S>>(
     providers: T[],
     messages: MessageModel[],
     options: { stream: false } & ChatOptions = {
@@ -93,7 +89,7 @@ export class AISuite<S extends string = string> {
    * @returns The chat completion
    */
   async createChatCompletion(
-    provider: ProviderModel<S>,
+    provider: ProviderChatModel<S>,
     messages: MessageModel[],
     options?: { stream: false } & ChatOptions,
   ): Promise<ResultChatCompletion>;
@@ -112,7 +108,7 @@ export class AISuite<S extends string = string> {
   // ): Promise<Readable>;
 
   async createChatCompletion(
-    provider: ProviderModel<S>,
+    provider: ProviderChatModel<S>,
     messages: MessageModel[],
     options?: ChatOptions,
   ): Promise<ResultChatCompletion> {
@@ -137,25 +133,82 @@ export class AISuite<S extends string = string> {
       };
     }
 
+    const p = this.getProvider(provider);
+
+    return this.resultWhithObservation(
+      () => p.createChatCompletion(messages, opts),
+      {
+        langfuseData: {
+          name: "create-chat-completion",
+          tags: ["chat", provider],
+        },
+        model: provider.split("/")[1],
+        input: messages,
+      },
+      p,
+      start,
+    );
+  }
+
+  /**
+   * Create a chat completion
+   * @param provider - The provider to use
+   * @param embedding- The embedding request to send to the provider
+   * @param options - The options to use
+   * @returns The chat completion
+   */
+  async createEmbedding(
+    provider: ProviderEmbeddingModel<S>,
+    embedding: EmbeddingRequest,
+    options?: EmbeddingOptions,
+  ): Promise<ResultEmbedding>;
+
+  async createEmbedding(
+    provider: ProviderEmbeddingModel<S>,
+    embedding: EmbeddingRequest,
+    options?: EmbeddingOptions,
+  ): Promise<ResultEmbedding> {
+    const start = Date.now();
+    const p = this.getProvider(provider);
+
+    return this.resultWhithObservation(
+      () => p.createEmbedding(embedding, options ?? {}),
+      {
+        langfuseData: {
+          name: "create-embedding",
+          tags: ["embedding", provider],
+        },
+        model: provider.split("/")[1],
+        input: embedding.content,
+      },
+      p,
+      start,
+    );
+  }
+
+  private async resultWhithObservation<R extends ResultBase>(
+    func: () => Promise<R>,
+    langfuseOptions: { langfuseData: LangfuseData; model: string; input: unknown },
+    provider: OpenAIProvider | AnthropicProvider | GeminiProvider,
+    start: number,
+  ): Promise<(R & ResponseBase) | (ErrorAISuite & ResponseBase)> {
     const trace = this.langFuse?.trace({
-      ...(options?.metadata?.langFuse?.sessionId ? { sessionId: options?.metadata?.langFuse?.sessionId } : {}),
-      name: options?.metadata?.langFuse?.name ?? "create-chat-completion",
-      tags: options?.metadata?.langFuse?.tags ?? [],
-      environment: options?.metadata?.langFuse?.environment ?? "default",
-      ...(options?.metadata?.langFuse?.userId ? { userId: options?.metadata?.langFuse?.userId } : {}),
+      ...(langfuseOptions.langfuseData.sessionId ? { sessionId: langfuseOptions.langfuseData.sessionId } : {}),
+      name: langfuseOptions.langfuseData.name ?? "create-chat-completion",
+      tags: langfuseOptions.langfuseData.tags ?? [],
+      environment: langfuseOptions.langfuseData.environment ?? "default",
+      ...(langfuseOptions.langfuseData.userId ? { userId: langfuseOptions.langfuseData.userId } : {}),
     });
 
     const generation = trace?.generation({
-      environment: options?.metadata?.langFuse?.environment ?? "default",
-      name: options?.metadata?.langFuse?.name ?? "create-chat-completion",
-      model: provider.split("/")[1],
-      input: messages,
+      environment: langfuseOptions.langfuseData.environment ?? "default",
+      name: langfuseOptions.langfuseData.name ?? "create-chat-completion",
+      model: langfuseOptions.model,
+      input: langfuseOptions.input,
     });
 
-    const p = this.getProvider(provider);
-
     try {
-      const result = await p.createChatCompletion(messages, opts);
+      const result = await func();
       const end = Date.now();
 
       generation?.end({
@@ -168,7 +221,7 @@ export class AISuite<S extends string = string> {
       });
 
       trace?.update({
-        input: messages,
+        input: langfuseOptions.input,
         output: result.content,
       });
 
@@ -177,14 +230,14 @@ export class AISuite<S extends string = string> {
         execution_time: end - start,
       };
     } catch (error) {
-      const result = p.handleError(error as Error);
+      const result = provider.handleError(error as Error);
       const end = Date.now();
       generation?.end({
         output: error,
       });
 
       trace?.update({
-        input: messages,
+        input: langfuseOptions.input,
         output: error,
       });
 
@@ -192,7 +245,7 @@ export class AISuite<S extends string = string> {
         success: false,
         ...result,
         created: start,
-        model: provider.split("/")[1],
+        model: langfuseOptions.model,
         execution_time: end - start,
       };
     }

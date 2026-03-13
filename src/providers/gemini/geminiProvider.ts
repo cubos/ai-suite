@@ -1,7 +1,9 @@
 import { ApiError, type FunctionCall, type GenerateContentParameters, GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
-import type { ErrorChatCompletion, InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
+import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
+import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
+import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import { notUseThinkingConfig } from "./constants/notUseThinkingConfig.js";
@@ -182,6 +184,45 @@ export class GeminiProvider extends ProviderBase {
     return result;
   }
 
+  protected async _createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {
+    const req = {
+      model: this.model,
+      contents: embedding.content,
+      config: {
+        outputDimensionality: options.dimensions,
+        taskType: options.taskType,
+      },
+    };
+    const response = await this.client.models.embedContent(req);
+
+    await this.hooks.handleRequest(req);
+
+    await this.hooks.handleResponse(req, response, options.metadata ?? {});
+
+    const embeddings = [];
+    let tokens = 0;
+    for (const embedding of response.embeddings || []) {
+      if (!embedding.values?.length) {
+        embeddings.push([]);
+      }
+      embeddings.push(embedding.values ?? []);
+      tokens += embedding.values?.length || 0;
+    }
+
+    return {
+      success: true,
+      created: Math.floor(Date.now() / 1000),
+      content: embeddings,
+      model: this.model,
+      object: "list",
+      usage: {
+        input_tokens: tokens,
+        output_tokens: 0,
+        total_tokens: tokens,
+      },
+    };
+  }
+
   /**
    * Parses the input content into a Gemini-compatible content part.
    * @param content The input content to parse.
@@ -239,7 +280,7 @@ export class GeminiProvider extends ProviderBase {
     throw new Error("Unsupported content type");
   }
 
-  handleError(error: Error): Pick<ErrorChatCompletion, "error" | "raw" | "tag"> {
+  handleError(error: Error): Pick<ErrorAISuite, "error" | "raw" | "tag"> {
     if (error instanceof ApiError) {
       const status = error.status;
 

@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import z from "zod";
 import { AISuite } from "../src/index.js";
 import type { SuccessChatCompletion } from "../src/types/chat.js";
+import type { SuccessEmbedding } from "../src/types/embed.js";
 
 dotenv.config();
 
@@ -197,5 +198,75 @@ describe("GeminiProvider", () => {
     expect((result as SuccessChatCompletion).content_object).toBeDefined();
     expect((result as SuccessChatCompletion).content_object).toHaveProperty("message");
     expect((result as SuccessChatCompletion).content_object.message).toBe("Hello, world!");
+  });
+});
+
+describe("GeminiProvider - Embeddings", () => {
+  it("should create embedding with a single text string", async () => {
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not defined");
+    }
+
+    const gemini = new AISuite({
+      geminiKey: apiKey,
+    });
+
+    const dimensions = 8;
+    const result = await gemini.createEmbedding(
+      "gemini/gemini-embedding-001",
+      {
+        content: "Hello, world!",
+      },
+      {
+        dimensions,
+      },
+    );
+
+    const successResult = result as SuccessEmbedding;
+    expect(result.success).toBe(true);
+    expect(successResult.content).toBeDefined();
+    expect(Array.isArray(successResult.content)).toBe(true);
+    expect(successResult.content.length).toBe(1);
+    expect(Array.isArray(successResult.content[0])).toBe(true);
+    expect(successResult.content[0].length).toBe(dimensions);
+    expect(successResult.model).toBeDefined();
+    expect(successResult.object).toBe("list");
+    expect(successResult.usage).toBeDefined();
+  });
+
+  it("should create embedding with multiple text strings", async () => {
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not defined");
+    }
+
+    const gemini = new AISuite({
+      geminiKey: apiKey,
+    });
+
+    const texts = ["Hello, world!", "How are you?", "Great to see you!"];
+    const dimensions = 8;
+    const result = await gemini.createEmbedding(
+      "gemini/gemini-embedding-001",
+      {
+        content: texts,
+      },
+      {
+        dimensions,
+      },
+    );
+
+    const successResult = result as SuccessEmbedding;
+    expect(successResult.success).toBe(true);
+    expect(successResult.content).toBeDefined();
+    expect(Array.isArray(successResult.content)).toBe(true);
+    expect(successResult.content.length).toBe(texts.length);
+    expect(successResult.content).toHaveLength(texts.length);
+    successResult.content.forEach(embedding => {
+      expect(Array.isArray(embedding)).toBe(true);
+      expect(embedding.length).toBe(dimensions);
+    });
+    expect(successResult.model).toBeDefined();
+    expect(successResult.object).toBe("list");
+    expect(successResult.usage).toBeDefined();
   });
 });

@@ -1,45 +1,7 @@
-interface ResultErrorChatCompletion {
-  /**
-   * The Unix timestamp (in seconds) of when the chat completion was created.
-   */
-  created: number;
+import type { ErrorAISuite } from "./handleErrorResponse.js";
+import type { ResultBase } from "./resultBase.js";
 
-  /**
-   * The model used for the chat completion.
-   */
-  model: string;
-
-  /**
-   * The error message.
-   */
-  error: string;
-
-  /**
-   * The error tag.
-   * e.g. "InvalidAuth" | "InvalidRequest" | "InvalidModel" | "RateLimitExceeded" | "ServerError" | "ServerOverloaded" | "Unknown";
-   *
-   */
-  tag:
-    | "InvalidAuth"
-    | "InvalidRequest"
-    | "InvalidModel"
-    | "RateLimitExceeded"
-    | "ServerError"
-    | "ServerOverloaded"
-    | "Unknown";
-  /**
-   *
-   * The raw error from the API.
-   */
-  raw: Error;
-
-  /**
-   * The execution time of the completion request. In milliseconds.
-   */
-  execution_time?: number;
-}
-
-interface ResultSuccessChatCompletion {
+interface ResultSuccessChatCompletion extends ResultBase {
   /**
    * A unique identifier for the chat completion.
    */
@@ -124,11 +86,7 @@ export type SuccessChatCompletion = ResultSuccessChatCompletion & {
   success: true;
 };
 
-export type ErrorChatCompletion = ResultErrorChatCompletion & {
-  success: false;
-};
-
-export type ResultChatCompletion = SuccessChatCompletion | ErrorChatCompletion;
+export type ResultChatCompletion = SuccessChatCompletion | ErrorAISuite;
 
 /**
  * Represents an image input content.

@@ -24,7 +24,7 @@ All providers implement the following methods:
 
 ### OpenAI
 
-**Module**: `./src/providers/openai.ts`
+**Module**: `./src/providers/openai/` (OpenAI provider directory)
 
 OpenAI integration supports models like GPT-3.5 and GPT-4. The provider maps AI-Suite's unified message format to OpenAI's API format.
 
@@ -50,7 +50,7 @@ if (response.success) {
 
 ### Anthropic
 
-**Module**: `./src/providers/anthropic.ts`
+**Module**: `./src/providers/anthropic/` (Anthropic provider directory)
 
 Anthropic integration supports Claude models. The provider handles the conversion between AI-Suite's message format and Anthropic's API format.
 
@@ -76,7 +76,7 @@ if (response.success) {
 
 ### Google Gemini
 
-**Module**: `./src/providers/gemini.ts`
+**Module**: `./src/providers/gemini/` (Gemini provider directory)
 
 Google Gemini integration supports Gemini models. The provider maps between AI-Suite's message format and Gemini's API requirements.
 
@@ -117,7 +117,7 @@ if (response.success) {
 
 ### DeepSeek
 
-**Module**: `./src/providers/deepseek.ts`
+**Module**: `./src/providers/deepseek/` (DeepSeek provider directory)
 
 DeepSeek integration supports DeepSeek AI models. The provider handles mapping between AI-Suite's format and DeepSeek's API.
 
@@ -142,7 +142,7 @@ if (response.success) {
 
 ### Grok
 
-**Module**: `./src/providers/grok.ts`
+**Module**: `./src/providers/grok/` (Grok provider directory)
 
 Grok integration supports Grok models from xAI. The provider extends OpenAI provider as Grok uses OpenAI-compatible API.
 
@@ -177,7 +177,7 @@ if (response.success) {
 
 ### Custom LLM
 
-**Module**: `./src/providers/customLLM.ts`
+**Module**: `./src/providers/customLLM/` (Custom LLM provider directory)
 
 Custom LLM provider allows you to use any OpenAI-compatible API endpoint. This is useful for:
 - Self-hosted LLMs (Ollama, LM Studio, vLLM, etc.)
