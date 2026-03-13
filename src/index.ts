@@ -224,7 +224,6 @@ export class AISuite<S extends string = string> {
     );
   }
 
-
   private async resultWhithObservation<R extends ResultBase>(
     func: () => Promise<R>,
     langfuseOptions: { langfuseData: LangfuseData; model: string; input: unknown },
