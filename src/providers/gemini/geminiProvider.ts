@@ -1,4 +1,11 @@
-import { ApiError, type Content, type FunctionCall, type GenerateContentParameters, GoogleGenAI, ThinkingLevel } from "@google/genai";
+import {
+  ApiError,
+  type Content,
+  type FunctionCall,
+  type GenerateContentParameters,
+  GoogleGenAI,
+  ThinkingLevel,
+} from "@google/genai";
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
