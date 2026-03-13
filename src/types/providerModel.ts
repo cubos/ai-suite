@@ -24,6 +24,7 @@ export type ProviderEmbeddingModel<S extends string> =
   | `deepseek/${DeepSeekEmbeddingModels}`
   | `custom-llm/${S}`;
 
+
 export type ProviderBatchModel<S extends string = string> = ProviderChatModel<S> | ProviderEmbeddingModel<S>;
 
 export type ProviderFileType = "openai" | "anthropic" | "gemini" | "deepseek" | "custom-llm" | "grok";

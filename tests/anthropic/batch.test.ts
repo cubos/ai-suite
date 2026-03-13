@@ -24,8 +24,8 @@ describe("Anthropic Batch API", () => {
     const ai = new AISuite({ anthropicKey: apiKey });
 
     const result = await ai.batch.create(
-      "anthropic/claude-haiku-4-5-20251001",
       "chat/completions",
+      "anthropic/claude-haiku-4-5-20251001",
       { inputFileId: "file-123" },
       { responseFormat: "text" },
     );
@@ -39,8 +39,8 @@ describe("Anthropic Batch API", () => {
     const ai = new AISuite({ anthropicKey: apiKey });
 
     const result = await ai.batch.create(
-      "anthropic/claude-haiku-4-5-20251001",
       "chat/completions",
+      "anthropic/claude-haiku-4-5-20251001",
       {},
       { responseFormat: "text" },
     );
@@ -55,8 +55,8 @@ describe("Anthropic Batch API", () => {
 
     // create
     const createResult = await ai.batch.create(
-      "anthropic/claude-haiku-4-5-20251001",
       "chat/completions",
+      "anthropic/claude-haiku-4-5-20251001",
       {
         batch: [
           {

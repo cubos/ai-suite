@@ -180,8 +180,8 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
     switch (status) {
       case JobState.JOB_STATE_QUEUED:
       case JobState.JOB_STATE_UNSPECIFIED:
-        return "validating";
       case JobState.JOB_STATE_PENDING:
+        return "validating";
       case JobState.JOB_STATE_PARTIALLY_SUCCEEDED:
       case JobState.JOB_STATE_RUNNING:
         return "in_progress";
@@ -227,7 +227,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
         completedAt: batch.endTime ? Math.floor(new Date(batch.endTime).getTime() / 1000) : undefined,
         requestCounts: this.getRequestCounts(batch.completionStats),
         outputFileId: batch.dest?.fileName || undefined,
-        id: response.name || "",
+        id: batch.name || "",
         object: "batch",
         status: this.getStatus(batch.state),
         errors: batch.error,
@@ -282,14 +282,14 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
       throw new AISuiteError("Gemini batch output file is not available yet.");
     }
 
-    const isEmbeddings = /embeddings/.test(batch.model || "");
+    const isEmbeddings = /embedding/.test(batch.model || "");
     const tmpPath = join(tmpdir(), `gemini-batch-${Date.now()}.jsonl`);
 
     await this.provider.client.files.download({ file: batch.dest.fileName, downloadPath: tmpPath });
 
     const text = await readFile(tmpPath, "utf-8");
     await unlink(tmpPath);
-
+    
     const lines = text.trim().split("\n").filter(Boolean);
 
     type GeminiLine<T> = { key: string; response?: T; status?: { code: number; message: string } };

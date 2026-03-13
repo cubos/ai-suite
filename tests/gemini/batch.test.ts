@@ -25,8 +25,8 @@ describe("Gemini Batch API", () => {
 
     // create
     const createResult = await ai.batch.create(
-      "gemini/gemini-2.5-flash",
       "chat/completions",
+      "gemini/gemini-2.5-flash",
       {
         batch: [
           {
@@ -68,8 +68,8 @@ describe("Gemini Batch API", () => {
     const ai = new AISuite({ geminiKey: apiKey });
 
     const createResult = await ai.batch.create(
-      "gemini/gemini-embedding-001",
       "embeddings",
+      "gemini/gemini-embedding-001",
       {
         batch: [
           { customId: "emb-1", params: { content: "Hello world" } },

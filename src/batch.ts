@@ -7,8 +7,6 @@ import type {
   ChatBatchOptions,
   ChatBatchRequest,
   CreateBatchArgs,
-  CreateBatchOptions,
-  CreateBatchRequest,
   EmbeddingBatchRequest,
   Endpoint,
   ListBatchOptions,
@@ -21,7 +19,6 @@ import type {
 import type { EmbeddingOptions } from "./types/embed.js";
 import type { ErrorAISuite } from "./types/handleErrorResponse.js";
 import type {
-  ProviderBatchModel,
   ProviderBatchType,
   ProviderChatModel,
   ProviderEmbeddingModel,
@@ -77,23 +74,11 @@ export class Batch<S extends string = string> {
    * @param options options for batch creation, including optional expiration time and metadata for hooks.
    * @return a promise that resolves to the result of the batch creation operation, including status and provider information.
    */
-  async create(
-    provider: ProviderEmbeddingModel<S>,
-    endpoint: "embeddings",
-    batch: EmbeddingBatchRequest,
-    options: EmbeddingOptions,
-  ): Promise<ResultCreateBatch>;
-  async create(
-    provider: ProviderChatModel<S>,
-    endpoint: "chat/completions",
-    batch: ChatBatchRequest,
-    options: ChatBatchOptions,
-  ): Promise<ResultCreateBatch>;
-  async create(
-    provider: ProviderBatchModel<S>,
-    endpoint: Endpoint,
-    batch: CreateBatchRequest,
-    options: CreateBatchOptions,
+  async create<E extends Endpoint>(
+    endpoint: E,
+    provider: E extends "embeddings" ? ProviderEmbeddingModel<S> : ProviderChatModel<S>,
+    batch: E extends "embeddings" ? EmbeddingBatchRequest : ChatBatchRequest,
+    options: E extends "embeddings" ? EmbeddingOptions : ChatBatchOptions,
   ): Promise<ResultCreateBatch> {
     const start = Date.now();
     const p = this.getProvider(provider);

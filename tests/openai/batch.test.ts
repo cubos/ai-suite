@@ -23,7 +23,7 @@ describe("OpenAI Batch API", () => {
 
     const ai = new AISuite({ openaiKey: apiKey });
 
-    const result = await ai.batch.create("openai/gpt-4o-mini", "chat/completions", {}, { responseFormat: "text" });
+    const result = await ai.batch.create("chat/completions", "openai/gpt-4o-mini", {}, { responseFormat: "text" });
 
     expect(result.success).toBe(false);
   });
@@ -35,8 +35,8 @@ describe("OpenAI Batch API", () => {
 
     // create
     const createResult = await ai.batch.create(
-      "openai/gpt-4o-mini",
       "chat/completions",
+      "openai/gpt-4o-mini",
       {
         batch: [
           {
@@ -78,8 +78,8 @@ describe("OpenAI Batch API", () => {
     const ai = new AISuite({ openaiKey: apiKey });
 
     const createResult = await ai.batch.create(
-      "openai/text-embedding-3-small",
       "embeddings",
+      "openai/text-embedding-3-small",
       {
         batch: [
           { customId: "emb-1", params: { content: "Hello world" } },
