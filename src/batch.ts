@@ -12,6 +12,7 @@ import type {
   EmbeddingBatchRequest,
   Endpoint,
   ListBatchOptions,
+  ResultBatch,
   ResultCancelBatch,
   ResultCreateBatch,
   ResultListBatch,
@@ -19,7 +20,13 @@ import type {
 } from "./types/batch.js";
 import type { EmbeddingOptions } from "./types/embed.js";
 import type { ErrorAISuite } from "./types/handleErrorResponse.js";
-import type { ProviderBatchModel, ProviderChatModel, ProviderEmbeddingModel, ProviderModel } from "./types/providerModel.js";
+import type {
+  ProviderBatchModel,
+  ProviderBatchType,
+  ProviderChatModel,
+  ProviderEmbeddingModel,
+  ProviderModel,
+} from "./types/providerModel.js";
 import type { ResponseBase } from "./types/responseBase.js";
 import type { ResultBase } from "./types/resultBase.js";
 
@@ -154,6 +161,25 @@ export class Batch<S extends string = string> {
       {
         langfuseData: {
           name: "cancel-batch",
+          tags: ["batch", provider],
+        },
+        model: p.model,
+        input: id,
+      },
+      p,
+      start,
+    );
+  }
+
+  async result(provider: ProviderBatchType, id: string, options: OptionsBase): Promise<ResultBatch> {
+    const start = Date.now();
+    const p = this.getProvider(provider);
+
+    return this.resultWhithObservation(
+      () => p.batch.result(id, options),
+      {
+        langfuseData: {
+          name: "result-batch",
           tags: ["batch", provider],
         },
         model: p.model,
