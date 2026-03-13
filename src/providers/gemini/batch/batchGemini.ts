@@ -1,3 +1,6 @@
+import { readFile, unlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type {
   BatchJob,
   CancelBatchJobParameters,
@@ -7,17 +10,22 @@ import type {
 } from "@google/genai";
 import { JobState } from "@google/genai";
 import { toGeminiSchema } from "gemini-zod";
+import JSON5 from "json5";
 import type { BatchRequestCounts } from "openai/resources";
 import type {
   Batch,
   BatchStatus,
+  ChatCompletionBatchResponse,
   CreateBatchArgs,
+  EmbeddingtBatchResponse,
   ListBatchOptions,
   SuccessCancelBatch,
   SuccessCreateBatch,
   SuccessListBatch,
+  SuccessResultBatch,
   SuccessRetrieveBatch,
 } from "../../../types/batch.js";
+import { AISuiteError } from "../../../utils.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
 import { notUseThinkingConfig } from "../constants/notUseThinkingConfig.js";
@@ -73,9 +81,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
           temperature: options.temperature ?? 0.7,
           thinkingConfig: thinkingConfig ?? { thinkingBudget: 0 },
           responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
-          ...(options.responseFormat === "json_schema"
-            ? { responseSchema: toGeminiSchema(options.zodSchema) }
-            : {}),
+          ...(options.responseFormat === "json_schema" ? { responseSchema: toGeminiSchema(options.zodSchema) } : {}),
           ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
         };
 
@@ -245,6 +251,134 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
         status: this.getStatus(response.state),
         errors: response.error,
       },
+    };
+  }
+
+  async result(id: string, options: OptionsBase): Promise<SuccessResultBatch> {
+    await this.provider.hooks.handleRequest(id);
+
+    const batch = await this.provider.client.batches.get({ name: id });
+
+    if (!batch.dest?.fileName) {
+      throw new AISuiteError("Gemini batch output file is not available yet.");
+    }
+
+    const isEmbeddings = /embeddings/.test(batch.model || "");
+    const tmpPath = join(tmpdir(), `gemini-batch-${Date.now()}.jsonl`);
+
+    await this.provider.client.files.download({ file: batch.dest.fileName, downloadPath: tmpPath });
+
+    const text = await readFile(tmpPath, "utf-8");
+    await unlink(tmpPath);
+
+    const lines = text.trim().split("\n").filter(Boolean);
+
+    type GeminiLine<T> = { key: string; response?: T; status?: { code: number; message: string } };
+
+    if (isEmbeddings) {
+      type EmbedResponse = { embedding: { values: number[] } };
+
+      const parsed = lines.map(l => JSON.parse(l) as GeminiLine<EmbedResponse>);
+
+      const errors = parsed
+        .filter(p => p.status)
+        .map(p => ({ customId: p.key, code: String(p.status!.code), message: p.status!.message }));
+
+      const result: EmbeddingtBatchResponse[] = parsed
+        .filter(p => p.response)
+        .map(p => ({
+          customId: p.key,
+          id: "",
+          content: [p.response!.embedding.values],
+          model: batch.model || "",
+          object: "list" as const,
+        }));
+
+      await this.provider.hooks.handleResponse(id, result, options.metadata ?? {});
+
+      return { success: true, content: result, model: this.provider.providerName, object: "batch.list", errors };
+    }
+
+    type ChatResponse = {
+      candidates: {
+        content: { parts: { text?: string; functionCall?: { name: string; args: Record<string, unknown> } }[] };
+      }[];
+      usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
+      modelVersion?: string;
+    };
+
+    const parsed = lines.map(l => JSON.parse(l) as GeminiLine<ChatResponse>);
+
+    const errors = parsed
+      .filter(p => p.status)
+      .map(p => ({ customId: p.key, code: String(p.status!.code), message: p.status!.message }));
+
+    const result: ChatCompletionBatchResponse[] = parsed
+      .filter(p => p.response)
+      .map(p => {
+        const resp = p.response!;
+        const parts = resp.candidates[0]?.content?.parts ?? [];
+
+        const textPart = parts.find(pt => pt.text != null);
+        const content = textPart?.text ?? null;
+
+        let content_object: Record<string, unknown> = {};
+        try {
+          content_object = JSON5.parse<Record<string, unknown>>(content ?? "");
+        } catch (_) {}
+
+        const tools = parts
+          .filter(pt => pt.functionCall)
+          .map(pt => ({
+            id: pt.functionCall!.name,
+            type: "function" as const,
+            name: pt.functionCall!.name,
+            content: pt.functionCall!.args,
+            rawContent: JSON.stringify(pt.functionCall!.args),
+          }));
+
+        return {
+          customId: p.key,
+          id: p.key,
+          model: resp.modelVersion || batch.model || "",
+          object: "chat.completion" as const,
+          content,
+          content_object,
+          tools: tools.length ? tools : undefined,
+          usage: resp.usageMetadata
+            ? {
+                input_tokens: resp.usageMetadata.promptTokenCount ?? 0,
+                output_tokens: resp.usageMetadata.candidatesTokenCount ?? 0,
+                total_tokens: resp.usageMetadata.totalTokenCount ?? 0,
+                cached_tokens: 0,
+                reasoning_tokens: 0,
+                thoughts_tokens: 0,
+              }
+            : undefined,
+        };
+      });
+
+    const usage = result.reduce(
+      (acc, r) => ({
+        input_tokens: acc.input_tokens + (r.usage?.input_tokens ?? 0),
+        output_tokens: acc.output_tokens + (r.usage?.output_tokens ?? 0),
+        total_tokens: acc.total_tokens + (r.usage?.total_tokens ?? 0),
+        cached_tokens: 0,
+        reasoning_tokens: 0,
+        thoughts_tokens: 0,
+      }),
+      { input_tokens: 0, output_tokens: 0, total_tokens: 0, cached_tokens: 0, reasoning_tokens: 0, thoughts_tokens: 0 },
+    );
+
+    await this.provider.hooks.handleResponse(id, result, options.metadata ?? {});
+
+    return {
+      success: true,
+      content: result,
+      model: this.provider.providerName,
+      object: "batch.chat.completion",
+      errors,
+      usage,
     };
   }
 
