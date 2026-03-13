@@ -1,14 +1,15 @@
 import { readFile, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type {
-  BatchJob,
-  CancelBatchJobParameters,
-  CompletionStats,
-  GetBatchJobParameters,
-  ListBatchJobsParameters,
+import {
+  type BatchJob,
+  type CancelBatchJobParameters,
+  type CompletionStats,
+  type GetBatchJobParameters,
+  JobState,
+  type ListBatchJobsParameters,
+  ThinkingLevel,
 } from "@google/genai";
-import { JobState } from "@google/genai";
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
 import type { BatchRequestCounts } from "openai/resources";
@@ -30,6 +31,7 @@ import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
 import { notUseThinkingConfig } from "../constants/notUseThinkingConfig.js";
 import { onlyWorksWithThinking } from "../constants/onlyWorksWithThinking.js";
+import { useThinkingLevel } from "../constants/useThinkingLevel.js";
 import type { GeminiProvider } from "../geminiProvider.js";
 import { convertToGeminiFunctions } from "../utils/convertToGeminiFunctions.js";
 
@@ -63,8 +65,25 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
           )
           .join("\n");
       } else {
-        let thinkingConfig: { thinkingBudget: number; includeThoughts: boolean } | null = null;
-        if (onlyWorksWithThinking.includes(this.provider.model)) {
+        const thinkingLevelMap: Record<string, ThinkingLevel> = {
+          minimal: ThinkingLevel.MINIMAL,
+          low: ThinkingLevel.LOW,
+          medium: ThinkingLevel.MEDIUM,
+          high: ThinkingLevel.HIGH,
+        };
+
+        let thinkingConfig: {
+          thinkingBudget?: number;
+          thinkingLevel?: ThinkingLevel;
+          includeThoughts: boolean;
+        } | null = null;
+
+        if (useThinkingLevel.includes(this.provider.model)) {
+          thinkingConfig = {
+            thinkingLevel: thinkingLevelMap[options.thinking?.level ?? "high"],
+            includeThoughts: options.thinking?.output ?? false,
+          };
+        } else if (onlyWorksWithThinking.includes(this.provider.model)) {
           thinkingConfig = {
             thinkingBudget: options.thinking?.budget ?? 128,
             includeThoughts: options.thinking?.output ?? false,
