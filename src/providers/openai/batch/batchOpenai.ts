@@ -1,14 +1,23 @@
+import JSON5 from "json5";
 import type OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
-import type { BatchCreateParams } from "openai/resources";
+import type {
+  BatchCreateParams,
+  ChatCompletion,
+  ChatCompletionMessageToolCall,
+  CreateEmbeddingResponse,
+} from "openai/resources";
 import type { BatchListParams } from "openai/resources.js";
 import type {
   BatchStatus,
+  ChatCompletionBatchResponse,
   CreateBatchArgs,
+  EmbeddingtBatchResponse,
   ListBatchOptions,
   SuccessCancelBatch,
   SuccessCreateBatch,
   SuccessListBatch,
+  SuccessResultBatch,
   SuccessRetrieveBatch,
 } from "../../../types/batch.js";
 
@@ -205,6 +214,140 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
         outputFileId: response.output_file_id,
         errors: response.errors,
       },
+    };
+  }
+
+  async result(id: string, options: OptionsBase): Promise<SuccessResultBatch> {
+    await this.provider.hooks.handleRequest(id);
+
+    const batch = await this.provider.client.batches.retrieve(id);
+
+    if (!batch.output_file_id) {
+      throw new AISuiteError("Batch output file is not available yet.");
+    }
+
+    const isEmbeddings = /embeddings/.test(batch.endpoint);
+
+    const fileResponse = await this.provider.client.files.content(batch.output_file_id);
+    const text = await fileResponse.text();
+    const lines = text.trim().split("\n").filter(Boolean);
+
+    type ParsedLine<T> = {
+      custom_id: string;
+      response: { body: T } | null;
+      error: { code: string; message: string } | null;
+    };
+
+    if (isEmbeddings) {
+      const parsed = lines.map(line => JSON.parse(line) as ParsedLine<CreateEmbeddingResponse>);
+
+      const errors = parsed
+        .filter(p => p.error !== null)
+        .map(p => ({ customId: p.custom_id, code: p.error!.code, message: p.error!.message }));
+
+      const result: EmbeddingtBatchResponse[] = parsed
+        .filter(p => p.response !== null)
+        .map(p => {
+          const body = p.response!.body;
+          return {
+            customId: p.custom_id,
+            content: body.data.map(d => d.embedding),
+            model: body.model,
+            object: "list" as const,
+            usage: body.usage
+              ? {
+                  input_tokens: body.usage.prompt_tokens ?? 0,
+                  output_tokens: 0 as const,
+                  total_tokens: body.usage.total_tokens ?? 0,
+                }
+              : undefined,
+          };
+        });
+
+      const usage = result.reduce(
+        (acc, r) => ({
+          input_tokens: acc.input_tokens + (r.usage?.input_tokens ?? 0),
+          output_tokens: 0 as const,
+          total_tokens: acc.total_tokens + (r.usage?.total_tokens ?? 0),
+        }),
+        { input_tokens: 0, output_tokens: 0 as const, total_tokens: 0 },
+      );
+
+      await this.provider.hooks.handleResponse(id, result, options.metadata ?? {});
+
+      return { success: true, content: result, model: this.provider.providerName, object: "batch.list", errors, usage };
+    }
+
+    const parsed = lines.map(line => JSON.parse(line) as ParsedLine<ChatCompletion>);
+
+    const errors = parsed
+      .filter(p => p.error !== null)
+      .map(p => ({ customId: p.custom_id, code: p.error!.code, message: p.error!.message }));
+
+    const result: ChatCompletionBatchResponse[] = parsed
+      .filter(p => p.response !== null)
+      .map(p => {
+        const body = p.response!.body;
+        const message = body.choices[0]?.message;
+
+        const tools = message?.tool_calls
+          ?.filter((tc): tc is Extract<ChatCompletionMessageToolCall, { type: "function" }> => tc.type === "function")
+          .map(tc => ({
+            id: tc.id,
+            type: "function" as const,
+            name: tc.function.name,
+            content: JSON.parse(tc.function.arguments),
+            rawContent: tc.function.arguments,
+          }));
+
+        return {
+          customId: p.custom_id,
+          id: body.id,
+          model: body.model,
+          object: "chat.completion" as const,
+          content: message?.content ?? null,
+          content_object: (() => {
+            try {
+              return JSON5.parse<Record<string, unknown>>(message?.content ?? "");
+            } catch (_) {
+              return {};
+            }
+          })(),
+          tools: tools?.length ? tools : undefined,
+          usage: body.usage
+            ? {
+                input_tokens: body.usage.prompt_tokens ?? 0,
+                output_tokens: body.usage.completion_tokens ?? 0,
+                total_tokens: body.usage.total_tokens ?? 0,
+                cached_tokens: body.usage.prompt_tokens_details?.cached_tokens ?? 0,
+                reasoning_tokens: body.usage.completion_tokens_details?.reasoning_tokens ?? 0,
+                thoughts_tokens: 0,
+              }
+            : undefined,
+        };
+      });
+
+    const usage = result.reduce(
+      (acc, r) => ({
+        input_tokens: acc.input_tokens + (r.usage?.input_tokens ?? 0),
+        output_tokens: acc.output_tokens + (r.usage?.output_tokens ?? 0),
+        total_tokens: acc.total_tokens + (r.usage?.total_tokens ?? 0),
+        cached_tokens: acc.cached_tokens + (r.usage?.cached_tokens ?? 0),
+        reasoning_tokens: acc.reasoning_tokens + (r.usage?.reasoning_tokens ?? 0),
+        thoughts_tokens: 0,
+      }),
+      { input_tokens: 0, output_tokens: 0, total_tokens: 0, cached_tokens: 0, reasoning_tokens: 0, thoughts_tokens: 0 },
+    );
+
+    await this.provider.hooks.handleResponse(id, result, options.metadata ?? {});
+
+    return {
+      success: true,
+      content: result,
+      model: this.provider.providerName,
+      object: "batch.chat.completion",
+      errors,
+      usage,
     };
   }
 
