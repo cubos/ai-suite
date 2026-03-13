@@ -114,7 +114,7 @@ export class Batch<S extends string = string> {
     );
   }
 
-  async list(provider: ProviderBatchModel<S>, options: ListBatchOptions): Promise<ResultListBatch> {
+  async list(provider: ProviderBatchType, options: ListBatchOptions): Promise<ResultListBatch> {
     const start = Date.now();
     const p = this.getProvider(provider);
 
@@ -133,7 +133,7 @@ export class Batch<S extends string = string> {
     );
   }
 
-  async retrieve(provider: ProviderBatchModel<S>, id: string, options: OptionsBase): Promise<ResultRetrieveBatch> {
+  async retrieve(provider: ProviderBatchType, id: string, options: OptionsBase): Promise<ResultRetrieveBatch> {
     const start = Date.now();
     const p = this.getProvider(provider);
 
@@ -152,7 +152,7 @@ export class Batch<S extends string = string> {
     );
   }
 
-  async cancel(provider: ProviderBatchModel<S>, id: string, options: OptionsBase): Promise<ResultCancelBatch> {
+  async cancel(provider: ProviderBatchType, id: string, options: OptionsBase): Promise<ResultCancelBatch> {
     const start = Date.now();
     const p = this.getProvider(provider);
 
