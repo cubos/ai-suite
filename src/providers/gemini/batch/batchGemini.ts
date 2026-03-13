@@ -289,7 +289,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
 
     const text = await readFile(tmpPath, "utf-8");
     await unlink(tmpPath);
-    
+
     const lines = text.trim().split("\n").filter(Boolean);
 
     type GeminiLine<T> = { key: string; response?: T; status?: { code: number; message: string } };
