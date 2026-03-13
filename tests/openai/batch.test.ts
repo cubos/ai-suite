@@ -23,12 +23,7 @@ describe("OpenAI Batch API", () => {
 
     const ai = new AISuite({ openaiKey: apiKey });
 
-    const result = await ai.batch.create(
-      "openai/gpt-4o-mini",
-      "chat/completions",
-      {},
-      { responseFormat: "text" },
-    );
+    const result = await ai.batch.create("openai/gpt-4o-mini", "chat/completions", {}, { responseFormat: "text" });
 
     expect(result.success).toBe(false);
   });
