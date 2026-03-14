@@ -141,6 +141,7 @@ export class AISuite<S extends string = string> {
         langfuseData: {
           name: "create-chat-completion",
           tags: ["chat", provider],
+          ...options?.metadata?.langFuse,
         },
         model: provider.split("/")[1],
         input: messages,
@@ -177,6 +178,7 @@ export class AISuite<S extends string = string> {
         langfuseData: {
           name: "create-embedding",
           tags: ["embedding", provider],
+          ...options?.metadata?.langFuse,
         },
         model: provider.split("/")[1],
         input: embedding.content,
