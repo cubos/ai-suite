@@ -1,4 +1,11 @@
-import { ApiError, type FunctionCall, type GenerateContentParameters, GoogleGenAI, ThinkingLevel } from "@google/genai";
+import {
+  ApiError,
+  type Content,
+  type FunctionCall,
+  type GenerateContentParameters,
+  GoogleGenAI,
+  ThinkingLevel,
+} from "@google/genai";
 import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
@@ -6,19 +13,25 @@ import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../..
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
+import { BatchGemini } from "./batch/index.js";
 import { notUseThinkingConfig } from "./constants/notUseThinkingConfig.js";
 import { onlyWorksWithThinking } from "./constants/onlyWorksWithThinking.js";
 import { useThinkingLevel } from "./constants/useThinkingLevel.js";
+import { FileGemini } from "./file/index.js";
 import { convertToGeminiFunctions } from "./utils/convertToGeminiFunctions.js";
 
 export class GeminiProvider extends ProviderBase {
-  private client: GoogleGenAI;
-  private model: string;
-  private hooks: BaseHook;
+  public client: GoogleGenAI;
+  public model: string;
+  public providerName: string;
+  public hooks: BaseHook;
+  batch: BatchGemini = new BatchGemini(this);
+  file: FileGemini = new FileGemini(this);
 
   constructor(
     apiKey: string,
     model: string,
+    provideName: string,
     hooks?: {
       handleRequest?: (req: unknown) => Promise<void>;
       handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
@@ -31,6 +44,7 @@ export class GeminiProvider extends ProviderBase {
       apiKey: apiKey,
     });
     this.model = model;
+    this.providerName = provideName;
   }
 
   async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
@@ -93,46 +107,7 @@ export class GeminiProvider extends ProviderBase {
           : {}),
         ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
       },
-      contents: messages.slice(systemMessage ? 1 : 0, messages.length).map(msg => {
-        const content = Array.isArray(msg.content) ? msg.content : [msg.content];
-        const parsedContent = content.map(c =>
-          this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(c),
-        );
-
-        if (msg.role === "user" || msg.role === "developer") {
-          return {
-            role: "user",
-            parts: parsedContent,
-          };
-        }
-        if (msg.role === "assistant") {
-          const textContent = parsedContent
-            .filter(c => c.text !== undefined)
-            .map(c => c.text!)
-            .join("");
-
-          return {
-            role: "model",
-            parts: [{ text: textContent }],
-          };
-        }
-        if (msg.role === "tool") {
-          const textContent = parsedContent
-            .filter(c => c.text !== undefined)
-            .map(c => c.text!)
-            .join("");
-
-          return {
-            role: "user",
-            parts: [
-              {
-                text: `Tool Response (${msg.name || "default_tool"}): ${textContent}`,
-              },
-            ],
-          };
-        }
-        throw new Error(`Unsupported role: ${msg.role}`);
-      }),
+      contents: this.mapMessages(messages.slice(systemMessage ? 1 : 0)),
       model: this.model,
     };
 
@@ -278,6 +253,49 @@ export class GeminiProvider extends ProviderBase {
     }
 
     throw new Error("Unsupported content type");
+  }
+
+  mapMessages(messages: MessageModel[]): Content[] {
+    return messages.map(msg => {
+      const content = Array.isArray(msg.content) ? msg.content : [msg.content];
+      const parsedContent = content.map(c =>
+        this.parseInputContent<{ text?: string; inlineData?: { mimeType: string; data: string } }>(c),
+      );
+
+      if (msg.role === "user" || msg.role === "developer") {
+        return {
+          role: "user",
+          parts: parsedContent,
+        };
+      }
+      if (msg.role === "assistant") {
+        const textContent = parsedContent
+          .filter(c => c.text !== undefined)
+          .map(c => c.text!)
+          .join("");
+
+        return {
+          role: "model",
+          parts: [{ text: textContent }],
+        };
+      }
+      if (msg.role === "tool") {
+        const textContent = parsedContent
+          .filter(c => c.text !== undefined)
+          .map(c => c.text!)
+          .join("");
+
+        return {
+          role: "user",
+          parts: [
+            {
+              text: `Tool Response (${msg.name || "default_tool"}): ${textContent}`,
+            },
+          ],
+        };
+      }
+      throw new Error(`Unsupported role: ${msg.role}`);
+    });
   }
 
   handleError(error: Error): Pick<ErrorAISuite, "error" | "raw" | "tag"> {

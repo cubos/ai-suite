@@ -2,9 +2,9 @@ import dotenv from "dotenv";
 import { readFileSync } from "fs";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import z from "zod";
-import { AISuite } from "../src/index.js";
-import type { SuccessChatCompletion } from "../src/types/chat.js";
-import type { SuccessEmbedding } from "../src/types/embed.js";
+import { AISuite } from "../../src/index.js";
+import type { SuccessChatCompletion } from "../../src/types/chat.js";
+import type { SuccessEmbedding } from "../../src/types/embed.js";
 
 dotenv.config();
 
@@ -120,7 +120,7 @@ describe("GeminiProvider", () => {
       geminiKey: apiKey,
     });
 
-    const file = readFileSync(`${__dirname}/assets/teste.pdf`);
+    const file = readFileSync(`${__dirname}/../assets/teste.pdf`);
 
     const base64File = file.toString("base64");
 

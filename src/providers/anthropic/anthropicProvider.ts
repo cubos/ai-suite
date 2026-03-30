@@ -5,17 +5,23 @@ import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../..
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
+import { BatchAnthropic } from "./batch/index.js";
+import { FileAnthropic } from "./file/index.js";
 import type { AnthropicContentBlock } from "./types/index.js";
 import { convertToAnthropicFunctions } from "./utils/convertToAnthropicFunctions.js";
 
 export class AnthropicProvider extends ProviderBase {
-  private client: Anthropic;
-  private model: string;
-  private hooks: BaseHook;
+  public client: Anthropic;
+  public model: string;
+  public hooks: BaseHook;
+  public providerName: string;
+  batch: BatchAnthropic = new BatchAnthropic(this);
+  file: FileAnthropic = new FileAnthropic(this);
 
   constructor(
     apiKey: string,
     model: string,
+    provideName: string,
     hooks?: {
       handleRequest?: (req: unknown) => Promise<void>;
       handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
@@ -28,50 +34,11 @@ export class AnthropicProvider extends ProviderBase {
       apiKey: apiKey,
     });
     this.model = model;
+    this.providerName = provideName;
   }
 
   async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
-    const mappedMessages = messages.map(
-      (
-        msg,
-      ): {
-        role: "user" | "assistant";
-        content: string | Array<AnthropicContentBlock>;
-      } => {
-        const content = Array.isArray(msg.content) ? msg.content : [msg.content];
-        const parsedContent = content.map(c => this.parseInputContent<AnthropicContentBlock>(c));
-
-        if (msg.role === "developer" || msg.role === "user") {
-          return {
-            role: "user",
-            content: parsedContent,
-          };
-        }
-        if (msg.role === "assistant") {
-          const textContent = parsedContent
-            .filter((c): c is { type: "text"; text: string } => c.type === "text")
-            .map(c => c.text)
-            .join("");
-
-          return {
-            role: "assistant",
-            content: textContent,
-          };
-        }
-        if (msg.role === "tool") {
-          const textContent = parsedContent
-            .filter((c): c is { type: "text"; text: string } => c.type === "text")
-            .map(c => c.text)
-            .join("");
-
-          return {
-            role: "user",
-            content: `Tool Response (${msg.name || "default_tool"}): ${textContent}`,
-          };
-        }
-        throw new Error(`Unsupported role: ${msg.role}`);
-      },
-    );
+    const mappedMessages = this.mapMessagesToChat(messages);
 
     // Prepare common options
     const anthropicOptions: Anthropic.Messages.MessageCreateParams = {
@@ -152,8 +119,55 @@ export class AnthropicProvider extends ProviderBase {
   /**
    * Anthropic does not have a dedicated embedding endpoint, so this method is not implemented.
    */
-  protected _createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {
+  protected _createEmbedding(_embedding: EmbeddingRequest, _options: EmbeddingOptions): Promise<SuccessEmbedding> {
     throw new Error("Method not implemented.");
+  }
+
+  mapMessagesToChat(messages: MessageModel[]): {
+    role: "user" | "assistant";
+    content: string | AnthropicContentBlock[];
+  }[] {
+    return messages.map(
+      (
+        msg,
+      ): {
+        role: "user" | "assistant";
+        content: string | Array<AnthropicContentBlock>;
+      } => {
+        const content = Array.isArray(msg.content) ? msg.content : [msg.content];
+        const parsedContent = content.map(c => this.parseInputContent<AnthropicContentBlock>(c));
+
+        if (msg.role === "developer" || msg.role === "user") {
+          return {
+            role: "user",
+            content: parsedContent,
+          };
+        }
+        if (msg.role === "assistant") {
+          const textContent = parsedContent
+            .filter((c): c is { type: "text"; text: string } => c.type === "text")
+            .map(c => c.text)
+            .join("");
+
+          return {
+            role: "assistant",
+            content: textContent,
+          };
+        }
+        if (msg.role === "tool") {
+          const textContent = parsedContent
+            .filter((c): c is { type: "text"; text: string } => c.type === "text")
+            .map(c => c.text)
+            .join("");
+
+          return {
+            role: "user",
+            content: `Tool Response (${msg.name || "default_tool"}): ${textContent}`,
+          };
+        }
+        throw new Error(`Unsupported role: ${msg.role}`);
+      },
+    );
   }
 
   /**

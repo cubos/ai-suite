@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import z from "zod";
-import { AISuite } from "../src/index.js";
-import type { SuccessChatCompletion } from "../src/types/chat.js";
+import { AISuite } from "../../src/index.js";
+import type { SuccessChatCompletion } from "../../src/types/chat.js";
 
 dotenv.config();
 

@@ -1,4 +1,4 @@
-export interface ResultBase {
+export interface ResultBase<Content = unknown> {
   /**
    * Whether the request was successful
    */
@@ -7,7 +7,7 @@ export interface ResultBase {
   /**
    * The content of the response, if the request was successful. It can be null if the provider doesn't return a content or if there was an error.
    */
-  content: unknown;
+  content: Content;
 
   /**
    * The model used for AI.

@@ -2,9 +2,9 @@ import dotenv from "dotenv";
 import { readFileSync } from "fs";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import z from "zod";
-import { AISuite } from "../src/index.js";
-import type { SuccessChatCompletion } from "../src/types/chat.js";
-import type { SuccessEmbedding } from "../src/types/index.js";
+import { AISuite } from "../../src/index.js";
+import type { SuccessChatCompletion } from "../../src/types/chat.js";
+import type { SuccessEmbedding } from "../../src/types/index.js";
 
 dotenv.config();
 
@@ -93,7 +93,7 @@ describe("OpenAIProvider", () => {
       openaiKey: apiKey,
     });
 
-    const img = readFileSync(`${__dirname}/assets/cat.jpg`);
+    const img = readFileSync(`${__dirname}/../assets/cat.jpg`);
 
     const result = await openAi.createChatCompletion(
       "openai/gpt-4o-mini",

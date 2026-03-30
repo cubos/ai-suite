@@ -4,7 +4,11 @@ import type { GeminiEmbeddingModels, GeminiModels } from "../providers/gemini/in
 import type { GrokModels } from "../providers/grok/index.js";
 import type { OpenAIEmbeddingModels, OpenAIModels } from "../providers/openai/index.js";
 
-export type ProviderModel<S extends string> = ProviderChatModel<S> | ProviderEmbeddingModel<S>;
+export type ProviderModel<S extends string> =
+  | ProviderChatModel<S>
+  | ProviderEmbeddingModel<S>
+  | ProviderFileType
+  | ProviderBatchModel<S>;
 
 export type ProviderChatModel<S extends string> =
   | `openai/${OpenAIModels}`
@@ -19,3 +23,9 @@ export type ProviderEmbeddingModel<S extends string> =
   | `gemini/${GeminiEmbeddingModels}`
   | `deepseek/${DeepSeekEmbeddingModels}`
   | `custom-llm/${S}`;
+
+export type ProviderBatchModel<S extends string = string> = ProviderChatModel<S> | ProviderEmbeddingModel<S>;
+
+export type ProviderFileType = "openai" | "anthropic" | "gemini" | "deepseek" | "custom-llm" | "grok";
+
+export type ProviderBatchType = "openai" | "anthropic" | "gemini" | "deepseek" | "custom-llm" | "grok";

@@ -1,7 +1,8 @@
 import dotenv from "dotenv";
 import type { Langfuse } from "langfuse";
+import { Batch } from "./batch.js";
+import { File } from "./file.js";
 import { AnthropicProvider } from "./providers/anthropic/index.js";
-
 import { CustomLLMProvider } from "./providers/customLLM/index.js";
 import { DeepSeekProvider } from "./providers/deepSeek/index.js";
 import { GeminiProvider } from "./providers/gemini/index.js";
@@ -32,6 +33,16 @@ export class AISuite<S extends string = string> {
     failOnError?: boolean;
   };
 
+  /**
+   * The Batch class provides an interface for managing file resources across different AI providers.
+   */
+  public batch: Batch<S>;
+
+  /**
+   * The File class provides an interface for managing file resources across different AI providers.
+   * only batch file uploads are supported as of now.
+   */
+  public file: File<S>;
   constructor(
     keys: {
       openaiKey?: string;
@@ -60,6 +71,33 @@ export class AISuite<S extends string = string> {
     this.customLLMKey = keys.customLLMKey || "";
     this.langFuse = options?.langFuse;
     this.hooks = options?.hooks;
+
+    this.batch = new Batch(
+      {
+        openaiKey: this.openaiKey,
+        anthropicKey: this.anthropicKey,
+        geminiKey: this.geminiKey,
+        deepseekKey: this.deepseekKey,
+        grokKey: this.grokKey,
+        customURL: this.customURL,
+        customLLMKey: this.customLLMKey,
+      },
+      this.getProvider,
+      this.resultWhithObservation,
+    );
+    this.file = new File(
+      {
+        openaiKey: this.openaiKey,
+        anthropicKey: this.anthropicKey,
+        geminiKey: this.geminiKey,
+        deepseekKey: this.deepseekKey,
+        grokKey: this.grokKey,
+        customURL: this.customURL,
+        customLLMKey: this.customLLMKey,
+      },
+      this.getProvider,
+      this.resultWhithObservation,
+    );
   }
 
   /**
@@ -256,20 +294,20 @@ export class AISuite<S extends string = string> {
   private getProvider(provider: ProviderModel<S>) {
     const [providerName, model] = provider.split("/");
     if (providerName === "openai") {
-      return new OpenAIProvider(this.openaiKey, model, undefined, this.hooks);
+      return new OpenAIProvider(this.openaiKey, model, providerName, undefined, this.hooks);
     } else if (providerName === "anthropic") {
-      return new AnthropicProvider(this.anthropicKey, model, this.hooks);
+      return new AnthropicProvider(this.anthropicKey, model, providerName, this.hooks);
     } else if (providerName === "gemini") {
-      return new GeminiProvider(this.geminiKey, model, this.hooks);
+      return new GeminiProvider(this.geminiKey, model, providerName, this.hooks);
     } else if (providerName === "deepseek") {
-      return new DeepSeekProvider(this.deepseekKey, model, "https://api.deepseek.com/v1", this.hooks);
+      return new DeepSeekProvider(this.deepseekKey, model, providerName, "https://api.deepseek.com/v1", this.hooks);
     } else if (providerName === "custom-llm") {
       if (!this.customURL) {
         throw new Error(`Need to provide a custom URL for the custom-llm provider`);
       }
-      return new CustomLLMProvider(this.customLLMKey ?? "not-needed", model, this.customURL, this.hooks);
+      return new CustomLLMProvider(this.customLLMKey ?? "not-needed", model, providerName, this.customURL, this.hooks);
     } else if (providerName === "grok") {
-      return new GrokProvider(this.grokKey, model, "https://api.x.ai/v1", this.hooks);
+      return new GrokProvider(this.grokKey, model, providerName, "https://api.x.ai/v1", this.hooks);
     }
     throw new Error(`Unsupported provider: ${providerName}`);
   }

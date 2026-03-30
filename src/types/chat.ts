@@ -1,5 +1,6 @@
 import type { ErrorAISuite } from "./handleErrorResponse.js";
 import type { ResultBase } from "./resultBase.js";
+import type { Usage } from "./usage.js";
 
 interface ResultSuccessChatCompletion extends ResultBase {
   /**
@@ -44,14 +45,7 @@ interface ResultSuccessChatCompletion extends ResultBase {
   /**
    * Usage statistics for the completion request.
    */
-  usage?: {
-    input_tokens: number;
-    output_tokens: number;
-    total_tokens: number;
-    cached_tokens: number;
-    reasoning_tokens: number;
-    thoughts_tokens: number;
-  };
+  usage?: Usage;
 
   /**
    * The content of the chat completion.
