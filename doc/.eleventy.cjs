@@ -1,15 +1,15 @@
-module.exports = function(eleventyConfig) {
+module.exports = async function(eleventyConfig) {
+  const { HtmlBasePlugin } = await import("@11ty/eleventy");
+  const eleventyNavigationPlugin = require("@11ty/eleventy-navigation");
+  const syntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
+
+  eleventyConfig.addPlugin(HtmlBasePlugin);
+  eleventyConfig.addPlugin(eleventyNavigationPlugin);
+  eleventyConfig.addPlugin(syntaxHighlight);
+
   // Copy static assets
   eleventyConfig.addPassthroughCopy("assets");
   eleventyConfig.addPassthroughCopy("favicon.svg");
-
-  // Add navigation plugin
-  const eleventyNavigationPlugin = require("@11ty/eleventy-navigation");
-  eleventyConfig.addPlugin(eleventyNavigationPlugin);
-
-  // Add syntax highlighting
-  const syntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
-  eleventyConfig.addPlugin(syntaxHighlight);
 
   // Watch for CSS changes
   eleventyConfig.addWatchTarget("_includes/**/*.css");
@@ -35,6 +35,19 @@ module.exports = function(eleventyConfig) {
       });
   });
 
+  // Markdown
+  const markdownIt = require("markdown-it");
+  const markdownItAnchor = require("markdown-it-anchor");
+  eleventyConfig.setLibrary("md", markdownIt({
+    html: true,
+    breaks: true,
+    linkify: true,
+    typographer: true
+  }).use(markdownItAnchor, {
+    permalink: false,
+    level: [2, 3, 4]
+  }));
+
   return {
     dir: {
       input: ".",
@@ -47,17 +60,5 @@ module.exports = function(eleventyConfig) {
     markdownTemplateEngine: "njk",
     htmlTemplateEngine: "njk",
     dataTemplateEngine: "njk",
-
-    // Markdown options
-    markdownLibrary: require("markdown-it")({
-      html: true,
-      breaks: true,
-      linkify: true,
-      typographer: true
-    })
-    .use(require("markdown-it-anchor"), {
-      permalink: false,
-      level: [2, 3, 4]
-    })
   };
 };

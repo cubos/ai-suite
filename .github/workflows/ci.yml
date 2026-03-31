@@ -145,7 +145,7 @@ jobs:
         with:
           run_install: false
       - run: pnpm i --frozen-lockfile
-      - run: pnpm run docs:build -- --pathprefix=/ai-suite/
+      - run: npx eleventy --input=./doc --config=./doc/.eleventy.cjs --pathprefix=/ai-suite/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./public
