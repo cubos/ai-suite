@@ -1,7 +1,4 @@
-module.exports = async function(eleventyConfig) {
-  const { HtmlBasePlugin } = await import("@11ty/eleventy");
-  eleventyConfig.addPlugin(HtmlBasePlugin);
-
+module.exports = function(eleventyConfig) {
   // Copy static assets
   eleventyConfig.addPassthroughCopy("assets");
   eleventyConfig.addPassthroughCopy("favicon.svg");
