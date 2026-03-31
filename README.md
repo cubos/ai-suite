@@ -19,17 +19,17 @@ All AI providers in one place - a unified TypeScript interface for working with 
 ## Installation
 
 ```bash
-npm install @cubos-ai/ai-suite
+npm install @cubos/ai-suite
 # or
-yarn add @cubos-ai/ai-suite
+yarn add @cubos/ai-suite
 # or
-pnpm add @cubos-ai/ai-suite
+pnpm add @cubos/ai-suite
 ```
 
 ## Quick Start
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 
 // Initialize with API keys
 const aiSuite = new AISuite({
@@ -66,4 +66,3 @@ if (response.success) {
 - **Grok** - Grok 3, Grok 3 Mini
 - **Custom LLM** - Any OpenAI-compatible API (Ollama, LM Studio, vLLM, etc.)
 
-Read the full documentation at [https://ai-suite-a94dd0.pages.cubos.io](https://ai-suite-a94dd0.pages.cubos.io)

@@ -18,13 +18,13 @@ Install AI-Suite using your preferred package manager:
 
 ```bash
 # Using npm
-npm install @cubos-ai/ai-suite
+npm install @cubos/ai-suite
 
 # Using yarn
-yarn add @cubos-ai/ai-suite
+yarn add @cubos/ai-suite
 
 # Using pnpm
-pnpm add @cubos-ai/ai-suite
+pnpm add @cubos/ai-suite
 ```
 
 ## Basic Setup
@@ -46,7 +46,7 @@ CUSTOM_LLM_KEY=your_custom_key  # Optional, some endpoints don't require auth
 Then, initialize the AISuite instance:
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import dotenv from 'dotenv';
 
 // Load environment variables

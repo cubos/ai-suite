@@ -33,13 +33,13 @@ AI-Suite provides a consistent, type-safe interface for interacting with multipl
 Install the package:
 
 ```bash
-npm install @cubos-ai/ai-suite
+npm install @cubos/ai-suite
 ```
 
 Basic usage:
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 
 const aiSuite = new AISuite({
   openaiKey: process.env.OPENAI_API_KEY

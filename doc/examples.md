@@ -17,7 +17,7 @@ This document provides practical examples of using AI-Suite in different scenari
 ### Simple Q&A
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -47,7 +47,7 @@ main().catch(console.error);
 ### Conversation with Context
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -83,7 +83,7 @@ main().catch(console.error);
 ### JSON Schema with Zod
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import { z } from 'zod';
 import dotenv from 'dotenv';
 
@@ -139,7 +139,7 @@ generateRecipe().catch(console.error);
 ### JSON Object Mode
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -173,7 +173,7 @@ extractData().catch(console.error);
 ### Provider Comparison
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import dotenv from 'dotenv';
 import fs from 'fs';
 
@@ -234,7 +234,7 @@ compareProviders().catch(console.error);
 ### Function Calling / Tools
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -313,7 +313,7 @@ weatherAssistant().catch(console.error);
 ### Reasoning with OpenAI o1
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -353,7 +353,7 @@ solveComplexProblem().catch(console.error);
 ### Thinking Mode with Gemini 2.5
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -390,7 +390,7 @@ deepAnalysis().catch(console.error);
 ### Using Langfuse for Monitoring
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import { Langfuse } from 'langfuse';
 import dotenv from 'dotenv';
 
@@ -477,7 +477,7 @@ runAIWorkflow().catch(console.error);
 ### Custom Hooks for Logging
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import dotenv from 'dotenv';
 import fs from 'fs';
 
@@ -532,7 +532,7 @@ main().catch(console.error);
 ### Using Custom LLM (Ollama)
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 
 const aiSuite = new AISuite({
   customURL: 'http://localhost:11434/v1',
@@ -562,7 +562,7 @@ main().catch(console.error);
 ### Retry Logic Example
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -604,7 +604,7 @@ robustRequest().catch(console.error);
 Analyze images using AI vision capabilities:
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import { readFileSync } from 'fs';
 import dotenv from 'dotenv';
 
@@ -648,7 +648,7 @@ analyzeImage().catch(console.error);
 Classify images with type-safe JSON output:
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import { readFileSync } from 'fs';
 import { z } from 'zod';
 import dotenv from 'dotenv';
@@ -709,7 +709,7 @@ classifyImage().catch(console.error);
 Send multiple images in a single request:
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import { readFileSync } from 'fs';
 import dotenv from 'dotenv';
 
@@ -760,7 +760,7 @@ compareImages().catch(console.error);
 Analyze and extract information from PDF documents:
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import { readFileSync } from 'fs';
 import dotenv from 'dotenv';
 
@@ -806,7 +806,7 @@ analyzePDF().catch(console.error);
 Extract structured information from documents:
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import { readFileSync } from 'fs';
 import { z } from 'zod';
 import dotenv from 'dotenv';
@@ -876,7 +876,7 @@ extractInvoiceData().catch(console.error);
 Extract text from images:
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import { readFileSync } from 'fs';
 import dotenv from 'dotenv';
 
@@ -921,7 +921,7 @@ extractTextFromImage().catch(console.error);
 Work with base64-encoded images:
 
 ```typescript
-import { AISuite } from '@cubos-ai/ai-suite';
+import { AISuite } from '@cubos/ai-suite';
 import { readFileSync } from 'fs';
 import dotenv from 'dotenv';
 
