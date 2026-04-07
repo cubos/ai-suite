@@ -167,47 +167,20 @@ export class OpenAIProvider extends ProviderBase {
 
     let accumulated = "";
     let chunkId = "";
+    let lastChunk: OpenAI.Chat.Completions.ChatCompletionChunk | undefined;
     const created = Math.floor(Date.now() / 1000);
 
     for await (const chunk of stream) {
-      chunkId = chunk.id;
+      if (chunk.id) chunkId = chunk.id;
       const delta = chunk.choices[0]?.delta?.content ?? "";
-      const finishReason = chunk.choices[0]?.finish_reason;
       accumulated += delta;
 
-      if (finishReason != null) {
-        await this.hooks.handleResponse(request, chunk, options.metadata ?? {});
-        let contentObject: Record<string, unknown> | undefined;
-        if (options.responseFormat !== "text" && accumulated) {
-          try {
-            contentObject = JSON5.parse<Record<string, unknown>>(accumulated);
-          } catch (_) {
-            // ignore JSON5 parse errors
-          }
-        }
-        yield {
-          id: chunkId,
-          created,
-          object: "chat.completion",
-          model: chunk.model || this.model,
-          delta,
-          content: accumulated,
-          content_object: contentObject,
-          done: true,
-          usage: chunk.usage
-            ? {
-                input_tokens: chunk.usage.prompt_tokens,
-                output_tokens: chunk.usage.completion_tokens,
-                total_tokens: chunk.usage.total_tokens,
-                cached_tokens: chunk.usage.prompt_tokens_details?.cached_tokens ?? 0,
-                reasoning_tokens: chunk.usage.completion_tokens_details?.reasoning_tokens ?? 0,
-                thoughts_tokens: 0,
-              }
-            : undefined,
-          execution_time: Date.now() - start,
-          metadata: options.metadata,
-        };
-      } else {
+      // Keep track of the last chunk to extract usage after the loop
+      if (chunk.usage || chunk.choices[0]?.finish_reason != null) {
+        lastChunk = chunk;
+      }
+
+      if (delta) {
         yield {
           id: chunkId,
           created,
@@ -220,6 +193,42 @@ export class OpenAIProvider extends ProviderBase {
         };
       }
     }
+
+    await this.hooks.handleResponse(request, lastChunk, options.metadata ?? {});
+
+    let contentObject: Record<string, unknown> | undefined;
+    if (options.responseFormat !== "text" && accumulated) {
+      try {
+        contentObject = JSON5.parse<Record<string, unknown>>(accumulated);
+      } catch (_) {
+        // ignore JSON5 parse errors
+      }
+    }
+
+    const usage = lastChunk?.usage;
+
+    yield {
+      id: chunkId,
+      created,
+      object: "chat.completion",
+      model: lastChunk?.model || this.model,
+      delta: "",
+      content: accumulated,
+      content_object: contentObject,
+      done: true,
+      usage: usage
+        ? {
+            input_tokens: usage.prompt_tokens,
+            output_tokens: usage.completion_tokens,
+            total_tokens: usage.total_tokens,
+            cached_tokens: usage.prompt_tokens_details?.cached_tokens ?? 0,
+            reasoning_tokens: usage.completion_tokens_details?.reasoning_tokens ?? 0,
+            thoughts_tokens: 0,
+          }
+        : undefined,
+      execution_time: Date.now() - start,
+      metadata: options.metadata,
+    };
   }
 
   async _createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {
