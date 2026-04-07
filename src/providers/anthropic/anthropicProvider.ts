@@ -3,6 +3,7 @@ import JSON5 from "json5";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
 import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
+import type { StreamChunk } from "../../types/stream.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import { BatchAnthropic } from "./batch/index.js";
@@ -37,15 +38,35 @@ export class AnthropicProvider extends ProviderBase {
     this.providerName = provideName;
   }
 
-  async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
+  protected _createChatCompletion(
+    messages: MessageModel[],
+    options: ChatOptions & { stream: true },
+  ): AsyncGenerator<StreamChunk>;
+  protected _createChatCompletion(
+    messages: MessageModel[],
+    options: ChatOptions & { stream?: false },
+  ): Promise<SuccessChatCompletion>;
+  protected _createChatCompletion(
+    messages: MessageModel[],
+    options: ChatOptions,
+  ): Promise<SuccessChatCompletion> | AsyncGenerator<StreamChunk> {
+    if (options.stream) {
+      return this._createChatCompletionStream(messages, options);
+    }
+    return this._createChatCompletionNonStream(messages, options);
+  }
+
+  private async _createChatCompletionNonStream(
+    messages: MessageModel[],
+    options: ChatOptions,
+  ): Promise<SuccessChatCompletion> {
     const mappedMessages = this.mapMessagesToChat(messages);
 
-    // Prepare common options
     const anthropicOptions: Anthropic.Messages.MessageCreateParams = {
       model: this.model,
       messages: mappedMessages,
       ...(options.maxOutputTokens ? { max_tokens: options.maxOutputTokens } : { max_tokens: 4096 }),
-      stream: options.stream || false,
+      stream: false,
       tools: convertToAnthropicFunctions(options.tools),
       thinking: {
         ...((options.thinking?.budget ?? 0) > 0
@@ -54,22 +75,17 @@ export class AnthropicProvider extends ProviderBase {
       },
     };
 
-    // Add temperature if provided
     if (options.temperature !== undefined) {
       anthropicOptions.temperature = options.temperature;
     }
 
-    // Handle response format (Anthropic uses system prompt for this)
     if (options.responseFormat === "json_object") {
       anthropicOptions.system = "Please provide your response in JSON format.";
     }
 
     await this.hooks.handleRequest(anthropicOptions);
 
-    const response = await this.client.messages.create({
-      ...anthropicOptions,
-      stream: false,
-    });
+    const response = await this.client.messages.create({ ...anthropicOptions, stream: false });
 
     await this.hooks.handleResponse(anthropicOptions, response, options.metadata ?? {});
 
@@ -85,7 +101,7 @@ export class AnthropicProvider extends ProviderBase {
       }
     }
 
-    const result: SuccessChatCompletion = {
+    return {
       success: true,
       id: response.id,
       created: Math.floor(Date.now() / 1000),
@@ -112,8 +128,95 @@ export class AnthropicProvider extends ProviderBase {
       },
       metadata: options.metadata,
     };
+  }
 
-    return result;
+  private async *_createChatCompletionStream(
+    messages: MessageModel[],
+    options: ChatOptions,
+  ): AsyncGenerator<StreamChunk> {
+    const start = Date.now();
+    const mappedMessages = this.mapMessagesToChat(messages);
+
+    const anthropicOptions: Omit<Anthropic.Messages.MessageCreateParamsNonStreaming, "stream"> = {
+      model: this.model,
+      messages: mappedMessages,
+      ...(options.maxOutputTokens ? { max_tokens: options.maxOutputTokens } : { max_tokens: 4096 }),
+      tools: convertToAnthropicFunctions(options.tools),
+      thinking: {
+        ...((options.thinking?.budget ?? 0) > 0
+          ? { budget_tokens: options.thinking?.budget ?? 0, type: "enabled" }
+          : { type: "disabled" }),
+      },
+    };
+
+    if (options.temperature !== undefined) {
+      anthropicOptions.temperature = options.temperature;
+    }
+
+    if (options.responseFormat === "json_object") {
+      anthropicOptions.system = "Please provide your response in JSON format.";
+    }
+
+    await this.hooks.handleRequest(anthropicOptions);
+
+    const stream = this.client.messages.stream(anthropicOptions);
+
+    let accumulated = "";
+    let chunkId = "";
+    const created = Math.floor(Date.now() / 1000);
+
+    for await (const event of stream) {
+      if (event.type === "message_start") {
+        chunkId = event.message.id;
+      }
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+        accumulated += event.delta.text;
+        yield {
+          id: chunkId,
+          created,
+          object: "chat.completion",
+          model: this.model,
+          delta: event.delta.text,
+          content: accumulated,
+          done: false,
+          metadata: options.metadata,
+        };
+      }
+    }
+
+    const finalMessage = await stream.finalMessage();
+
+    await this.hooks.handleResponse(anthropicOptions, finalMessage, options.metadata ?? {});
+
+    let contentObject: Record<string, unknown> | undefined;
+    if (options.responseFormat !== "text" && accumulated) {
+      try {
+        contentObject = JSON5.parse<Record<string, unknown>>(accumulated);
+      } catch {
+        // ignore JSON5 parse errors
+      }
+    }
+
+    yield {
+      id: finalMessage.id,
+      created,
+      object: "chat.completion",
+      model: this.model,
+      delta: "",
+      content: accumulated,
+      content_object: contentObject,
+      done: true,
+      usage: {
+        input_tokens: finalMessage.usage.input_tokens,
+        output_tokens: finalMessage.usage.output_tokens,
+        total_tokens: finalMessage.usage.input_tokens + finalMessage.usage.output_tokens,
+        cached_tokens: finalMessage.usage.cache_read_input_tokens ?? 0,
+        reasoning_tokens: 0,
+        thoughts_tokens: 0,
+      },
+      execution_time: Date.now() - start,
+      metadata: options.metadata,
+    };
   }
 
   /**
