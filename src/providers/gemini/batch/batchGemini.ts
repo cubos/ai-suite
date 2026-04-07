@@ -33,7 +33,7 @@ import { onlyWorksWithThinking } from "../constants/onlyWorksWithThinking.js";
 import { useThinkingLevel } from "../constants/useThinkingLevel.js";
 import type { GeminiProvider } from "../geminiProvider.js";
 import { convertToGeminiFunctions } from "../utils/convertToGeminiFunctions.js";
-import { zodToGeminiSchema } from "../utils/zodToGeminiSchema.js";
+import * as zod from "zod";
 
 export class BatchGemini extends BatchProviderBase<GeminiProvider> {
   async create(args: CreateBatchArgs): Promise<SuccessCreateBatch> {
@@ -100,7 +100,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
           temperature: options.temperature ?? 0.7,
           thinkingConfig: thinkingConfig ?? { thinkingBudget: 0 },
           responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
-          ...(options.responseFormat === "json_schema" ? { responseSchema: zodToGeminiSchema(options.zodSchema) } : {}),
+          ...(options.responseFormat === "json_schema" ? { responseSchema: zod.toJSONSchema(options.zodSchema) } : {}),
           ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
         };
 
