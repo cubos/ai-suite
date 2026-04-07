@@ -6,5 +6,6 @@ export * from "./handleErrorResponse.js";
 export * from "./providerModel.js";
 export * from "./resultBase.js";
 export * from "./retryOptions.js";
+export * from "./stream.js";
 export * from "./usage.js";
 export * from "./utils.js";

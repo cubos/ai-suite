@@ -10,6 +10,7 @@ import { GrokProvider } from "./providers/grok/index.js";
 import { OpenAIProvider } from "./providers/openai/openaiProvider.js";
 import type { ChatOptions, LangfuseData } from "./providers/types/index.js";
 import type { MessageModel, ResultChatCompletion } from "./types/chat.js";
+import type { StreamChunk } from "./types/stream.js";
 import type { EmbeddingOptions, EmbeddingRequest, ResultEmbedding } from "./types/embed.js";
 import type { ErrorAISuite } from "./types/handleErrorResponse.js";
 import type { ProviderChatModel, ProviderEmbeddingModel, ProviderModel } from "./types/providerModel.js";
@@ -129,27 +130,27 @@ export class AISuite<S extends string = string> {
   async createChatCompletion(
     provider: ProviderChatModel<S>,
     messages: MessageModel[],
-    options?: { stream: false } & ChatOptions,
+    options?: { stream?: false } & ChatOptions,
   ): Promise<ResultChatCompletion>;
 
   /**
-   * Create a chat completion with streaming
+   * Create a streaming chat completion
    * @param provider - The provider to use
    * @param messages - The messages to send to the provider
    * @param options - The options to use
-   * @returns A stream of the chat completion
+   * @returns An async generator that yields StreamChunk objects
    */
-  // async createChatCompletion(
-  //   provider: ProviderModel,
-  //   messages: MessageModel[],
-  //   options?: { stream: true } & Partial<ChatOptions>
-  // ): Promise<Readable>;
+  async createChatCompletion(
+    provider: ProviderChatModel<S>,
+    messages: MessageModel[],
+    options: { stream: true } & ChatOptions,
+  ): Promise<AsyncGenerator<StreamChunk>>;
 
   async createChatCompletion(
     provider: ProviderChatModel<S>,
     messages: MessageModel[],
     options?: ChatOptions,
-  ): Promise<ResultChatCompletion> {
+  ): Promise<ResultChatCompletion | AsyncGenerator<StreamChunk>> {
     const opts = {
       stream: false,
       responseFormat: "text" as const,
@@ -158,20 +159,11 @@ export class AISuite<S extends string = string> {
     };
 
     const start = Date.now();
+    const p = this.getProvider(provider);
 
     if (opts.stream) {
-      return {
-        success: false,
-        error: "Streaming is not supported",
-        raw: new Error("Streaming is not supported"),
-        tag: "InvalidRequest",
-        created: start,
-        model: provider.split("/")[1],
-        execution_time: Date.now() - start,
-      };
+      return p.createChatCompletion(messages, opts as ChatOptions & { stream: true });
     }
-
-    const p = this.getProvider(provider);
 
     return this.resultWhithObservation(
       () => p.createChatCompletion(messages, opts),

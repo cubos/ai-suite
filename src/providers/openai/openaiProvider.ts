@@ -7,6 +7,7 @@ export type { ChatCompletionMessageParam };
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
 import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
+import type { StreamChunk } from "../../types/stream.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import { BatchOpenAI } from "./batch/index.js";
@@ -41,7 +42,28 @@ export class OpenAIProvider extends ProviderBase {
     this.providerName = provideName;
   }
 
-  async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
+  protected _createChatCompletion(
+    messages: MessageModel[],
+    options: ChatOptions & { stream: true },
+  ): AsyncGenerator<StreamChunk>;
+  protected _createChatCompletion(
+    messages: MessageModel[],
+    options: ChatOptions & { stream?: false },
+  ): Promise<SuccessChatCompletion>;
+  protected _createChatCompletion(
+    messages: MessageModel[],
+    options: ChatOptions,
+  ): Promise<SuccessChatCompletion> | AsyncGenerator<StreamChunk> {
+    if (options.stream) {
+      return this._createChatCompletionStream(messages, options);
+    }
+    return this._createChatCompletionNonStream(messages, options);
+  }
+
+  private async _createChatCompletionNonStream(
+    messages: MessageModel[],
+    options: ChatOptions,
+  ): Promise<SuccessChatCompletion> {
     const mappedMessages = this.mapMessages(messages);
 
     let response_format: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming["response_format"];
@@ -57,7 +79,7 @@ export class OpenAIProvider extends ProviderBase {
     const request: ChatCompletionCreateParamsBase = {
       model: this.model,
       messages: mappedMessages,
-      stream: options.stream || false,
+      stream: false,
       temperature: options.temperature,
       response_format,
       tools: options.tools,
@@ -82,7 +104,7 @@ export class OpenAIProvider extends ProviderBase {
       }
     }
 
-    const result: SuccessChatCompletion = {
+    return {
       success: true,
       id: completion.id,
       created: Math.floor(Date.now() / 1000),
@@ -92,15 +114,13 @@ export class OpenAIProvider extends ProviderBase {
       content_object: contentObject ?? {},
       tools: completion.choices[0].message.tool_calls
         ?.filter(l => l.type === "function")
-        .map(tool => {
-          return {
-            id: tool.id,
-            type: "function",
-            name: tool.function?.name || "unknown",
-            content: tool.function?.arguments ? JSON.parse(tool.function.arguments) : {},
-            rawContent: tool.function?.arguments || "",
-          };
-        }),
+        .map(tool => ({
+          id: tool.id,
+          type: "function",
+          name: tool.function?.name || "unknown",
+          content: tool.function?.arguments ? JSON.parse(tool.function.arguments) : {},
+          rawContent: tool.function?.arguments || "",
+        })),
       usage: {
         input_tokens: completion.usage?.prompt_tokens || 0,
         output_tokens: completion.usage?.completion_tokens || 0,
@@ -111,8 +131,95 @@ export class OpenAIProvider extends ProviderBase {
       },
       metadata: options.metadata,
     };
+  }
 
-    return result;
+  private async *_createChatCompletionStream(
+    messages: MessageModel[],
+    options: ChatOptions,
+  ): AsyncGenerator<StreamChunk> {
+    const start = Date.now();
+    const mappedMessages = this.mapMessages(messages);
+
+    let response_format: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming["response_format"];
+
+    if (options.responseFormat === "text") {
+      response_format = undefined;
+    } else if (options.responseFormat === "json_schema") {
+      response_format = zodResponseFormat(options.zodSchema, "default");
+    } else {
+      response_format = { type: options.responseFormat };
+    }
+
+    const request = {
+      model: this.model,
+      messages: mappedMessages,
+      stream: true as const,
+      stream_options: { include_usage: true },
+      temperature: options.temperature,
+      response_format,
+      tools: options.tools,
+      ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
+    };
+
+    await this.hooks.handleRequest(request);
+
+    const stream = await this.client.chat.completions.create(request);
+
+    let accumulated = "";
+    let chunkId = "";
+    const created = Math.floor(Date.now() / 1000);
+
+    for await (const chunk of stream) {
+      chunkId = chunk.id;
+      const delta = chunk.choices[0]?.delta?.content ?? "";
+      const finishReason = chunk.choices[0]?.finish_reason;
+      accumulated += delta;
+
+      if (finishReason != null) {
+        await this.hooks.handleResponse(request, chunk, options.metadata ?? {});
+        let contentObject: Record<string, unknown> | undefined;
+        if (options.responseFormat !== "text" && accumulated) {
+          try {
+            contentObject = JSON5.parse<Record<string, unknown>>(accumulated);
+          } catch (_) {
+            // ignore JSON5 parse errors
+          }
+        }
+        yield {
+          id: chunkId,
+          created,
+          object: "chat.completion",
+          model: chunk.model || this.model,
+          delta,
+          content: accumulated,
+          content_object: contentObject,
+          done: true,
+          usage: chunk.usage
+            ? {
+                input_tokens: chunk.usage.prompt_tokens,
+                output_tokens: chunk.usage.completion_tokens,
+                total_tokens: chunk.usage.total_tokens,
+                cached_tokens: chunk.usage.prompt_tokens_details?.cached_tokens ?? 0,
+                reasoning_tokens: chunk.usage.completion_tokens_details?.reasoning_tokens ?? 0,
+                thoughts_tokens: 0,
+              }
+            : undefined,
+          execution_time: Date.now() - start,
+          metadata: options.metadata,
+        };
+      } else {
+        yield {
+          id: chunkId,
+          created,
+          object: "chat.completion",
+          model: chunk.model || this.model,
+          delta,
+          content: accumulated,
+          done: false,
+          metadata: options.metadata,
+        };
+      }
+    }
   }
 
   async _createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {
