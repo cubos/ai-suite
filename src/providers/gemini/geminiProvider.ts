@@ -6,7 +6,7 @@ import {
   GoogleGenAI,
   ThinkingLevel,
 } from "@google/genai";
-import { toGeminiSchema } from "gemini-zod";
+import { zodToGeminiSchema } from "./utils/zodToGeminiSchema.js";
 import JSON5 from "json5";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
 import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
@@ -102,7 +102,7 @@ export class GeminiProvider extends ProviderBase {
         responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
         ...(options.responseFormat === "json_schema"
           ? {
-              responseSchema: toGeminiSchema(options.zodSchema),
+              responseSchema: zodToGeminiSchema(options.zodSchema),
             }
           : {}),
         ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),

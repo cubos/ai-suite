@@ -47,7 +47,7 @@
     "json5": "^2.2.3",
     "langfuse": "^3.38.5",
     "openai": "6.9.1",
-    "zod": "^3.25.76",
+    "zod": "^4.3.6",
     "zod-openapi": "^5.4.3",
     "zod-to-json-schema": "^3.24.6"
   }
