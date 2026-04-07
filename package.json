@@ -43,7 +43,6 @@
     "@google/genai": "^1.43.0",
     "@types/node": "^22.15.18",
     "dotenv": "^16.5.0",
-    "gemini-zod": "^0.1.2",
     "json5": "^2.2.3",
     "langfuse": "^3.38.5",
     "openai": "6.9.1",

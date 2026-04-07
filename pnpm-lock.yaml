@@ -20,9 +20,6 @@ importers:
       dotenv:
         specifier: ^16.5.0
         version: 16.5.0
-      gemini-zod:
-        specifier: ^0.1.2
-        version: 0.1.2
       json5:
         specifier: ^2.2.3
         version: 2.2.3
@@ -1438,9 +1435,6 @@ packages:
   gcp-metadata@8.1.2:
     resolution: {integrity: sha512-zV/5HKTfCeKWnxG0Dmrw51hEWFGfcF2xiXqcA3+J90WDuP0SvoiSO5ORvcBsifmx/FoIjgQN3oNOGaQ5PhLFkg==}
     engines: {node: '>=18'}
-
-  gemini-zod@0.1.2:
-    resolution: {integrity: sha512-2ic5mbzgefxTA2jeFs7gdqfvvsGXzkyTt6qhVedO2u4AeOZ6ZBQji7X3rT6b1UCSPflVquAoVf9C3dUxzLcC4g==}
 
   get-intrinsic@1.2.7:
     resolution: {integrity: sha512-VW6Pxhsrk0KAOqs3WEd0klDiF/+V7gQOpAvY1jVU/LHmaD/kQO4523aiJuikX/QAKYiW6x8Jh+RJej1almdtCA==}
@@ -4170,8 +4164,6 @@ snapshots:
       json-bigint: 1.0.0
     transitivePeerDependencies:
       - supports-color
-
-  gemini-zod@0.1.2: {}
 
   get-intrinsic@1.2.7:
     dependencies:

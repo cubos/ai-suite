@@ -10,7 +10,6 @@ import {
   type ListBatchJobsParameters,
   ThinkingLevel,
 } from "@google/genai";
-import { toGeminiSchema } from "gemini-zod";
 import JSON5 from "json5";
 import type { BatchRequestCounts } from "openai/resources";
 import type {
@@ -34,6 +33,7 @@ import { onlyWorksWithThinking } from "../constants/onlyWorksWithThinking.js";
 import { useThinkingLevel } from "../constants/useThinkingLevel.js";
 import type { GeminiProvider } from "../geminiProvider.js";
 import { convertToGeminiFunctions } from "../utils/convertToGeminiFunctions.js";
+import { zodToGeminiSchema } from "../utils/zodToGeminiSchema.js";
 
 export class BatchGemini extends BatchProviderBase<GeminiProvider> {
   async create(args: CreateBatchArgs): Promise<SuccessCreateBatch> {
@@ -100,7 +100,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
           temperature: options.temperature ?? 0.7,
           thinkingConfig: thinkingConfig ?? { thinkingBudget: 0 },
           responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
-          ...(options.responseFormat === "json_schema" ? { responseSchema: toGeminiSchema(options.zodSchema) } : {}),
+          ...(options.responseFormat === "json_schema" ? { responseSchema: zodToGeminiSchema(options.zodSchema) } : {}),
           ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
         };
 
