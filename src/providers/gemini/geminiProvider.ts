@@ -7,6 +7,7 @@ import {
   ThinkingLevel,
 } from "@google/genai";
 import JSON5 from "json5";
+import * as zod from "zod";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
 import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
@@ -18,8 +19,6 @@ import { onlyWorksWithThinking } from "./constants/onlyWorksWithThinking.js";
 import { useThinkingLevel } from "./constants/useThinkingLevel.js";
 import { FileGemini } from "./file/index.js";
 import { convertToGeminiFunctions } from "./utils/convertToGeminiFunctions.js";
-import * as zod from "zod";
-
 
 export class GeminiProvider extends ProviderBase {
   public client: GoogleGenAI;

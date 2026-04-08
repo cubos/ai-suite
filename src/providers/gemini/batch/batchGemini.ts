@@ -12,6 +12,7 @@ import {
 } from "@google/genai";
 import JSON5 from "json5";
 import type { BatchRequestCounts } from "openai/resources";
+import { z as zod } from "zod";
 import type {
   Batch,
   BatchStatus,
@@ -33,7 +34,6 @@ import { onlyWorksWithThinking } from "../constants/onlyWorksWithThinking.js";
 import { useThinkingLevel } from "../constants/useThinkingLevel.js";
 import type { GeminiProvider } from "../geminiProvider.js";
 import { convertToGeminiFunctions } from "../utils/convertToGeminiFunctions.js";
-import * as zod from "zod";
 
 export class BatchGemini extends BatchProviderBase<GeminiProvider> {
   async create(args: CreateBatchArgs): Promise<SuccessCreateBatch> {
