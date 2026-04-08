@@ -3,6 +3,7 @@ import {
   type Content,
   type FunctionCall,
   type GenerateContentParameters,
+  type GenerateContentResponse,
   GoogleGenAI,
   ThinkingLevel,
 } from "@google/genai";
@@ -11,6 +12,7 @@ import JSON5 from "json5";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
 import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
+import type { StreamChunk } from "../../types/stream.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import { BatchGemini } from "./batch/index.js";
@@ -47,7 +49,25 @@ export class GeminiProvider extends ProviderBase {
     this.providerName = provideName;
   }
 
-  async _createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
+  protected _createChatCompletion(
+    messages: MessageModel[],
+    options: ChatOptions & { stream: true },
+  ): AsyncGenerator<StreamChunk>;
+  protected _createChatCompletion(
+    messages: MessageModel[],
+    options: ChatOptions & { stream?: false },
+  ): Promise<SuccessChatCompletion>;
+  protected _createChatCompletion(
+    messages: MessageModel[],
+    options: ChatOptions,
+  ): Promise<SuccessChatCompletion> | AsyncGenerator<StreamChunk> {
+    if (options.stream) {
+      return this._createChatCompletionStream(messages, options);
+    }
+    return this._createChatCompletionNonStream(messages, options);
+  }
+
+  private buildRequest(messages: MessageModel[], options: ChatOptions): GenerateContentParameters {
     const systemMessage = messages[0].role !== "user" ? messages[0] : null;
     const systemPrompt = systemMessage
       ? Array.isArray(systemMessage.content)
@@ -93,28 +113,30 @@ export class GeminiProvider extends ProviderBase {
       };
     }
 
-    const req: GenerateContentParameters = {
+    return {
       config: {
         tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
         temperature: options.temperature ?? 0.7,
         thinkingConfig: thinkingConfig ?? { thinkingBudget: 0 },
         ...(systemPrompt ? { systemInstruction: { role: "user", parts: systemPrompt } } : {}),
         responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
-        ...(options.responseFormat === "json_schema"
-          ? {
-              responseSchema: toGeminiSchema(options.zodSchema),
-            }
-          : {}),
+        ...(options.responseFormat === "json_schema" ? { responseSchema: toGeminiSchema(options.zodSchema) } : {}),
         ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
       },
       contents: this.mapMessages(messages.slice(systemMessage ? 1 : 0)),
       model: this.model,
     };
+  }
+
+  private async _createChatCompletionNonStream(
+    messages: MessageModel[],
+    options: ChatOptions,
+  ): Promise<SuccessChatCompletion> {
+    const req = this.buildRequest(messages, options);
 
     const response = await this.client.models.generateContent(req);
 
     await this.hooks.handleRequest(req);
-
     await this.hooks.handleResponse(req, response, options.metadata ?? {});
 
     let contentObject: Record<string, unknown> | undefined;
@@ -127,7 +149,7 @@ export class GeminiProvider extends ProviderBase {
       }
     }
 
-    const result: SuccessChatCompletion = {
+    return {
       success: true,
       id: `gemini-${Date.now()}`,
       created: Math.floor(Date.now() / 1000),
@@ -155,8 +177,73 @@ export class GeminiProvider extends ProviderBase {
       },
       metadata: options.metadata,
     };
+  }
 
-    return result;
+  private async *_createChatCompletionStream(
+    messages: MessageModel[],
+    options: ChatOptions,
+  ): AsyncGenerator<StreamChunk> {
+    const start = Date.now();
+    const req = this.buildRequest(messages, options);
+    const created = Math.floor(Date.now() / 1000);
+    const id = `gemini-${Date.now()}`;
+
+    await this.hooks.handleRequest(req);
+
+    const stream = await this.client.models.generateContentStream(req);
+
+    let accumulated = "";
+    let lastResponse: GenerateContentResponse | undefined;
+
+    for await (const chunk of stream) {
+      lastResponse = chunk;
+      const delta = chunk.text ?? "";
+      accumulated += delta;
+      yield {
+        id,
+        created,
+        object: "chat.completion",
+        model: this.model,
+        delta,
+        content: accumulated,
+        done: false,
+        metadata: options.metadata,
+      };
+    }
+
+    await this.hooks.handleResponse(req, lastResponse, options.metadata ?? {});
+
+    let contentObject: Record<string, unknown> | undefined;
+    if (options.responseFormat !== "text" && accumulated) {
+      try {
+        contentObject = JSON5.parse<Record<string, unknown>>(accumulated);
+      } catch (_) {
+        // ignore JSON5 parse errors
+      }
+    }
+
+    yield {
+      id,
+      created,
+      object: "chat.completion",
+      model: this.model,
+      delta: "",
+      content: accumulated,
+      content_object: contentObject,
+      done: true,
+      usage: {
+        input_tokens: lastResponse?.usageMetadata?.promptTokenCount ?? 0,
+        output_tokens: lastResponse?.usageMetadata?.candidatesTokenCount ?? 0,
+        total_tokens:
+          (lastResponse?.usageMetadata?.promptTokenCount ?? 0) +
+          (lastResponse?.usageMetadata?.candidatesTokenCount ?? 0),
+        cached_tokens: lastResponse?.usageMetadata?.cachedContentTokenCount ?? 0,
+        thoughts_tokens: lastResponse?.usageMetadata?.thoughtsTokenCount ?? 0,
+        reasoning_tokens: 0,
+      },
+      execution_time: Date.now() - start,
+      metadata: options.metadata,
+    };
   }
 
   protected async _createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {
