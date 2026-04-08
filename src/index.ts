@@ -10,12 +10,12 @@ import { GrokProvider } from "./providers/grok/index.js";
 import { OpenAIProvider } from "./providers/openai/openaiProvider.js";
 import type { ChatOptions, LangfuseData } from "./providers/types/index.js";
 import type { MessageModel, ResultChatCompletion } from "./types/chat.js";
-import type { StreamChunk } from "./types/stream.js";
 import type { EmbeddingOptions, EmbeddingRequest, ResultEmbedding } from "./types/embed.js";
 import type { ErrorAISuite } from "./types/handleErrorResponse.js";
 import type { ProviderChatModel, ProviderEmbeddingModel, ProviderModel } from "./types/providerModel.js";
 import type { ResponseBase } from "./types/responseBase.js";
 import type { ResultBase } from "./types/resultBase.js";
+import type { StreamChunk } from "./types/stream.js";
 
 dotenv.config();
 

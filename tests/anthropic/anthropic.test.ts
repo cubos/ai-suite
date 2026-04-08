@@ -128,7 +128,6 @@ describe("AnthropicProvider - Stream", () => {
     expect(final!.usage!.total_tokens).toBeGreaterThan(0);
   }, 15000);
 
-
   it("should parse content_object on final chunk when using json_object format", async () => {
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not defined");
 
