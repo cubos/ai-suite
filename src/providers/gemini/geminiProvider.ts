@@ -7,7 +7,7 @@ import {
   ThinkingLevel,
 } from "@google/genai";
 import JSON5 from "json5";
-import * as zod from "zod";
+import { z as zod } from "zod";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
 import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
