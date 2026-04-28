@@ -28,7 +28,7 @@
     "@11ty/eleventy": "^3.1.5",
     "@11ty/eleventy-navigation": "^1.0.5",
     "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.2",
-    "@biomejs/biome": "2.2.4",
+    "@biomejs/biome": "2.4.13",
     "@cubos/eslint-config": "^2.2.0",
     "globals": "^16.3.0",
     "markdown-it": "^14.0.0",
