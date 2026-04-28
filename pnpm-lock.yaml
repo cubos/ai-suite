@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@anthropic-ai/sdk':
         specifier: 0.70.0
-        version: 0.70.0(zod@3.25.76)
+        version: 0.70.0(zod@4.3.6)
       '@google/genai':
         specifier: ^1.43.0
         version: 1.43.0
@@ -20,9 +20,6 @@ importers:
       dotenv:
         specifier: ^16.5.0
         version: 16.5.0
-      gemini-zod:
-        specifier: ^0.1.2
-        version: 0.1.2
       json5:
         specifier: ^2.2.3
         version: 2.2.3
@@ -31,16 +28,16 @@ importers:
         version: 3.38.5
       openai:
         specifier: 6.9.1
-        version: 6.9.1(ws@8.19.0)(zod@3.25.76)
+        version: 6.9.1(ws@8.19.0)(zod@4.3.6)
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.3.6
+        version: 4.3.6
       zod-openapi:
         specifier: ^5.4.3
-        version: 5.4.3(zod@3.25.76)
+        version: 5.4.3(zod@4.3.6)
       zod-to-json-schema:
         specifier: ^3.24.6
-        version: 3.24.6(zod@3.25.76)
+        version: 3.24.6(zod@4.3.6)
     devDependencies:
       '@11ty/eleventy':
         specifier: ^3.1.5
@@ -1439,9 +1436,6 @@ packages:
     resolution: {integrity: sha512-zV/5HKTfCeKWnxG0Dmrw51hEWFGfcF2xiXqcA3+J90WDuP0SvoiSO5ORvcBsifmx/FoIjgQN3oNOGaQ5PhLFkg==}
     engines: {node: '>=18'}
 
-  gemini-zod@0.1.2:
-    resolution: {integrity: sha512-2ic5mbzgefxTA2jeFs7gdqfvvsGXzkyTt6qhVedO2u4AeOZ6ZBQji7X3rT6b1UCSPflVquAoVf9C3dUxzLcC4g==}
-
   get-intrinsic@1.2.7:
     resolution: {integrity: sha512-VW6Pxhsrk0KAOqs3WEd0klDiF/+V7gQOpAvY1jVU/LHmaD/kQO4523aiJuikX/QAKYiW6x8Jh+RJej1almdtCA==}
     engines: {node: '>= 0.4'}
@@ -2667,8 +2661,8 @@ packages:
     peerDependencies:
       zod: ^3.24.1
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+  zod@4.3.6:
+    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
 snapshots:
 
@@ -2777,11 +2771,11 @@ snapshots:
       minimatch: 3.1.5
       slash: 3.0.0
 
-  '@anthropic-ai/sdk@0.70.0(zod@3.25.76)':
+  '@anthropic-ai/sdk@0.70.0(zod@4.3.6)':
     dependencies:
       json-schema-to-ts: 3.1.1
     optionalDependencies:
-      zod: 3.25.76
+      zod: 4.3.6
 
   '@babel/runtime@7.28.4': {}
 
@@ -2822,7 +2816,7 @@ snapshots:
 
   '@cubos/eslint-config@2.2.0':
     dependencies:
-      '@typescript-eslint/eslint-plugin': 6.21.0(@typescript-eslint/parser@8.35.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
+      '@typescript-eslint/eslint-plugin': 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
       '@typescript-eslint/parser': 6.21.0(eslint@8.57.1)(typescript@5.8.3)
       '@typescript-eslint/typescript-estree': 6.21.0(typescript@5.8.3)
       confusing-browser-globals: 1.0.11
@@ -3121,10 +3115,10 @@ snapshots:
 
   '@types/semver@7.5.8': {}
 
-  '@typescript-eslint/eslint-plugin@6.21.0(@typescript-eslint/parser@8.35.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)':
+  '@typescript-eslint/eslint-plugin@6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.1
-      '@typescript-eslint/parser': 8.35.1(eslint@8.57.1)(typescript@5.8.3)
+      '@typescript-eslint/parser': 6.21.0(eslint@8.57.1)(typescript@5.8.3)
       '@typescript-eslint/scope-manager': 6.21.0
       '@typescript-eslint/type-utils': 6.21.0(eslint@8.57.1)(typescript@5.8.3)
       '@typescript-eslint/utils': 6.21.0(eslint@8.57.1)(typescript@5.8.3)
@@ -3957,7 +3951,7 @@ snapshots:
       eslint: 8.57.1
       eslint-rule-composer: 0.3.0
     optionalDependencies:
-      '@typescript-eslint/eslint-plugin': 6.21.0(@typescript-eslint/parser@8.35.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
+      '@typescript-eslint/eslint-plugin': 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
 
   eslint-rule-composer@0.3.0: {}
 
@@ -4170,8 +4164,6 @@ snapshots:
       json-bigint: 1.0.0
     transitivePeerDependencies:
       - supports-color
-
-  gemini-zod@0.1.2: {}
 
   get-intrinsic@1.2.7:
     dependencies:
@@ -4760,10 +4752,10 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
-  openai@6.9.1(ws@8.19.0)(zod@3.25.76):
+  openai@6.9.1(ws@8.19.0)(zod@4.3.6):
     optionalDependencies:
       ws: 8.19.0
-      zod: 3.25.76
+      zod: 4.3.6
 
   optionator@0.9.4:
     dependencies:
@@ -5474,12 +5466,12 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-openapi@5.4.3(zod@3.25.76):
+  zod-openapi@5.4.3(zod@4.3.6):
     dependencies:
-      zod: 3.25.76
+      zod: 4.3.6
 
-  zod-to-json-schema@3.24.6(zod@3.25.76):
+  zod-to-json-schema@3.24.6(zod@4.3.6):
     dependencies:
-      zod: 3.25.76
+      zod: 4.3.6
 
-  zod@3.25.76: {}
+  zod@4.3.6: {}

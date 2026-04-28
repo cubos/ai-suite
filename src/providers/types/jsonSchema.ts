@@ -1,7 +1,7 @@
 import type { ZodType } from "zod";
 import type { ChatOptionsBase } from "./chatOptionsBase.js";
 
-export interface JSONSchema<T = unknown> extends ChatOptionsBase {
+export interface JSONSchema<T = unknown, I = unknown> extends ChatOptionsBase {
   /**
    * The response format
    */
@@ -9,5 +9,5 @@ export interface JSONSchema<T = unknown> extends ChatOptionsBase {
   /**
    * The Zod schema to use for the response
    */
-  zodSchema: ZodType<T>;
+  zodSchema: ZodType<T, I>;
 }
