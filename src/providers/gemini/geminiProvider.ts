@@ -120,15 +120,11 @@ export class GeminiProvider extends ProviderBase {
         thinkingConfig: thinkingConfig ?? { thinkingBudget: 0 },
         ...(systemPrompt ? { systemInstruction: { role: "user", parts: systemPrompt } } : {}),
         responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
-<<<<<<< HEAD
         ...(options.responseFormat === "json_schema"
           ? {
               responseSchema: zod.toJSONSchema(options.zodSchema),
             }
           : {}),
-=======
-        ...(options.responseFormat === "json_schema" ? { responseSchema: toGeminiSchema(options.zodSchema) } : {}),
->>>>>>> e4aa4f8 (feat: add stream)
         ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
       },
       contents: this.mapMessages(messages.slice(systemMessage ? 1 : 0)),
