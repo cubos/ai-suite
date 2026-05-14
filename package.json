@@ -49,5 +49,11 @@
     "zod": "^4.3.6",
     "zod-openapi": "^5.4.3",
     "zod-to-json-schema": "^3.24.6"
+  },
+  "pnpm": {
+    "overrides": {
+      "protobufjs@<7.5.5": "^7.5.5",
+      "brace-expansion@>=2.0.0 <2.0.3": "^2.0.3"
+    }
   }
 }

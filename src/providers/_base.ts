@@ -9,6 +9,7 @@ import type {
   InputContent,
   MessageModel,
   RetryOptions,
+  StreamChunk,
   SuccessChatCompletion,
   SuccessEmbedding,
 } from "../types/index.js";
@@ -33,7 +34,7 @@ export abstract class ProviderBase {
   protected abstract _createChatCompletion(
     messages: MessageModel[],
     options: ChatOptions,
-  ): Promise<SuccessChatCompletion>;
+  ): Promise<SuccessChatCompletion> | AsyncGenerator<StreamChunk>;
 
   /**
    * Abstract method that must be implemented by each provider
@@ -90,8 +91,19 @@ export abstract class ProviderBase {
   /**
    * Public method that includes retry logic
    */
-  async createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion> {
-    return this.retry(() => this._createChatCompletion(messages, options), options.retry);
+  createChatCompletion(messages: MessageModel[], options: ChatOptions & { stream: true }): AsyncGenerator<StreamChunk>;
+  createChatCompletion(messages: MessageModel[], options: ChatOptions): Promise<SuccessChatCompletion>;
+  createChatCompletion(
+    messages: MessageModel[],
+    options: ChatOptions,
+  ): Promise<SuccessChatCompletion> | AsyncGenerator<StreamChunk> {
+    if (options.stream) {
+      return this._createChatCompletion(messages, options) as AsyncGenerator<StreamChunk>;
+    }
+    return this.retry(
+      () => this._createChatCompletion(messages, options) as Promise<SuccessChatCompletion>,
+      options.retry,
+    );
   }
 
   async createEmbedding(embedding: EmbeddingRequest, options: EmbeddingOptions): Promise<SuccessEmbedding> {

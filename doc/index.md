@@ -19,6 +19,7 @@ AI-Suite provides a consistent, type-safe interface for interacting with multipl
 ### Key Features
 
 - **Unified API** - Same interface for all providers
+- **Streaming** - Real-time incremental responses via async generators
 - **Structured Output** - JSON Schema support via Zod
 - **Function Calling** - Tools support across providers
 - **Advanced Reasoning** - Support for o1/o3, Grok, and Gemini thinking modes
@@ -81,7 +82,7 @@ Detailed information about each supported provider.
 Complete API documentation with all types and methods.
 
 ### [Advanced Usage](/advanced-usage/)
-Advanced features like structured output, tools, retry logic, and hooks.
+Advanced features like streaming, structured output, tools, retry logic, and hooks.
 
 ### [Examples](/examples/)
 Practical code examples for common use cases.

@@ -37,6 +37,10 @@ constructor(
   }
 )
 ```
+  ## Streaming
+
+  For details on streaming chat completions (chunk structure, JSON responses, hooks, metadata), see the streaming guide: [Usage — Stream](/usage-stream).
+
   ## File Uploads
 
   For details on uploading JSONL files (Node and Browser examples, validation rules and error messages), see the file upload guide: [Usage — File Upload](/usage-file-upload).
@@ -65,22 +69,33 @@ Parameters:
 #### createChatCompletion
 
 ```typescript
+// Non-streaming (default)
 async createChatCompletion(
-  provider: ProviderModel<S>,
+  provider: ProviderChatModel<S>,
   messages: MessageModel[],
-  options?: ChatOptions
+  options?: { stream?: false } & ChatOptions
 ): Promise<ResultChatCompletion>
+
+// Streaming
+async createChatCompletion(
+  provider: ProviderChatModel<S>,
+  messages: MessageModel[],
+  options: { stream: true } & ChatOptions
+): Promise<AsyncGenerator<StreamChunk>>
 ```
 
-Send a chat completion request to a single provider.
+Send a chat completion request to a single provider. Pass `stream: true` to receive responses incrementally as an async generator.
 
 Parameters:
-- `provider`: The provider and model to use (e.g., `'openai/gpt-4'`, `'anthropic/claude-3-5-sonnet-20241022'`)
+- `provider`: The provider and model to use (e.g., `'openai/gpt-4o'`, `'anthropic/claude-sonnet-4-5'`)
 - `messages`: Array of message objects
-- `options`: Additional options for the request
+- `options`: Additional options for the request. Set `stream: true` to enable streaming.
 
 Returns:
-- `Promise<ResultChatCompletion>`: The completion result (either success or error)
+- Without `stream: true` → `Promise<ResultChatCompletion>`: the full completion result
+- With `stream: true` → `Promise<AsyncGenerator<StreamChunk>>`: an async generator that yields chunks as they arrive
+
+See [Usage — Stream](/usage-stream) for full details and examples.
 
 #### createChatCompletionMultiResult
 
@@ -322,6 +337,33 @@ interface ErrorChatCompletion {
 }
 ```
 
+### StreamChunk
+
+Yielded by `createChatCompletion` when `stream: true` is set. See [Usage — Stream](/usage-stream) for full details.
+
+```typescript
+interface StreamChunk {
+  id: string;
+  created: number;               // Unix timestamp in seconds
+  object: 'chat.completion';
+  model: string;
+  delta: string;                 // New text in this chunk (empty on the final chunk)
+  content: string;               // Full accumulated text so far
+  content_object?: Record<string, unknown>; // Parsed JSON — final chunk only, when using json_object or json_schema
+  done: boolean;                 // true only on the last chunk
+  usage?: {                      // Final chunk only
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    cached_tokens: number;
+    reasoning_tokens: number;
+    thoughts_tokens: number;
+  };
+  execution_time?: number;       // Milliseconds — final chunk only
+  metadata?: Record<string, unknown>;
+}
+```
+
 ### ChatOptions
 
 ChatOptions is a union type that varies based on the response format:
@@ -334,7 +376,7 @@ type ChatOptions = JSONSchema | JSONObject | Text;
 
 ```typescript
 interface ChatOptionsBase {
-  stream?: boolean;  // Currently not supported
+  stream?: boolean;  // Set to true to receive an AsyncGenerator<StreamChunk> instead of a full response
   temperature?: number;  // Default: 0.7
 
   // Token management

@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import z from "zod";
 import { AISuite } from "../../src/index.js";
 import type { SuccessChatCompletion } from "../../src/types/chat.js";
+import type { StreamChunk } from "../../src/types/stream.js";
 
 dotenv.config();
 
@@ -84,5 +85,70 @@ describe("AnthropicProvider", () => {
 
     expect(result.success).toBe(true);
     expect((result as SuccessChatCompletion).content).toBeDefined();
+  }, 15000);
+});
+
+async function collectStream(gen: Promise<AsyncGenerator<StreamChunk>>): Promise<StreamChunk[]> {
+  const chunks: StreamChunk[] = [];
+  for await (const chunk of await gen) chunks.push(chunk);
+  return chunks;
+}
+
+describe("AnthropicProvider - Stream", () => {
+  it("should stream chunks with correct structure", async () => {
+    if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not defined");
+
+    const ai = new AISuite({ anthropicKey: apiKey });
+    const chunks = await collectStream(
+      ai.createChatCompletion("anthropic/claude-sonnet-4-5", [{ role: "user", content: "Say hello in one word" }], {
+        stream: true,
+        responseFormat: "text",
+      }),
+    );
+
+    const intermediates = chunks.filter(c => !c.done);
+    const final = chunks.find(c => c.done);
+
+    expect(intermediates.length).toBeGreaterThan(0);
+    intermediates.forEach(c => {
+      expect(c.delta).toBeTruthy();
+      expect(c.id).toBeDefined();
+      expect(c.created).toBeDefined();
+      expect(c.object).toBe("chat.completion");
+      expect(c.model).toBeDefined();
+    });
+
+    expect(final).toBeDefined();
+    expect(final!.delta).toBe("");
+    expect(final!.content).toBeTruthy();
+    expect(final!.execution_time).toBeDefined();
+    expect(final!.usage).toBeDefined();
+    expect(final!.usage!.input_tokens).toBeGreaterThan(0);
+    expect(final!.usage!.output_tokens).toBeGreaterThan(0);
+    expect(final!.usage!.total_tokens).toBeGreaterThan(0);
+  }, 15000);
+
+  it("should parse content_object on final chunk when using json_object format", async () => {
+    if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not defined");
+
+    const ai = new AISuite({ anthropicKey: apiKey });
+    const chunks = await collectStream(
+      ai.createChatCompletion(
+        "anthropic/claude-sonnet-4-5",
+        [
+          {
+            role: "user",
+            content:
+              'Respond with ONLY this exact raw JSON text, no markdown, no code blocks, no explanation: {"message":"Hello, world!"}',
+          },
+        ],
+        { stream: true, responseFormat: "json_object" },
+      ),
+    );
+
+    const final = chunks.find(c => c.done);
+    expect(final).toBeDefined();
+    expect(final!.content_object).toBeDefined();
+    expect(final!.content_object).toHaveProperty("message");
   }, 15000);
 });
