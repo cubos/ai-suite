@@ -42,6 +42,13 @@ export class OpenAIProvider extends ProviderBase {
     this.providerName = provideName;
   }
 
+  private reasoningOrTemperature(options: ChatOptions) {
+    if (options.reasoning) {
+      return { reasoning_effort: options.reasoning.effort };
+    }
+    return { temperature: options.temperature };
+  }
+
   protected _createChatCompletion(
     messages: MessageModel[],
     options: ChatOptions & { stream: true },
@@ -80,9 +87,9 @@ export class OpenAIProvider extends ProviderBase {
       model: this.model,
       messages: mappedMessages,
       stream: false,
-      temperature: options.temperature,
       response_format,
       tools: options.tools,
+      ...this.reasoningOrTemperature(options),
       ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
     };
 
@@ -155,9 +162,9 @@ export class OpenAIProvider extends ProviderBase {
       messages: mappedMessages,
       stream: true as const,
       stream_options: { include_usage: true },
-      temperature: options.temperature,
       response_format,
       tools: options.tools,
+      ...this.reasoningOrTemperature(options),
       ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
     };
 
@@ -347,8 +354,12 @@ export class OpenAIProvider extends ProviderBase {
       const status = error.status;
 
       if (status === 400) {
+        const rejectedReasoning = error.param === "reasoning_effort" || /reasoning_effort/i.test(error.message ?? "");
+
         return {
-          error: "Bad Request",
+          error: rejectedReasoning
+            ? `Model "${this.model}" does not support the "reasoning" option. Remove it or use a reasoning model (e.g. OpenAI o-series/gpt-5, Grok mini).`
+            : "Bad Request",
           raw: error,
           tag: "InvalidRequest",
         };
