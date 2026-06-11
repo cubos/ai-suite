@@ -2,8 +2,9 @@ import { OpenAI } from "openai";
 import { describe, expect, it } from "vitest";
 import { AISuite } from "../../src/index.js";
 import { OpenAIProvider } from "../../src/providers/openai/openaiProvider.js";
-import type { ResultChatCompletion } from "../../src/types/chat.js";
-import type { StreamChunk } from "../../src/types/stream.js";
+import type { ChatOptions } from "../../src/providers/types/index.js";
+import type { MessageModel } from "../../src/types/chat.js";
+import type { ProviderChatModel } from "../../src/types/providerModel.js";
 
 /**
  * These tests assert how the request payload is built for the OpenAI provider.
@@ -12,10 +13,8 @@ import type { StreamChunk } from "../../src/types/stream.js";
  * No OPENAI_API_KEY is required.
  */
 async function captureRequest(
-  // biome-ignore lint/suspicious/noExplicitAny: test helper passes through to the overloaded method
-  model: any,
-  // biome-ignore lint/suspicious/noExplicitAny: test helper passes through to the overloaded method
-  options: any,
+  model: ProviderChatModel<string>,
+  options: ChatOptions,
 ): Promise<Record<string, unknown> | undefined> {
   let captured: Record<string, unknown> | undefined;
 
@@ -32,17 +31,17 @@ async function captureRequest(
     },
   );
 
-  try {
-    const result = (await aiSuite.createChatCompletion(model, [{ role: "user", content: "Hello" }], options)) as
-      | ResultChatCompletion
-      | AsyncGenerator<StreamChunk>;
+  const messages: MessageModel[] = [{ role: "user", content: "Hello" }];
 
-    // The streaming path returns a lazy async generator, so handleRequest only fires once we
-    // consume it. We know whether to drain it from the stream flag we passed in.
+  try {
     if (options.stream) {
-      for await (const _chunk of result as AsyncGenerator<StreamChunk>) {
+      // The streaming path returns a lazy async generator, so handleRequest only fires once we consume it.
+      const stream = await aiSuite.createChatCompletion(model, messages, { ...options, stream: true });
+      for await (const _chunk of stream) {
         // no-op: handleRequest throws before any chunk is produced
       }
+    } else {
+      await aiSuite.createChatCompletion(model, messages, { ...options, stream: false });
     }
   } catch {
     // handleRequest short-circuits the call after capturing the request
@@ -101,8 +100,11 @@ describe("OpenAIProvider reasoning effort", () => {
     const provider = new OpenAIProvider("test-key", "gpt-4o-mini", "openai");
     const apiError = new OpenAI.APIError(
       400,
-      { param: "reasoning_effort" },
-      "Unsupported parameter: 'reasoning_effort' is not supported with this model.",
+      {
+        param: "reasoning_effort",
+        message: "Unsupported parameter: 'reasoning_effort' is not supported with this model.",
+      },
+      undefined,
       undefined,
     );
 

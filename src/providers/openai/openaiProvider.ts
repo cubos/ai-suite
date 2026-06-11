@@ -12,6 +12,7 @@ import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import { BatchOpenAI } from "./batch/index.js";
 import { FileOpenAI } from "./file/index.js";
+import { reasoningOrTemperature } from "./reasoning.js";
 
 export class OpenAIProvider extends ProviderBase {
   public client: OpenAI;
@@ -40,13 +41,6 @@ export class OpenAIProvider extends ProviderBase {
     });
     this.model = model;
     this.providerName = provideName;
-  }
-
-  private reasoningOrTemperature(options: ChatOptions) {
-    if (options.reasoning) {
-      return { reasoning_effort: options.reasoning.effort };
-    }
-    return { temperature: options.temperature };
   }
 
   protected _createChatCompletion(
@@ -89,7 +83,7 @@ export class OpenAIProvider extends ProviderBase {
       stream: false,
       response_format,
       tools: options.tools,
-      ...this.reasoningOrTemperature(options),
+      ...reasoningOrTemperature(options),
       ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
     };
 
@@ -164,7 +158,7 @@ export class OpenAIProvider extends ProviderBase {
       stream_options: { include_usage: true },
       response_format,
       tools: options.tools,
-      ...this.reasoningOrTemperature(options),
+      ...reasoningOrTemperature(options),
       ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
     };
 
@@ -354,7 +348,8 @@ export class OpenAIProvider extends ProviderBase {
       const status = error.status;
 
       if (status === 400) {
-        const rejectedReasoning = error.param === "reasoning_effort" || /reasoning_effort/i.test(error.message ?? "");
+        const mentionsReasoning = error.param === "reasoning_effort" || /reasoning_effort/i.test(error.message ?? "");
+        const rejectedReasoning = mentionsReasoning && /unsupported|not supported/i.test(error.message ?? "");
 
         return {
           error: rejectedReasoning
