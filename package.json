@@ -2,6 +2,10 @@
   "name": "@cubos/ai-suite",
   "author": "Joshua Passos",
   "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cubos/ai-suite.git"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx --trace-deprecation --watch src/index.ts",
