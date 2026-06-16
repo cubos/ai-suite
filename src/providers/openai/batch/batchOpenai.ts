@@ -25,6 +25,7 @@ import { AISuiteError } from "../../../utils.js";
 import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
 import type { OpenAIProvider } from "../openaiProvider.js";
+import { reasoningOrTemperature } from "../reasoning.js";
 import type { OpenAIBatchChatCompletionCreateParams } from "../types/openAIBatchChatCompletionCreateParams.js";
 import type { OpenAIBatchEmbeddingCreateParams } from "../types/openAIBatchEmbeddingCreateParams.js";
 
@@ -76,9 +77,9 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
               body: {
                 model: this.provider.model,
                 messages: this.provider.mapMessages(item.params.mensagens),
-                temperature: options.temperature,
                 response_format,
                 tools: options.tools,
+                ...reasoningOrTemperature(options),
                 ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
               },
             } as OpenAIBatchChatCompletionCreateParams),

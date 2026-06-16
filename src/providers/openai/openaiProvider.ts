@@ -13,6 +13,7 @@ import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import { BatchOpenAI } from "./batch/index.js";
 import { FileOpenAI } from "./file/index.js";
+import { reasoningOrTemperature } from "./reasoning.js";
 
 export class OpenAIProvider extends ProviderBase {
   public client: OpenAI;
@@ -81,9 +82,9 @@ export class OpenAIProvider extends ProviderBase {
       model: this.model,
       messages: mappedMessages,
       stream: false,
-      temperature: options.temperature,
       response_format,
       tools: options.tools,
+      ...reasoningOrTemperature(options),
       ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
     };
 
@@ -156,9 +157,9 @@ export class OpenAIProvider extends ProviderBase {
       messages: mappedMessages,
       stream: true as const,
       stream_options: { include_usage: true },
-      temperature: options.temperature,
       response_format,
       tools: options.tools,
+      ...reasoningOrTemperature(options),
       ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
     };
 
@@ -348,8 +349,13 @@ export class OpenAIProvider extends ProviderBase {
       const status = error.status;
 
       if (status === 400) {
+        const mentionsReasoning = error.param === "reasoning_effort" || /reasoning_effort/i.test(error.message ?? "");
+        const rejectedReasoning = mentionsReasoning && /unsupported|not supported/i.test(error.message ?? "");
+
         return {
-          error: "Bad Request",
+          error: rejectedReasoning
+            ? `Model "${this.model}" does not support the "reasoning" option. Remove it or use a reasoning model (e.g. OpenAI o-series/gpt-5, Grok mini).`
+            : "Bad Request",
           raw: error,
           tag: "InvalidRequest",
         };
