@@ -6,6 +6,10 @@ on:
     tags: ['v*']
   pull_request:
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   typecheck:
     name: TypeCheck
@@ -97,8 +101,6 @@ jobs:
       - run: pnpm version 1.0.${{ github.run_id }}.dev --no-git-checks || true
       - run: pnpm run build
       - run: pnpm publish --no-git-checks --tag dev --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-release:
     name: NPM Package (Release)
@@ -121,8 +123,6 @@ jobs:
           pnpm version $VERSION --no-git-checks || true
       - run: pnpm run build
       - run: pnpm publish --no-git-checks --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   pages:
     name: Deploy Pages
