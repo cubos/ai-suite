@@ -2,6 +2,7 @@ import JSON5 from "json5";
 import { OpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import type { ChatCompletionCreateParamsBase, ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs";
+
 export type { ChatCompletionMessageParam };
 
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
