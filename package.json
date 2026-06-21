@@ -27,7 +27,7 @@
   "keywords": [],
   "license": "MIT",
   "description": "All ai providers in one place",
-  "packageManager": "pnpm@10.4.1",
+  "packageManager": "pnpm@10.34.4",
   "devDependencies": {
     "@11ty/eleventy": "^3.1.6",
     "@11ty/eleventy-navigation": "^1.0.5",
