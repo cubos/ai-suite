@@ -12,17 +12,16 @@ import { z as zod } from "zod";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
 import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
-import type { ServiceTier } from "../../types/serviceTier.js";
 import type { StreamChunk } from "../../types/stream.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import { BatchGemini } from "./batch/index.js";
 import { notUseThinkingConfig } from "./constants/notUseThinkingConfig.js";
 import { onlyWorksWithThinking } from "./constants/onlyWorksWithThinking.js";
-import { geminiServiceTierMap } from "./constants/serviceTierMap.js";
 import { useThinkingLevel } from "./constants/useThinkingLevel.js";
 import { FileGemini } from "./file/index.js";
 import { convertToGeminiFunctions } from "./utils/convertToGeminiFunctions.js";
+import { fromGeminiTrafficType, toGeminiServiceTier } from "./utils/serviceTier.js";
 
 export class GeminiProvider extends ProviderBase {
   public client: GoogleGenAI;
@@ -90,7 +89,7 @@ export class GeminiProvider extends ProviderBase {
       high: ThinkingLevel.HIGH,
     };
 
-    const serviceTier = options.serviceTier ? geminiServiceTierMap[options.serviceTier] : undefined;
+    const serviceTier = toGeminiServiceTier(options.serviceTier);
 
     let thinkingConfig: {
       thinkingBudget?: number;
@@ -137,10 +136,6 @@ export class GeminiProvider extends ProviderBase {
     };
   }
 
-  private echoedServiceTier(options: ChatOptions): ServiceTier | undefined {
-    return options.serviceTier && geminiServiceTierMap[options.serviceTier] ? options.serviceTier : undefined;
-  }
-
   private async _createChatCompletionNonStream(
     messages: MessageModel[],
     options: ChatOptions,
@@ -170,7 +165,7 @@ export class GeminiProvider extends ProviderBase {
       object: "chat.completion",
       content: response.text ?? null,
       content_object: contentObject ?? {},
-      service_tier: this.echoedServiceTier(options),
+      service_tier: fromGeminiTrafficType(response.usageMetadata?.trafficType),
       tools: response.functionCalls?.map((tool: FunctionCall) => ({
         id: tool.name ?? "",
         type: "function",
@@ -244,7 +239,7 @@ export class GeminiProvider extends ProviderBase {
       delta: "",
       content: accumulated,
       content_object: contentObject,
-      service_tier: this.echoedServiceTier(options),
+      service_tier: fromGeminiTrafficType(lastResponse?.usageMetadata?.trafficType),
       done: true,
       usage: {
         input_tokens: lastResponse?.usageMetadata?.promptTokenCount ?? 0,

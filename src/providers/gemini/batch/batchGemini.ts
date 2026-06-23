@@ -31,10 +31,10 @@ import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
 import { notUseThinkingConfig } from "../constants/notUseThinkingConfig.js";
 import { onlyWorksWithThinking } from "../constants/onlyWorksWithThinking.js";
-import { geminiServiceTierMap } from "../constants/serviceTierMap.js";
 import { useThinkingLevel } from "../constants/useThinkingLevel.js";
 import type { GeminiProvider } from "../geminiProvider.js";
 import { convertToGeminiFunctions } from "../utils/convertToGeminiFunctions.js";
+import { toGeminiServiceTier } from "../utils/serviceTier.js";
 
 export class BatchGemini extends BatchProviderBase<GeminiProvider> {
   async create(args: CreateBatchArgs): Promise<SuccessCreateBatch> {
@@ -96,7 +96,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
           };
         }
 
-        const serviceTier = options.serviceTier ? geminiServiceTierMap[options.serviceTier] : undefined;
+        const serviceTier = toGeminiServiceTier(options.serviceTier);
 
         config = {
           tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
