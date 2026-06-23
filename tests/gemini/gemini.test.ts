@@ -42,7 +42,7 @@ describe("GeminiProvider", () => {
       },
     );
 
-    const result = await gemini.createChatCompletion("gemini/gemini-2.0-flash-lite", [
+    const result = await gemini.createChatCompletion("gemini/gemini-2.5-flash-lite", [
       {
         role: "user",
         content: "Hello, world!",
@@ -69,7 +69,7 @@ describe("GeminiProvider", () => {
     });
 
     const result = await gemini.createChatCompletion(
-      "gemini/gemini-2.0-flash-lite",
+      "gemini/gemini-2.5-flash-lite",
       [
         {
           role: "user",
@@ -214,7 +214,7 @@ describe("GeminiProvider - Stream", () => {
 
     const ai = new AISuite({ geminiKey: apiKey });
     const chunks = await collectStream(
-      ai.createChatCompletion("gemini/gemini-2.0-flash-lite", [{ role: "user", content: "Say hello in one word" }], {
+      ai.createChatCompletion("gemini/gemini-2.5-flash-lite", [{ role: "user", content: "Say hello in one word" }], {
         stream: true,
         responseFormat: "text",
       }),
@@ -248,7 +248,7 @@ describe("GeminiProvider - Stream", () => {
     const ai = new AISuite({ geminiKey: apiKey });
     const chunks = await collectStream(
       ai.createChatCompletion(
-        "gemini/gemini-2.0-flash-lite",
+        "gemini/gemini-2.5-flash-lite",
         [{ role: "user", content: "Return a JSON object with a field 'message' containing 'Hello, world!'" }],
         { stream: true, responseFormat: "json_object" },
       ),

@@ -21,6 +21,7 @@ import { onlyWorksWithThinking } from "./constants/onlyWorksWithThinking.js";
 import { useThinkingLevel } from "./constants/useThinkingLevel.js";
 import { FileGemini } from "./file/index.js";
 import { convertToGeminiFunctions } from "./utils/convertToGeminiFunctions.js";
+import { fromGeminiTrafficType, toGeminiServiceTier } from "./utils/serviceTier.js";
 
 export class GeminiProvider extends ProviderBase {
   public client: GoogleGenAI;
@@ -88,6 +89,8 @@ export class GeminiProvider extends ProviderBase {
       high: ThinkingLevel.HIGH,
     };
 
+    const serviceTier = toGeminiServiceTier(options.serviceTier);
+
     let thinkingConfig: {
       thinkingBudget?: number;
       thinkingLevel?: ThinkingLevel;
@@ -126,6 +129,7 @@ export class GeminiProvider extends ProviderBase {
             }
           : {}),
         ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
+        ...(serviceTier ? { serviceTier } : {}),
       },
       contents: this.mapMessages(messages.slice(systemMessage ? 1 : 0)),
       model: this.model,
@@ -161,6 +165,7 @@ export class GeminiProvider extends ProviderBase {
       object: "chat.completion",
       content: response.text ?? null,
       content_object: contentObject ?? {},
+      service_tier: fromGeminiTrafficType(response.usageMetadata?.trafficType),
       tools: response.functionCalls?.map((tool: FunctionCall) => ({
         id: tool.name ?? "",
         type: "function",
@@ -234,6 +239,7 @@ export class GeminiProvider extends ProviderBase {
       delta: "",
       content: accumulated,
       content_object: contentObject,
+      service_tier: fromGeminiTrafficType(lastResponse?.usageMetadata?.trafficType),
       done: true,
       usage: {
         input_tokens: lastResponse?.usageMetadata?.promptTokenCount ?? 0,
