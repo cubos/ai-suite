@@ -4,6 +4,7 @@ import type { MessageModel } from "./chat.js";
 import type { ErrorAISuite } from "./handleErrorResponse.js";
 import type { EmbeddingOptions, Usage } from "./index.js";
 import type { ResultBase } from "./resultBase.js";
+import type { ServiceTier } from "./serviceTier.js";
 
 export type Endpoint = "chat/completions" | "embeddings";
 
@@ -254,7 +255,7 @@ export interface ChatCompletionBatchResponse {
   /**
    * The service tier used for processing the request.
    */
-  service_tier?: "scale" | "default" | null;
+  service_tier?: ServiceTier | null;
 
   /**
    * This fingerprint represents the backend configuration that the model runs with.

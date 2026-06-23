@@ -1,3 +1,4 @@
+import type { ServiceTier } from "./serviceTier.js";
 import type { Usage } from "./usage.js";
 
 export interface StreamChunk {
@@ -15,6 +16,8 @@ export interface StreamChunk {
   content: string;
   /** Parsed JSON object — only populated on the final chunk when responseFormat is json_object or json_schema */
   content_object?: Record<string, unknown>;
+  /** The service tier used for processing the request */
+  service_tier?: ServiceTier | null;
   /** True on the final chunk */
   done: boolean;
   /** Usage stats — only populated on the final chunk */

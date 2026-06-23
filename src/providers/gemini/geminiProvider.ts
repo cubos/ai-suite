@@ -12,12 +12,14 @@ import { z as zod } from "zod";
 import type { InputContent, MessageModel, SuccessChatCompletion } from "../../types/chat.js";
 import type { EmbeddingOptions, EmbeddingRequest, SuccessEmbedding } from "../../types/embed.js";
 import type { ErrorAISuite } from "../../types/handleErrorResponse.js";
+import type { ServiceTier } from "../../types/serviceTier.js";
 import type { StreamChunk } from "../../types/stream.js";
 import { BaseHook, ProviderBase } from "../_base.js";
 import type { ChatOptions } from "../types/index.js";
 import { BatchGemini } from "./batch/index.js";
 import { notUseThinkingConfig } from "./constants/notUseThinkingConfig.js";
 import { onlyWorksWithThinking } from "./constants/onlyWorksWithThinking.js";
+import { geminiServiceTierMap } from "./constants/serviceTierMap.js";
 import { useThinkingLevel } from "./constants/useThinkingLevel.js";
 import { FileGemini } from "./file/index.js";
 import { convertToGeminiFunctions } from "./utils/convertToGeminiFunctions.js";
@@ -88,6 +90,8 @@ export class GeminiProvider extends ProviderBase {
       high: ThinkingLevel.HIGH,
     };
 
+    const serviceTier = options.serviceTier ? geminiServiceTierMap[options.serviceTier] : undefined;
+
     let thinkingConfig: {
       thinkingBudget?: number;
       thinkingLevel?: ThinkingLevel;
@@ -126,10 +130,15 @@ export class GeminiProvider extends ProviderBase {
             }
           : {}),
         ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
+        ...(serviceTier ? { serviceTier } : {}),
       },
       contents: this.mapMessages(messages.slice(systemMessage ? 1 : 0)),
       model: this.model,
     };
+  }
+
+  private echoedServiceTier(options: ChatOptions): ServiceTier | undefined {
+    return options.serviceTier && geminiServiceTierMap[options.serviceTier] ? options.serviceTier : undefined;
   }
 
   private async _createChatCompletionNonStream(
@@ -161,6 +170,7 @@ export class GeminiProvider extends ProviderBase {
       object: "chat.completion",
       content: response.text ?? null,
       content_object: contentObject ?? {},
+      service_tier: this.echoedServiceTier(options),
       tools: response.functionCalls?.map((tool: FunctionCall) => ({
         id: tool.name ?? "",
         type: "function",
@@ -234,6 +244,7 @@ export class GeminiProvider extends ProviderBase {
       delta: "",
       content: accumulated,
       content_object: contentObject,
+      service_tier: this.echoedServiceTier(options),
       done: true,
       usage: {
         input_tokens: lastResponse?.usageMetadata?.promptTokenCount ?? 0,

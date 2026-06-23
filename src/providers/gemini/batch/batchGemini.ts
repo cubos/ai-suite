@@ -31,6 +31,7 @@ import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
 import { notUseThinkingConfig } from "../constants/notUseThinkingConfig.js";
 import { onlyWorksWithThinking } from "../constants/onlyWorksWithThinking.js";
+import { geminiServiceTierMap } from "../constants/serviceTierMap.js";
 import { useThinkingLevel } from "../constants/useThinkingLevel.js";
 import type { GeminiProvider } from "../geminiProvider.js";
 import { convertToGeminiFunctions } from "../utils/convertToGeminiFunctions.js";
@@ -95,6 +96,8 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
           };
         }
 
+        const serviceTier = options.serviceTier ? geminiServiceTierMap[options.serviceTier] : undefined;
+
         config = {
           tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
           temperature: options.temperature ?? 0.7,
@@ -102,6 +105,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
           responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
           ...(options.responseFormat === "json_schema" ? { responseSchema: zod.toJSONSchema(options.zodSchema) } : {}),
           ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
+          ...(serviceTier ? { serviceTier } : {}),
         };
 
         jsonl = batch.batch
