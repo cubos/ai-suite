@@ -150,7 +150,7 @@ jobs:
         with:
           path: ./public
           name: github-pages-${{ github.run_id }}
-      - uses: actions/deploy-pages@v4
+      - uses: actions/deploy-pages@v5
         id: deployment
         with:
           artifact_name: github-pages-${{ github.run_id }}
