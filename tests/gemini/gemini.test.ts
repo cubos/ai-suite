@@ -110,7 +110,7 @@ describe("GeminiProvider", () => {
     expect((result2 as SuccessChatCompletion).content_object).toBeDefined();
     expect((result2 as SuccessChatCompletion).content_object).toHaveProperty("message");
     expect((result2 as SuccessChatCompletion).content_object.message).toBe("Hello, world!");
-  });
+  }, 30000);
 
   it("should send pdf file", async () => {
     if (!apiKey) {
@@ -161,7 +161,7 @@ describe("GeminiProvider", () => {
     expect((result as SuccessChatCompletion).content_object).toHaveProperty("description");
     expect((result as SuccessChatCompletion).content_object).toHaveProperty("title");
     expect((result as SuccessChatCompletion).content_object.title).toBe("ARQUIVO PDF DE TESTE");
-  });
+  }, 30000);
 
   it("should return a response using gemini-3-flash-preview with thinking level", async () => {
     if (!apiKey) {
@@ -200,6 +200,46 @@ describe("GeminiProvider", () => {
     expect((result as SuccessChatCompletion).content_object).toHaveProperty("message");
     expect((result as SuccessChatCompletion).content_object.message).toBe("Hello, world!");
   });
+
+  const stableGemini3Models = ["gemini-3.5-flash", "gemini-3.1-flash-lite"] as const;
+
+  it.each(stableGemini3Models)("should return a response using stable model %s with thinking level", async model => {
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not defined");
+    }
+
+    const gemini = new AISuite({
+      geminiKey: apiKey,
+    });
+
+    const result = await gemini.createChatCompletion(
+      `gemini/${model}`,
+      [
+        {
+          role: "user",
+          content: "Return a JSON object with a field 'message' containing 'Hello, world!'",
+        },
+      ],
+      {
+        stream: false,
+        zodSchema: z.object({
+          message: z.string(),
+        }),
+        responseFormat: "json_schema",
+        thinking: { level: "minimal", output: false },
+      },
+    );
+
+    if (!result.success) {
+      console.log(`Gemini error (${model}):`, result);
+    }
+
+    expect(result.success).toBe(true);
+    expect((result as SuccessChatCompletion).content).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toBeDefined();
+    expect((result as SuccessChatCompletion).content_object).toHaveProperty("message");
+    expect((result as SuccessChatCompletion).content_object.message).toBe("Hello, world!");
+  }, 15000);
 });
 
 async function collectStream(gen: Promise<AsyncGenerator<StreamChunk>>): Promise<StreamChunk[]> {
