@@ -43,7 +43,7 @@
     "vitest": "^3.2.6"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.70.0",
+    "@anthropic-ai/sdk": "0.109.0",
     "@google/genai": "^1.52.0",
     "@types/node": "^22.19.21",
     "dotenv": "^16.6.1",
