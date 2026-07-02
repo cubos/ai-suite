@@ -12,6 +12,8 @@
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "test": "vitest",
+    "test:mock": "vitest run mock",
+    "test:integration": "vitest run --exclude '**/*.mock.test.ts'",
     "docs:start": "eleventy --serve --input=./doc --config=./doc/.eleventy.cjs",
     "docs:build": "eleventy --input=./doc --config=./doc/.eleventy.cjs"
   },
