@@ -14,6 +14,7 @@ import type { ChatOptions } from "../types/index.js";
 import { BatchOpenAI } from "./batch/index.js";
 import { FileOpenAI } from "./file/index.js";
 import { reasoningOrTemperature } from "./reasoning.js";
+import { fromOpenAIServiceTier, toOpenAIServiceTier } from "./utils/index.js";
 
 export class OpenAIProvider extends ProviderBase {
   public client: OpenAI;
@@ -78,6 +79,8 @@ export class OpenAIProvider extends ProviderBase {
       response_format = { type: options.responseFormat };
     }
 
+    const serviceTier = toOpenAIServiceTier(options.serviceTier);
+
     const request: ChatCompletionCreateParamsBase = {
       model: this.model,
       messages: mappedMessages,
@@ -86,6 +89,7 @@ export class OpenAIProvider extends ProviderBase {
       tools: options.tools,
       ...reasoningOrTemperature(options),
       ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
+      ...(serviceTier ? { service_tier: serviceTier } : {}),
     };
 
     await this.hooks.handleRequest(request);
@@ -114,6 +118,7 @@ export class OpenAIProvider extends ProviderBase {
       object: "chat.completion",
       content: completion.choices[0].message.content,
       content_object: contentObject ?? {},
+      service_tier: fromOpenAIServiceTier(completion.service_tier),
       tools: completion.choices[0].message.tool_calls
         ?.filter(l => l.type === "function")
         .map(tool => ({
@@ -152,6 +157,8 @@ export class OpenAIProvider extends ProviderBase {
       response_format = { type: options.responseFormat };
     }
 
+    const serviceTier = toOpenAIServiceTier(options.serviceTier);
+
     const request = {
       model: this.model,
       messages: mappedMessages,
@@ -161,6 +168,7 @@ export class OpenAIProvider extends ProviderBase {
       tools: options.tools,
       ...reasoningOrTemperature(options),
       ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
+      ...(serviceTier ? { service_tier: serviceTier } : {}),
     };
 
     await this.hooks.handleRequest(request);
@@ -170,12 +178,20 @@ export class OpenAIProvider extends ProviderBase {
     let accumulated = "";
     let chunkId = "";
     let lastChunk: OpenAI.Chat.Completions.ChatCompletionChunk | undefined;
+    let serviceTierApplied: OpenAI.Chat.Completions.ChatCompletionChunk["service_tier"];
     const created = Math.floor(Date.now() / 1000);
 
     for await (const chunk of stream) {
       if (chunk.id) chunkId = chunk.id;
       const delta = chunk.choices[0]?.delta?.content ?? "";
       accumulated += delta;
+
+      // Capture the applied tier from whichever chunk reports it — some
+      // OpenAI-compatible providers send it on the finish_reason chunk but omit
+      // it from the trailing usage-only chunk.
+      if (chunk.service_tier != null) {
+        serviceTierApplied = chunk.service_tier;
+      }
 
       // Keep track of the last chunk to extract usage after the loop
       if (chunk.usage || chunk.choices[0]?.finish_reason != null) {
@@ -217,6 +233,7 @@ export class OpenAIProvider extends ProviderBase {
       delta: "",
       content: accumulated,
       content_object: contentObject,
+      service_tier: fromOpenAIServiceTier(serviceTierApplied),
       done: true,
       usage: usage
         ? {

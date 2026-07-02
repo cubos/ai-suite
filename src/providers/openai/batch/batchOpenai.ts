@@ -28,6 +28,7 @@ import type { OpenAIProvider } from "../openaiProvider.js";
 import { reasoningOrTemperature } from "../reasoning.js";
 import type { OpenAIBatchChatCompletionCreateParams } from "../types/openAIBatchChatCompletionCreateParams.js";
 import type { OpenAIBatchEmbeddingCreateParams } from "../types/openAIBatchEmbeddingCreateParams.js";
+import { fromOpenAIServiceTier, toOpenAIServiceTier } from "../utils/index.js";
 
 export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
   async create(args: CreateBatchArgs): Promise<SuccessCreateBatch> {
@@ -68,6 +69,8 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
           response_format = { type: options.responseFormat };
         }
 
+        const serviceTier = toOpenAIServiceTier(options.serviceTier);
+
         jsonl = batch.batch
           .map(item =>
             JSON.stringify({
@@ -81,6 +84,7 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
                 tools: options.tools,
                 ...reasoningOrTemperature(options),
                 ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
+                ...(serviceTier ? { service_tier: serviceTier } : {}),
               },
             } as OpenAIBatchChatCompletionCreateParams),
           )
@@ -306,6 +310,7 @@ export class BatchOpenAI extends BatchProviderBase<OpenAIProvider> {
           id: body.id,
           model: body.model,
           object: "chat.completion" as const,
+          service_tier: fromOpenAIServiceTier(body.service_tier),
           content: message?.content ?? null,
           content_object: (() => {
             try {
