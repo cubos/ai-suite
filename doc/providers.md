@@ -48,6 +48,11 @@ if (response.success) {
 }
 ```
 
+#### Special Features
+
+- **Reasoning modes**: o1/o3 models support reasoning effort configuration
+- **Service Tier**: supports `flex`, `scale`, `priority`, and `default` via the `serviceTier` option (see [Service Tier](#service-tier))
+
 ### Anthropic
 
 **Module**: `./src/providers/anthropic/` (Anthropic provider directory)
@@ -74,6 +79,11 @@ if (response.success) {
 }
 ```
 
+#### Special Features
+
+- **Extended context & vision**: large context windows and image inputs
+- **Service Tier**: the shared tiers map to Anthropic's opt-in/opt-out semantics — `priority` → `auto` (use Priority Tier when available) and `standard` → `standard_only`; other values are ignored (see [Service Tier](#service-tier))
+
 ### Google Gemini
 
 **Module**: `./src/providers/gemini/` (Gemini provider directory)
@@ -95,6 +105,7 @@ Google Gemini integration supports Gemini models. The provider maps between AI-S
 
 - **Thinking Budget**: Gemini 2.5 models support thinking budget configuration for extended reasoning
 - **JSON Schema**: Native support for structured JSON output via Zod schemas
+- **Service Tier**: supports `flex`, `standard`, and `priority` via the `serviceTier` option (`standard` is Gemini-only); see [Service Tier](#service-tier)
 
 #### Usage Example
 
@@ -199,6 +210,38 @@ const response = await aiSuite.createChatCompletion(
 
 if (response.success) {
   console.log(response.content);
+}
+```
+
+## Service Tier
+
+Some providers let you pick a processing tier that balances availability, latency, and cost. AI-Suite exposes this through a single `serviceTier` option, using a cross-provider superset of values. Each provider maps the values it understands and **silently ignores the rest**.
+
+| Requested `serviceTier` | OpenAI (+ DeepSeek/Grok/Custom) | Gemini | Anthropic |
+|---|:---:|:---:|:---:|
+| `flex` | `flex` | `flex` | ignored |
+| `scale` | `scale` | ignored | ignored |
+| `priority` | `priority` | `priority` | `auto` |
+| `default` | `default` | ignored | ignored |
+| `standard` | ignored | `standard` | `standard_only` |
+
+Notes:
+
+- **Anthropic** doesn't select a named tier — it opts in/out of Priority Tier. `priority` maps to `auto` (use Priority Tier when available) and `standard` maps to `standard_only`.
+- **DeepSeek / Grok / Custom LLM** reuse the OpenAI path, so the value is forwarded the same way; whether the endpoint honors it depends on the endpoint (`✓*` in the README table).
+- Works across chat (streaming and non-streaming) and batch requests.
+
+The response echoes the tier the provider **actually applied** on `response.service_tier` (and on the final stream chunk), which may differ from the requested one — e.g. a downgrade to `standard` when priority capacity isn't available.
+
+```typescript
+const response = await aiSuite.createChatCompletion(
+  'openai/gpt-4o',
+  [{ role: 'user', content: 'Summarize this document...' }],
+  { serviceTier: 'flex' }   // latency-tolerant, lower-cost tier
+);
+
+if (response.success) {
+  console.log(response.service_tier); // tier actually applied, e.g. 'flex' or 'default'
 }
 ```
 

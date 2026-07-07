@@ -19,6 +19,7 @@ import { BatchProviderBase } from "../../batchProviderBase.js";
 import type { OptionsBase } from "../../types/optionsBase.js";
 import type { AnthropicProvider } from "../index.js";
 import { convertToAnthropicFunctions } from "../utils/convertToAnthropicFunctions.js";
+import { fromAnthropicServiceTier, toAnthropicServiceTier } from "../utils/serviceTier.js";
 
 export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
   async create(args: CreateBatchArgs): Promise<SuccessCreateBatch> {
@@ -36,6 +37,8 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
       throw new AISuiteError("Necessary to pass the messages.");
     }
 
+    const serviceTier = toAnthropicServiceTier(options.serviceTier);
+
     const requests: Array<BatchCreateParams.Request> = batch.batch.map(req => {
       return {
         custom_id: req.customId,
@@ -49,6 +52,7 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
               ? { budget_tokens: options.thinking?.budget ?? 0, type: "enabled" }
               : { type: "disabled" }),
           },
+          ...(serviceTier ? { service_tier: serviceTier } : {}),
         },
       };
     });
@@ -214,6 +218,7 @@ export class BatchAnthropic extends BatchProviderBase<AnthropicProvider> {
         object: "chat.completion",
         content,
         content_object,
+        service_tier: fromAnthropicServiceTier(message.usage.service_tier),
         tools: tools.length ? tools : undefined,
         usage: {
           input_tokens: message.usage.input_tokens,

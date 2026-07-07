@@ -295,7 +295,9 @@ interface SuccessChatCompletion {
   created: number;  // Unix timestamp in seconds
   model: string;
   object: 'chat.completion';
-  service_tier?: 'scale' | 'default' | null;
+  // The service tier the provider actually applied (may differ from the requested
+  // one, e.g. a downgrade to 'standard'). Null/undefined when not reported.
+  service_tier?: 'scale' | 'default' | 'flex' | 'standard' | 'priority' | null;
   system_fingerprint?: string;
 
   usage?: {
@@ -401,6 +403,13 @@ interface ChatOptionsBase {
     budget: number;   // Thinking budget tokens
     output: boolean;  // Include thinking in output
   };
+
+  // Service tier — cross-provider superset; each provider maps what it supports:
+  //   OpenAI (+ DeepSeek/Grok/custom-llm): 'scale' | 'default' | 'flex' | 'priority'
+  //   Gemini: 'flex' | 'standard' | 'priority'  ('standard' is Gemini-only)
+  //   Anthropic: 'priority' -> 'auto', 'standard' -> 'standard_only' (others ignored)
+  // Unsupported values are silently ignored per provider.
+  serviceTier?: 'scale' | 'default' | 'flex' | 'standard' | 'priority';
 
   // Langfuse tracking metadata
   metadata?: Record<string, unknown> & {

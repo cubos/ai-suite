@@ -61,9 +61,9 @@ if (response.success) {
 
 | Provider | Models | Special Features |
 |----------|--------|------------------|
-| **OpenAI** | GPT-4o, GPT-4, o1, o3 | Reasoning modes, function calling |
-| **Anthropic** | Claude 3.5 Sonnet, Claude 3 Opus/Haiku | Extended context, vision |
-| **Google Gemini** | 2.5 Pro/Flash, 2.0 Flash, 1.5 Pro/Flash | Thinking budget, multimodal |
+| **OpenAI** | GPT-4o, GPT-4, o1, o3 | Reasoning modes, function calling, service tier |
+| **Anthropic** | Claude 3.5 Sonnet, Claude 3 Opus/Haiku | Extended context, vision, service tier |
+| **Google Gemini** | 2.5 Pro/Flash, 2.0 Flash, 1.5 Pro/Flash | Thinking budget, multimodal, service tier |
 | **DeepSeek** | Chat, Coder | Code-specialized models |
 | **Grok** | Grok 3, Grok 3 Mini | Reasoning modes |
 | **Custom LLM** | Any model | OpenAI-compatible APIs |

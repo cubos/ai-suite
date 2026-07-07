@@ -10,6 +10,7 @@ import { BatchAnthropic } from "./batch/index.js";
 import { FileAnthropic } from "./file/index.js";
 import type { AnthropicContentBlock } from "./types/index.js";
 import { convertToAnthropicFunctions } from "./utils/convertToAnthropicFunctions.js";
+import { fromAnthropicServiceTier, toAnthropicServiceTier } from "./utils/serviceTier.js";
 
 export class AnthropicProvider extends ProviderBase {
   public client: Anthropic;
@@ -62,6 +63,8 @@ export class AnthropicProvider extends ProviderBase {
   ): Promise<SuccessChatCompletion> {
     const mappedMessages = this.mapMessagesToChat(messages);
 
+    const serviceTier = toAnthropicServiceTier(options.serviceTier);
+
     const anthropicOptions: Anthropic.Messages.MessageCreateParams = {
       model: this.model,
       messages: mappedMessages,
@@ -73,6 +76,7 @@ export class AnthropicProvider extends ProviderBase {
           ? { budget_tokens: options.thinking?.budget ?? 0, type: "enabled" }
           : { type: "disabled" }),
       },
+      ...(serviceTier ? { service_tier: serviceTier } : {}),
     };
 
     if (options.temperature !== undefined) {
@@ -109,6 +113,7 @@ export class AnthropicProvider extends ProviderBase {
       object: "chat.completion",
       content,
       content_object: contentObject ?? {},
+      service_tier: fromAnthropicServiceTier(response.usage.service_tier),
       tools: response.content
         .filter((block): block is Anthropic.Messages.ToolUseBlock => block.type === "tool_use")
         .map(tool => ({
@@ -137,6 +142,8 @@ export class AnthropicProvider extends ProviderBase {
     const start = Date.now();
     const mappedMessages = this.mapMessagesToChat(messages);
 
+    const serviceTier = toAnthropicServiceTier(options.serviceTier);
+
     const anthropicOptions: Omit<Anthropic.Messages.MessageCreateParamsNonStreaming, "stream"> = {
       model: this.model,
       messages: mappedMessages,
@@ -147,6 +154,7 @@ export class AnthropicProvider extends ProviderBase {
           ? { budget_tokens: options.thinking?.budget ?? 0, type: "enabled" }
           : { type: "disabled" }),
       },
+      ...(serviceTier ? { service_tier: serviceTier } : {}),
     };
 
     if (options.temperature !== undefined) {
@@ -205,6 +213,7 @@ export class AnthropicProvider extends ProviderBase {
       delta: "",
       content: accumulated,
       content_object: contentObject,
+      service_tier: fromAnthropicServiceTier(finalMessage.usage.service_tier),
       done: true,
       usage: {
         input_tokens: finalMessage.usage.input_tokens,

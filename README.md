@@ -63,14 +63,16 @@ if (response.success) {
 
 ## Supported Providers
 
-| Provider | Chat | Embeddings | Batch | Files |
-|----------|:----:|:----------:|:-----:|:-----:|
-| **OpenAI** | ✓ | ✓ | ✓ | ✓ |
-| **Anthropic** | ✓ | — | ✓ | ✓ |
-| **Google Gemini** | ✓ | ✓ | ✓ | ✓ |
-| **DeepSeek** | ✓ | ✓ | — | — |
-| **Grok** | ✓ | — | — | — |
-| **Custom LLM** | ✓ | ✓ | — | — |
+| Provider | Chat | Embeddings | Batch | Files | Service Tier |
+|----------|:----:|:----------:|:-----:|:-----:|:------------:|
+| **OpenAI** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Anthropic** | ✓ | — | ✓ | ✓ | ✓ |
+| **Google Gemini** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **DeepSeek** | ✓ | ✓ | — | — | ✓* |
+| **Grok** | ✓ | — | — | — | ✓* |
+| **Custom LLM** | ✓ | ✓ | — | — | ✓* |
+
+<sub>`Service Tier` selects a processing/priority tier via the `serviceTier` option. `✓*` = forwarded through the OpenAI-compatible path; actual support depends on the endpoint. See [Service Tier](doc/providers.md#service-tier).</sub>
 
 ## Documentation
 
