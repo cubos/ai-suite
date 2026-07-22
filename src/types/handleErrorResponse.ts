@@ -16,7 +16,7 @@ interface ResultErrorAISuite {
 
   /**
    * The error tag.
-   * e.g. "InvalidAuth" | "InvalidRequest" | "InvalidModel" | "RateLimitExceeded" | "ServerError" | "ServerOverloaded" | "Unknown";
+   * e.g. "InvalidAuth" | "InvalidRequest" | "InvalidModel" | "RateLimitExceeded" | "QuotaExceeded" | "ServerError" | "ServerOverloaded" | "Unknown";
    *
    */
   tag:
@@ -24,6 +24,7 @@ interface ResultErrorAISuite {
     | "InvalidRequest"
     | "InvalidModel"
     | "RateLimitExceeded"
+    | "QuotaExceeded"
     | "ServerError"
     | "ServerOverloaded"
     | "Unknown";
