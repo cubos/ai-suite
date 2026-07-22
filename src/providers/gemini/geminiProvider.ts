@@ -21,6 +21,7 @@ import { onlyWorksWithThinking } from "./constants/onlyWorksWithThinking.js";
 import { useThinkingLevel } from "./constants/useThinkingLevel.js";
 import { FileGemini } from "./file/index.js";
 import { convertToGeminiFunctions } from "./utils/convertToGeminiFunctions.js";
+import { isQuotaExceeded } from "./utils/quotaExceeded.js";
 import { fromGeminiTrafficType, toGeminiServiceTier } from "./utils/serviceTier.js";
 
 export class GeminiProvider extends ProviderBase {
@@ -448,6 +449,14 @@ export class GeminiProvider extends ProviderBase {
       }
 
       if (status === 429) {
+        if (isQuotaExceeded(error)) {
+          return {
+            error: "Quota Exceeded",
+            raw: error,
+            tag: "QuotaExceeded",
+          };
+        }
+
         return {
           error: "Rate Limit Exceeded",
           raw: error,
