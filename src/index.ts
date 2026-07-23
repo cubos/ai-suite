@@ -292,7 +292,7 @@ export class AISuite<S extends string = string> {
       return {
         success: false,
         ...result,
-        created: start,
+        created: Math.floor(start / 1000),
         model: langfuseOptions.model,
         execution_time: end - start,
       };
