@@ -1,3 +1,4 @@
+import type { ErrorAISuite } from "./handleErrorResponse.js";
 import type { ServiceTier } from "./serviceTier.js";
 import type { Usage } from "./usage.js";
 
@@ -26,4 +27,34 @@ export interface StreamChunk {
   execution_time?: number;
   /** Metadata passed through from options */
   metadata?: Record<string, unknown>;
+  /** Present (true) only on the final success chunk */
+  success?: true;
 }
+
+/** Final chunk emitted when the stream fails, mirroring the non-stream ErrorAISuite shape */
+export interface StreamErrorChunk {
+  success: false;
+  done: true;
+  object: "chat.completion";
+  /** Unique identifier for the completion */
+  id: string;
+  /** Unix timestamp (in seconds) of when the chunk was created */
+  created: number;
+  /** Model used */
+  model: string;
+  delta: "";
+  /** Content accumulated before the failure (may be empty) */
+  content: string;
+  /** The error message */
+  error: string;
+  /** The error tag */
+  tag: ErrorAISuite["tag"];
+  /** The raw error from the API */
+  raw: Error;
+  /** Execution time in milliseconds */
+  execution_time: number;
+  /** Metadata passed through from options */
+  metadata?: Record<string, unknown>;
+}
+
+export type StreamResult = StreamChunk | StreamErrorChunk;

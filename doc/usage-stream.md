@@ -27,11 +27,11 @@ This page describes how to use AI-Suite's streaming feature to receive chat comp
 
 ## Basic Usage
 
-Pass `stream: true` in the options to receive an `AsyncGenerator<StreamChunk>` instead of a `Promise<SuccessChatCompletion>`.
+Pass `stream: true` in the options to receive an `AsyncGenerator<StreamResult>` instead of a `Promise<SuccessChatCompletion>`. A `StreamResult` is either a `StreamChunk` (a data chunk or the final success chunk) or a `StreamErrorChunk` (the final chunk when the stream fails).
 
 ```typescript
 import { AISuite } from '@cubos/ai-suite';
-import type { StreamChunk } from '@cubos/ai-suite';
+import type { StreamResult } from '@cubos/ai-suite';
 
 const aiSuite = new AISuite({
   openaiKey: process.env.OPENAI_API_KEY,
@@ -46,6 +46,9 @@ const stream = await aiSuite.createChatCompletion(
 for await (const chunk of stream) {
   if (!chunk.done) {
     process.stdout.write(chunk.delta); // print each new piece of text
+  } else if (chunk.success === false) {
+    console.error('\n--- stream failed ---');
+    console.error(chunk.tag, chunk.error); // e.g. "InvalidAuth" "Unauthorized"
   } else {
     console.log('\n--- done ---');
     console.log('Total tokens:', chunk.usage?.total_tokens);
@@ -56,9 +59,9 @@ for await (const chunk of stream) {
 
 ---
 
-## StreamChunk Structure
+## StreamResult Structure
 
-Each iteration of the generator yields a `StreamChunk` object:
+Each iteration of the generator yields a `StreamResult`, which is the union `StreamChunk | StreamErrorChunk`:
 
 ```typescript
 interface StreamChunk {
@@ -80,12 +83,32 @@ interface StreamChunk {
   };
   execution_time?: number;                  // Milliseconds — only on the final chunk
   metadata?: Record<string, unknown>;       // Passed through from options
+  success?: true;                           // Present (true) only on the final success chunk
 }
+
+interface StreamErrorChunk {
+  success: false;                           // Discriminates the error chunk
+  done: true;                               // The error chunk is always the final chunk
+  object: 'chat.completion';
+  id: string;
+  created: number;                          // Unix timestamp (seconds)
+  model: string;
+  delta: '';
+  content: string;                          // Content accumulated before the failure (may be '')
+  error: string;                            // Error message
+  tag: 'InvalidAuth' | 'InvalidRequest' | 'InvalidModel' | 'RateLimitExceeded' | 'ServerError' | 'ServerOverloaded' | 'Unknown';
+  raw: Error;                               // The raw error from the API
+  execution_time: number;                   // Milliseconds
+  metadata?: Record<string, unknown>;
+}
+
+type StreamResult = StreamChunk | StreamErrorChunk;
 ```
 
 Key rules:
 - **Intermediate chunks** (`done: false`): have a non-empty `delta` and a growing `content`.
-- **Final chunk** (`done: true`): has an empty `delta`, the complete `content`, and populated `usage` and `execution_time`.
+- **Final success chunk** (`done: true`, `success: true`): empty `delta`, the complete `content`, and populated `usage` and `execution_time`.
+- **Final error chunk** (`done: true`, `success: false`): a `StreamErrorChunk` carrying `tag`, `error`, and `raw`. See [Errors are data, not exceptions](#errors-in-streaming-are-data-not-exceptions).
 
 ---
 
@@ -94,7 +117,9 @@ Key rules:
 A common pattern is to collect all chunks into an array and process them after the stream ends:
 
 ```typescript
-const chunks: StreamChunk[] = [];
+import type { StreamResult } from '@cubos/ai-suite';
+
+const chunks: StreamResult[] = [];
 
 const stream = await aiSuite.createChatCompletion(
   'openai/gpt-4o-mini',
@@ -107,9 +132,46 @@ for await (const chunk of stream) {
 }
 
 const final = chunks.find(c => c.done)!;
-console.log('Full response:', final.content);
-console.log('Usage:', final.usage);
+if (final.success === false) {
+  console.error('Stream failed:', final.tag, final.error);
+} else {
+  console.log('Full response:', final.content);
+  console.log('Usage:', final.usage);
+}
 ```
+
+---
+
+## Errors in streaming are data, not exceptions
+
+Just like the non-streaming API, a failed stream never throws. Instead, the generator's **final chunk** is a `StreamErrorChunk` with `success: false`, mirroring the `{ success: false, tag, error, raw }` shape returned by non-streaming calls. This holds for any failure — authentication, rate limiting, network errors, or a `handleRequest`/`handleResponse` hook that throws with `failOnError: true`.
+
+You therefore never need a `try`/`catch` around the loop:
+
+```typescript
+const stream = await aiSuite.createChatCompletion(
+  'openai/gpt-4o-mini',
+  [{ role: 'user', content: 'Hello!' }],
+  { stream: true, responseFormat: 'text' }
+);
+
+for await (const chunk of stream) {
+  if (!chunk.done) {
+    process.stdout.write(chunk.delta);
+    continue;
+  }
+  if (chunk.success === false) {
+    // Final error chunk. `chunk.content` holds whatever text arrived before the failure.
+    console.error(`[${chunk.tag}] ${chunk.error}`);
+    console.error(chunk.raw); // the raw Error from the provider
+  } else {
+    // Final success chunk.
+    console.log('Done. Tokens:', chunk.usage?.total_tokens);
+  }
+}
+```
+
+> **Note:** streams are also traced in Langfuse (when a `langFuse` instance is configured), exactly like the non-streaming path — a trace and generation are created, usage and output are recorded on completion, and failures are reported to the generation. No configuration change is needed.
 
 ---
 
@@ -125,7 +187,7 @@ const stream = await aiSuite.createChatCompletion(
 );
 
 for await (const chunk of stream) {
-  if (chunk.done) {
+  if (chunk.done && chunk.success !== false) {
     console.log('Parsed JSON:', chunk.content_object); // { status: 'ok' }
   }
 }
