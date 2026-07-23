@@ -15,7 +15,9 @@ import type { ErrorAISuite } from "./types/handleErrorResponse.js";
 import type { ProviderChatModel, ProviderEmbeddingModel, ProviderModel } from "./types/providerModel.js";
 import type { ResponseBase } from "./types/responseBase.js";
 import type { ResultBase } from "./types/resultBase.js";
-import type { StreamChunk } from "./types/stream.js";
+import type { StreamChunk, StreamResult } from "./types/stream.js";
+
+export type { StreamChunk, StreamErrorChunk, StreamResult } from "./types/stream.js";
 
 dotenv.config();
 
@@ -138,19 +140,19 @@ export class AISuite<S extends string = string> {
    * @param provider - The provider to use
    * @param messages - The messages to send to the provider
    * @param options - The options to use
-   * @returns An async generator that yields StreamChunk objects
+   * @returns An async generator that yields StreamResult objects
    */
   async createChatCompletion(
     provider: ProviderChatModel<S>,
     messages: MessageModel[],
     options: { stream: true } & ChatOptions,
-  ): Promise<AsyncGenerator<StreamChunk>>;
+  ): Promise<AsyncGenerator<StreamResult>>;
 
   async createChatCompletion(
     provider: ProviderChatModel<S>,
     messages: MessageModel[],
     options?: ChatOptions,
-  ): Promise<ResultChatCompletion | AsyncGenerator<StreamChunk>> {
+  ): Promise<ResultChatCompletion | AsyncGenerator<StreamResult>> {
     const opts = {
       stream: false,
       responseFormat: "text" as const,
@@ -162,7 +164,21 @@ export class AISuite<S extends string = string> {
     const p = this.getProvider(provider);
 
     if (opts.stream) {
-      return p.createChatCompletion(messages, opts as ChatOptions & { stream: true });
+      return this.streamWithObservation(
+        () => p.createChatCompletion(messages, opts as ChatOptions & { stream: true }),
+        {
+          langfuseData: {
+            name: "create-chat-completion",
+            tags: ["chat", provider],
+            ...options?.metadata?.langFuse,
+          },
+          model: provider.split("/")[1],
+          input: messages,
+          metadata: options?.metadata,
+        },
+        p,
+        start,
+      );
     }
 
     return this.resultWhithObservation(
@@ -276,9 +292,87 @@ export class AISuite<S extends string = string> {
       return {
         success: false,
         ...result,
-        created: start,
+        created: Math.floor(start / 1000),
         model: langfuseOptions.model,
         execution_time: end - start,
+      };
+    }
+  }
+
+  private async *streamWithObservation(
+    genFactory: () => AsyncGenerator<StreamChunk>,
+    langfuseOptions: { langfuseData: LangfuseData; model: string; input: unknown; metadata?: Record<string, unknown> },
+    provider: OpenAIProvider | AnthropicProvider | GeminiProvider,
+    start: number,
+  ): AsyncGenerator<StreamResult> {
+    const trace = this.langFuse?.trace({
+      ...(langfuseOptions.langfuseData.sessionId ? { sessionId: langfuseOptions.langfuseData.sessionId } : {}),
+      name: langfuseOptions.langfuseData.name ?? "create-chat-completion",
+      tags: langfuseOptions.langfuseData.tags ?? [],
+      environment: langfuseOptions.langfuseData.environment ?? "default",
+      ...(langfuseOptions.langfuseData.userId ? { userId: langfuseOptions.langfuseData.userId } : {}),
+    });
+
+    const generation = trace?.generation({
+      environment: langfuseOptions.langfuseData.environment ?? "default",
+      name: langfuseOptions.langfuseData.name ?? "create-chat-completion",
+      model: langfuseOptions.model,
+      input: langfuseOptions.input,
+    });
+
+    let accumulated = "";
+    let ended = false;
+
+    try {
+      for await (const chunk of genFactory()) {
+        accumulated = chunk.content;
+
+        if (chunk.done) {
+          generation?.end({
+            usage: {
+              input: chunk.usage?.input_tokens ?? 0,
+              output: chunk.usage?.output_tokens ?? 0,
+              total: chunk.usage?.total_tokens ?? 0,
+            },
+            output: chunk,
+          });
+
+          trace?.update({
+            input: langfuseOptions.input,
+            output: chunk.content,
+          });
+
+          ended = true;
+          yield { ...chunk, success: true as const };
+        } else {
+          yield chunk;
+        }
+      }
+    } catch (error) {
+      const handled = provider.handleError(error as Error);
+
+      if (!ended) {
+        generation?.end({ output: error });
+        trace?.update({
+          input: langfuseOptions.input,
+          output: error,
+        });
+      }
+
+      yield {
+        success: false,
+        done: true,
+        object: "chat.completion",
+        id: "",
+        created: Math.floor(Date.now() / 1000),
+        model: langfuseOptions.model,
+        delta: "",
+        content: accumulated,
+        error: handled.error,
+        tag: handled.tag,
+        raw: handled.raw,
+        execution_time: Date.now() - start,
+        metadata: langfuseOptions.metadata,
       };
     }
   }
