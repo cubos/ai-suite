@@ -24,6 +24,7 @@ constructor(
     geminiKey?: string;
     deepseekKey?: string;
     grokKey?: string;
+    fireworksKey?: string;
     customURL?: string;
     customLLMKey?: string;
   },
@@ -58,6 +59,7 @@ Parameters:
   - `geminiKey`: Google Gemini API key
   - `deepseekKey`: DeepSeek API key
   - `grokKey`: Grok (xAI) API key
+  - `fireworksKey`: Fireworks AI API key
   - `customURL`: Base URL for custom OpenAI-compatible endpoints
   - `customLLMKey`: API key for custom endpoints (optional)
 - `options`: Additional configuration options
@@ -222,7 +224,8 @@ type ProviderChatModel<S extends string> =
   | `gemini/${GeminiModels}`
   | `deepseek/${DeepSeekModels}`
   | `custom-llm/${S}`
-  | `grok/${GrokModels}`;
+  | `grok/${GrokModels}`
+  | `fireworks/${FireworksModels}`;
 ```
 
 A string representation of a chat provider and model, in the format `provider/model`. Supports the following providers:
@@ -232,6 +235,7 @@ A string representation of a chat provider and model, in the format `provider/mo
 - **Google Gemini**: `gemini/gemini-2.5-pro`, `gemini/gemini-2.0-flash`, etc.
 - **DeepSeek**: `deepseek/deepseek-chat`, `deepseek/deepseek-reasoner`, etc.
 - **Grok**: `grok/grok-2-1212`, `grok/grok-vision-beta`, etc.
+- **Fireworks**: `fireworks/accounts/fireworks/models/deepseek-v4p1-flash`, etc. (the full model path)
 - **Custom LLM**: `custom-llm/{your-custom-model-id}`
 
 **Example:**
