@@ -45,6 +45,22 @@ export class OpenAIProvider extends ProviderBase {
     this.providerName = provideName;
   }
 
+  protected buildResponseFormat(options: ChatOptions): ChatCompletionCreateParamsBase["response_format"] {
+    if (options.responseFormat === "text") {
+      return undefined;
+    }
+    if (options.responseFormat === "json_schema") {
+      return zodResponseFormat(options.zodSchema, "default");
+    }
+    return { type: options.responseFormat };
+  }
+
+  protected buildSamplingParams(
+    options: ChatOptions,
+  ): Pick<ChatCompletionCreateParamsBase, "reasoning_effort" | "temperature"> {
+    return reasoningOrTemperature(options);
+  }
+
   protected _createChatCompletion(
     messages: MessageModel[],
     options: ChatOptions & { stream: true },
@@ -69,15 +85,7 @@ export class OpenAIProvider extends ProviderBase {
   ): Promise<SuccessChatCompletion> {
     const mappedMessages = this.mapMessages(messages);
 
-    let response_format: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming["response_format"];
-
-    if (options.responseFormat === "text") {
-      response_format = undefined;
-    } else if (options.responseFormat === "json_schema") {
-      response_format = zodResponseFormat(options.zodSchema, "default");
-    } else {
-      response_format = { type: options.responseFormat };
-    }
+    const response_format = this.buildResponseFormat(options);
 
     const serviceTier = toOpenAIServiceTier(options.serviceTier);
 
@@ -87,7 +95,7 @@ export class OpenAIProvider extends ProviderBase {
       stream: false,
       response_format,
       tools: options.tools,
-      ...reasoningOrTemperature(options),
+      ...this.buildSamplingParams(options),
       ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
       ...(serviceTier ? { service_tier: serviceTier } : {}),
     };
@@ -147,15 +155,7 @@ export class OpenAIProvider extends ProviderBase {
     const start = Date.now();
     const mappedMessages = this.mapMessages(messages);
 
-    let response_format: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming["response_format"];
-
-    if (options.responseFormat === "text") {
-      response_format = undefined;
-    } else if (options.responseFormat === "json_schema") {
-      response_format = zodResponseFormat(options.zodSchema, "default");
-    } else {
-      response_format = { type: options.responseFormat };
-    }
+    const response_format = this.buildResponseFormat(options);
 
     const serviceTier = toOpenAIServiceTier(options.serviceTier);
 
@@ -166,7 +166,7 @@ export class OpenAIProvider extends ProviderBase {
       stream_options: { include_usage: true },
       response_format,
       tools: options.tools,
-      ...reasoningOrTemperature(options),
+      ...this.buildSamplingParams(options),
       ...(options.maxOutputTokens ? { max_completion_tokens: options.maxOutputTokens } : {}),
       ...(serviceTier ? { service_tier: serviceTier } : {}),
     };
