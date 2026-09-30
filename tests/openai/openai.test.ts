@@ -5,7 +5,7 @@ import z from "zod";
 import { AISuite } from "../../src/index.js";
 import type { SuccessChatCompletion } from "../../src/types/chat.js";
 import type { SuccessEmbedding } from "../../src/types/index.js";
-import type { StreamChunk } from "../../src/types/stream.js";
+import type { StreamResult } from "../../src/types/stream.js";
 
 dotenv.config();
 
@@ -132,8 +132,8 @@ describe("OpenAIProvider", () => {
   });
 });
 
-async function collectStream(gen: Promise<AsyncGenerator<StreamChunk>>): Promise<StreamChunk[]> {
-  const chunks: StreamChunk[] = [];
+async function collectStream(gen: Promise<AsyncGenerator<StreamResult>>): Promise<StreamResult[]> {
+  const chunks: StreamResult[] = [];
   for await (const chunk of await gen) chunks.push(chunk);
   return chunks;
 }
@@ -163,6 +163,7 @@ describe("OpenAIProvider - Stream", () => {
     });
 
     expect(final).toBeDefined();
+    if (final?.success === false) throw new Error(`stream failed: ${final.tag} - ${final.error}`);
     expect(final!.delta).toBe("");
     expect(final!.content).toBeTruthy();
     expect(final!.execution_time).toBeDefined();
@@ -186,6 +187,7 @@ describe("OpenAIProvider - Stream", () => {
 
     const final = chunks.find(c => c.done);
     expect(final).toBeDefined();
+    if (final?.success === false) throw new Error(`stream failed: ${final.tag} - ${final.error}`);
     expect(final!.content_object).toBeDefined();
     expect(final!.content_object).toHaveProperty("message");
   }, 15000);
