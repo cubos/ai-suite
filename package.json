@@ -46,12 +46,12 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.130.0",
-    "@google/genai": "^1.52.0",
+    "@google/genai": "^2.24.0",
     "@types/node": "^22.19.21",
     "dotenv": "^16.6.1",
     "json5": "^2.2.3",
     "langfuse": "^3.38.20",
-    "openai": "6.49.0",
+    "openai": "7.25.0",
     "zod": "^4.4.3",
     "zod-openapi": "^5.4.6",
     "zod-to-json-schema": "^3.25.2"
