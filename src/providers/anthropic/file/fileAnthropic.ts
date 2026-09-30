@@ -40,7 +40,7 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
 
   async list(options: ListFileOptions): Promise<SuccessListFile> {
     const request: FileListParams = {
-      after_id: options.after,
+      page: options.after,
       limit: options.limit ?? 10,
     };
 
@@ -60,7 +60,8 @@ export class FileAnthropic extends FileProviderBase<AnthropicProvider> {
         filename: file.filename,
         object: "file",
       })),
-      has_next_page: response.has_more,
+      has_next_page: response.next_page !== null,
+      next_cursor: response.next_page,
     };
   }
 

@@ -81,6 +81,12 @@ if (listResult.success) {
   console.error('List error:', listResult.error);
 }
 
+// Next page: pass the previous response's `next_cursor` as `after`.
+// The cursor format differs per provider, so always use `next_cursor` instead of a file id.
+if (listResult.success && listResult.has_next_page) {
+  const nextPage = await aiSuite.file.list('gemini', { limit: 20, after: listResult.next_cursor ?? undefined });
+}
+
 // Retrieve file metadata by id
 const retrieveResult = await aiSuite.file.retrieve('gemini', 'file-id-123', {});
 if (retrieveResult.success) {
