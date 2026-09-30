@@ -38,6 +38,7 @@ ANTHROPIC_API_KEY=your_anthropic_key
 GEMINI_API_KEY=your_gemini_key
 DEEPSEEK_API_KEY=your_deepseek_key
 GROK_API_KEY=your_grok_key
+FIREWORKS_API_KEY=your_fireworks_key
 # For custom LLM providers (OpenAI-compatible APIs)
 CUSTOM_LLM_URL=https://your-custom-endpoint.com/v1
 CUSTOM_LLM_KEY=your_custom_key  # Optional, some endpoints don't require auth
@@ -59,6 +60,7 @@ const aiSuite = new AISuite({
   geminiKey: process.env.GEMINI_API_KEY,
   deepseekKey: process.env.DEEPSEEK_API_KEY,
   grokKey: process.env.GROK_API_KEY,
+  fireworksKey: process.env.FIREWORKS_API_KEY,
   // Optional: for custom LLM providers
   customURL: process.env.CUSTOM_LLM_URL,
   customLLMKey: process.env.CUSTOM_LLM_KEY
