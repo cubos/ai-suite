@@ -14,7 +14,7 @@ export interface CreateFileOptions extends OptionsBase {
 
 export interface ListFileOptions extends OptionsBase {
   /**
-   * The cursor for pagination, returned in the previous response's `after` field.
+   * The cursor for pagination, returned in the previous response's `next_cursor` field.
    */
   after?: string;
 
@@ -49,6 +49,11 @@ export interface SuccessCreateFile extends ResultBase<FileResponse> {}
 
 export interface SuccessListFile extends ResultBase<FileResponse[]> {
   has_next_page: boolean;
+
+  /**
+   * The cursor to pass as `after` to fetch the next page, or `null` when there are no more pages.
+   */
+  next_cursor: string | null;
 }
 
 export interface SuccessRetrieveFile extends ResultBase<FileResponse> {}

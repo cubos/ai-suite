@@ -56,18 +56,15 @@ export class FileGemini extends FileProviderBase<GeminiProvider> {
 
     const response = await this.provider.client.files.list(request);
 
-    const files: FileResponse[] = [];
-
-    for await (const file of response) {
-      files.push({
-        id: file.name || "",
-        bytes: file.sizeBytes ? Number(file.sizeBytes) : 0,
-        created_at: file.createTime ? Math.floor(new Date(file.createTime!).getTime() / 1000) : 0,
-        filename: file.displayName || "",
-        object: "file",
-        expires_at: file.expirationTime ? Math.floor(new Date(file.expirationTime).getTime() / 1000) : undefined,
-      });
-    }
+    // Only the current page: iterating the pager itself would fetch every remaining page.
+    const files: FileResponse[] = response.page.map(file => ({
+      id: file.name || "",
+      bytes: file.sizeBytes ? Number(file.sizeBytes) : 0,
+      created_at: file.createTime ? Math.floor(new Date(file.createTime!).getTime() / 1000) : 0,
+      filename: file.displayName || "",
+      object: "file",
+      expires_at: file.expirationTime ? Math.floor(new Date(file.expirationTime).getTime() / 1000) : undefined,
+    }));
 
     await this.provider.hooks.handleResponse(request, response, options.metadata ?? {});
 
@@ -76,6 +73,7 @@ export class FileGemini extends FileProviderBase<GeminiProvider> {
       model: this.provider.providerName,
       content: files,
       has_next_page: response.hasNextPage(),
+      next_cursor: response.params.config?.pageToken ?? null,
     };
   }
 

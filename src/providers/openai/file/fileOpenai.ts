@@ -65,6 +65,7 @@ export class FileOpenAI extends FileProviderBase<OpenAIProvider> {
         expires_at: file.expires_at,
       })),
       has_next_page: response.has_more,
+      next_cursor: response.has_more ? (response.data.at(-1)?.id ?? null) : null,
     };
   }
 
