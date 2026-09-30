@@ -21,6 +21,7 @@ export class File<S extends string = string> {
   protected geminiKey: string;
   protected deepseekKey: string;
   protected grokKey: string;
+  protected fireworksKey: string;
   protected customURL?: string;
   protected customLLMKey?: string;
   protected langFuse?: Langfuse;
@@ -31,6 +32,7 @@ export class File<S extends string = string> {
       geminiKey?: string;
       deepseekKey?: string;
       grokKey?: string;
+      fireworksKey?: string;
       customURL?: string;
       customLLMKey?: string;
       langFuse?: Langfuse;
@@ -48,6 +50,7 @@ export class File<S extends string = string> {
     this.geminiKey = keys.geminiKey || "";
     this.deepseekKey = keys.deepseekKey || "";
     this.grokKey = keys.grokKey || "";
+    this.fireworksKey = keys.fireworksKey || "";
     this.customURL = keys.customURL || "";
     this.customLLMKey = keys.customLLMKey || "";
     this.langFuse = keys.langFuse;

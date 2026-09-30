@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  All AI providers in one place — a unified TypeScript interface for OpenAI, Anthropic, Gemini, DeepSeek, Grok, and any OpenAI-compatible API.
+  All AI providers in one place — a unified TypeScript interface for OpenAI, Anthropic, Gemini, DeepSeek, Grok, Fireworks, and any OpenAI-compatible API.
 </p>
 
 ---
@@ -49,6 +49,7 @@ const aiSuite = new AISuite({
   geminiKey: process.env.GEMINI_API_KEY,
   deepseekKey: process.env.DEEPSEEK_API_KEY,
   grokKey: process.env.GROK_API_KEY,
+  fireworksKey: process.env.FIREWORKS_API_KEY,
 });
 
 const response = await aiSuite.createChatCompletion(
@@ -70,6 +71,7 @@ if (response.success) {
 | **Google Gemini** | ✓ | ✓ | ✓ | ✓ | ✓ |
 | **DeepSeek** | ✓ | ✓ | — | — | ✓* |
 | **Grok** | ✓ | — | — | — | ✓* |
+| **Fireworks** | ✓ | — | — | — | ✓* |
 | **Custom LLM** | ✓ | ✓ | — | — | ✓* |
 
 <sub>`Service Tier` selects a processing/priority tier via the `serviceTier` option. `✓*` = forwarded through the OpenAI-compatible path; actual support depends on the endpoint. See [Service Tier](doc/providers.md#service-tier).</sub>

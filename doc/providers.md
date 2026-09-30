@@ -186,6 +186,57 @@ if (response.success) {
 }
 ```
 
+### Fireworks
+
+**Module**: `./src/providers/fireworks/` (Fireworks provider directory)
+
+Fireworks serves open models (DeepSeek, Llama, Qwen, gpt-oss, ...) through an OpenAI-compatible API at `https://api.fireworks.ai/inference/v1`. The provider extends the OpenAI provider.
+
+#### Supported Models
+
+Any model path your Fireworks account serves, written in full after the `fireworks/` prefix (`FireworksModels` is `` `accounts/${string}` ``). The serverless catalog changes per account and over time, so check it with the Fireworks API before pinning a model.
+
+- `fireworks/accounts/fireworks/models/deepseek-v4p1-flash`
+
+#### Special Features
+
+It differs from the OpenAI provider in three places:
+
+- **Reasoning and temperature together**: `reasoning_effort` and `temperature` are both sent when set, instead of `reasoning` replacing `temperature`. Note that `createChatCompletion` defaults `temperature` to `0.7`, so pass it explicitly when you set `reasoning`.
+- **Structured output**: `json_schema` is sent as the plain JSON Schema generated from the Zod schema (`z.toJSONSchema`), without OpenAI's `strict` format. Fireworks documents `anyOf`, `$defs`/`$ref` and `$schema` as supported, so nullable fields stay as `anyOf` with `{ type: "null" }`. Note that Fireworks disables reasoning output when `json_schema` is used.
+- **System prompt**: messages with the `developer` role are sent with the `system` role. They must be text only: an image or file in a `developer` message returns an error instead of being dropped, so send it in a `user` message.
+
+#### Usage Example
+
+```typescript
+const aiSuite = new AISuite({
+  fireworksKey: process.env.FIREWORKS_API_KEY,
+});
+
+const personSchema = z.object({
+  name: z.string(),
+  age: z.number(),
+});
+
+const response = await aiSuite.createChatCompletion(
+  'fireworks/accounts/fireworks/models/deepseek-v4p1-flash',
+  [
+    { role: 'developer', content: 'You extract structured data from text.' },
+    { role: 'user', content: 'Extract the name and age from: John is 30 years old' },
+  ],
+  {
+    responseFormat: 'json_schema',
+    zodSchema: personSchema,
+    reasoning: { effort: 'low' },
+    temperature: 0.5,
+  }
+);
+
+if (response.success) {
+  console.log(response.content_object);
+}
+```
+
 ### Custom LLM
 
 **Module**: `./src/providers/customLLM/` (Custom LLM provider directory)
@@ -217,7 +268,7 @@ if (response.success) {
 
 Some providers let you pick a processing tier that balances availability, latency, and cost. AI-Suite exposes this through a single `serviceTier` option, using a cross-provider superset of values. Each provider maps the values it understands and **silently ignores the rest**.
 
-| Requested `serviceTier` | OpenAI (+ DeepSeek/Grok/Custom) | Gemini | Anthropic |
+| Requested `serviceTier` | OpenAI (+ DeepSeek/Grok/Fireworks/Custom) | Gemini | Anthropic |
 |---|:---:|:---:|:---:|
 | `flex` | `flex` | `flex` | ignored |
 | `scale` | `scale` | ignored | ignored |
@@ -228,7 +279,7 @@ Some providers let you pick a processing tier that balances availability, latenc
 Notes:
 
 - **Anthropic** doesn't select a named tier — it opts in/out of Priority Tier. `priority` maps to `auto` (use Priority Tier when available) and `standard` maps to `standard_only`.
-- **DeepSeek / Grok / Custom LLM** reuse the OpenAI path, so the value is forwarded the same way; whether the endpoint honors it depends on the endpoint (`✓*` in the README table).
+- **DeepSeek / Grok / Fireworks / Custom LLM** reuse the OpenAI path, so the value is forwarded the same way; whether the endpoint honors it depends on the endpoint (`✓*` in the README table).
 - Works across chat (streaming and non-streaming) and batch requests.
 
 The response echoes the tier the provider **actually applied** on `response.service_tier` (and on the final stream chunk), which may differ from the requested one — e.g. a downgrade to `standard` when priority capacity isn't available.

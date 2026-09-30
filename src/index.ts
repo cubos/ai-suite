@@ -5,6 +5,7 @@ import { File } from "./file.js";
 import { AnthropicProvider } from "./providers/anthropic/index.js";
 import { CustomLLMProvider } from "./providers/customLLM/index.js";
 import { DeepSeekProvider } from "./providers/deepSeek/index.js";
+import { FIREWORKS_BASE_URL, FireworksProvider } from "./providers/fireworks/index.js";
 import { GeminiProvider } from "./providers/gemini/index.js";
 import { GrokProvider } from "./providers/grok/index.js";
 import { OpenAIProvider } from "./providers/openai/openaiProvider.js";
@@ -16,6 +17,7 @@ import type { ProviderChatModel, ProviderEmbeddingModel, ProviderModel } from ".
 import type { ResponseBase } from "./types/responseBase.js";
 import type { ResultBase } from "./types/resultBase.js";
 import type { StreamChunk, StreamResult } from "./types/stream.js";
+import { splitProviderModel } from "./utils.js";
 
 export type { StreamChunk, StreamErrorChunk, StreamResult } from "./types/stream.js";
 
@@ -27,6 +29,7 @@ export class AISuite<S extends string = string> {
   private geminiKey: string;
   private deepseekKey: string;
   private grokKey: string;
+  private fireworksKey: string;
   private langFuse?: Langfuse;
   private customURL?: string;
   private customLLMKey?: string;
@@ -53,6 +56,7 @@ export class AISuite<S extends string = string> {
       geminiKey?: string;
       deepseekKey?: string;
       grokKey?: string;
+      fireworksKey?: string;
       customURL?: string;
       customLLMKey?: string;
     },
@@ -70,6 +74,7 @@ export class AISuite<S extends string = string> {
     this.geminiKey = keys.geminiKey || "";
     this.deepseekKey = keys.deepseekKey || "";
     this.grokKey = keys.grokKey || "";
+    this.fireworksKey = keys.fireworksKey || "";
     this.customURL = keys.customURL || "";
     this.customLLMKey = keys.customLLMKey || "";
     this.langFuse = options?.langFuse;
@@ -82,6 +87,7 @@ export class AISuite<S extends string = string> {
         geminiKey: this.geminiKey,
         deepseekKey: this.deepseekKey,
         grokKey: this.grokKey,
+        fireworksKey: this.fireworksKey,
         customURL: this.customURL,
         customLLMKey: this.customLLMKey,
       },
@@ -95,6 +101,7 @@ export class AISuite<S extends string = string> {
         geminiKey: this.geminiKey,
         deepseekKey: this.deepseekKey,
         grokKey: this.grokKey,
+        fireworksKey: this.fireworksKey,
         customURL: this.customURL,
         customLLMKey: this.customLLMKey,
       },
@@ -189,7 +196,7 @@ export class AISuite<S extends string = string> {
           tags: ["chat", provider],
           ...options?.metadata?.langFuse,
         },
-        model: provider.split("/")[1],
+        model: splitProviderModel(provider).model,
         input: messages,
       },
       p,
@@ -226,7 +233,7 @@ export class AISuite<S extends string = string> {
           tags: ["embedding", provider],
           ...options?.metadata?.langFuse,
         },
-        model: provider.split("/")[1],
+        model: splitProviderModel(provider).model,
         input: embedding.content,
       },
       p,
@@ -378,7 +385,7 @@ export class AISuite<S extends string = string> {
   }
 
   private getProvider(provider: ProviderModel<S>) {
-    const [providerName, model] = provider.split("/");
+    const { providerName, model } = splitProviderModel(provider);
     if (providerName === "openai") {
       return new OpenAIProvider(this.openaiKey, model, providerName, undefined, this.hooks);
     } else if (providerName === "anthropic") {
@@ -394,6 +401,8 @@ export class AISuite<S extends string = string> {
       return new CustomLLMProvider(this.customLLMKey ?? "not-needed", model, providerName, this.customURL, this.hooks);
     } else if (providerName === "grok") {
       return new GrokProvider(this.grokKey, model, providerName, "https://api.x.ai/v1", this.hooks);
+    } else if (providerName === "fireworks") {
+      return new FireworksProvider(this.fireworksKey, model, providerName, FIREWORKS_BASE_URL, this.hooks);
     }
     throw new Error(`Unsupported provider: ${providerName}`);
   }
