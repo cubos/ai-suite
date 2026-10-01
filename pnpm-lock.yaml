@@ -14,7 +14,7 @@ importers:
     dependencies:
       '@anthropic-ai/sdk':
         specifier: 0.130.0
-        version: 0.130.0(zod@4.4.3)
+        version: 0.130.0(zod@4.6.5)
       '@google/genai':
         specifier: ^2.24.0
         version: 2.24.0
@@ -32,16 +32,16 @@ importers:
         version: 3.39.2
       openai:
         specifier: 7.25.0
-        version: 7.25.0(ws@8.21.0)(zod@4.4.3)
+        version: 7.25.0(ws@8.21.0)(zod@4.6.5)
       zod:
         specifier: ^4.4.3
-        version: 4.4.3
+        version: 4.6.5
       zod-openapi:
         specifier: ^5.4.6
-        version: 5.4.6(zod@4.4.3)
+        version: 5.4.6(zod@4.6.5)
       zod-to-json-schema:
         specifier: ^3.25.2
-        version: 3.25.2(zod@4.4.3)
+        version: 3.25.2(zod@4.6.5)
     devDependencies:
       '@11ty/eleventy':
         specifier: ^3.1.6
@@ -2763,8 +2763,8 @@ packages:
     peerDependencies:
       zod: ^3.25.28 || ^4
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
 
 snapshots:
 
@@ -2873,12 +2873,12 @@ snapshots:
       minimatch: 3.1.5
       slash: 3.0.0
 
-  '@anthropic-ai/sdk@0.130.0(zod@4.4.3)':
+  '@anthropic-ai/sdk@0.130.0(zod@4.6.5)':
     dependencies:
       json-schema-to-ts: 3.1.1
       standardwebhooks: 1.1.1
     optionalDependencies:
-      zod: 4.4.3
+      zod: 4.6.5
 
   '@babel/runtime@7.29.7': {}
 
@@ -4928,10 +4928,10 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
-  openai@7.25.0(ws@8.21.0)(zod@4.4.3):
+  openai@7.25.0(ws@8.21.0)(zod@4.6.5):
     optionalDependencies:
       ws: 8.21.0
-      zod: 4.4.3
+      zod: 4.6.5
 
   optionator@0.9.4:
     dependencies:
@@ -5601,12 +5601,12 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-openapi@5.4.6(zod@4.4.3):
+  zod-openapi@5.4.6(zod@4.6.5):
     dependencies:
-      zod: 4.4.3
+      zod: 4.6.5
 
-  zod-to-json-schema@3.25.2(zod@4.4.3):
+  zod-to-json-schema@3.25.2(zod@4.6.5):
     dependencies:
-      zod: 4.4.3
+      zod: 4.6.5
 
-  zod@4.4.3: {}
+  zod@4.6.5: {}
