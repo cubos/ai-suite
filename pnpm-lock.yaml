@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: 0.130.0
-        version: 0.130.0(zod@4.4.3)
+        specifier: 0.133.0
+        version: 0.133.0(zod@4.4.3)
       '@google/genai':
         specifier: ^2.24.0
         version: 2.24.0
@@ -124,8 +124,8 @@ packages:
     resolution: {integrity: sha512-oI7m8pa7/IAU/3lqRU9vjBbs20iKFo7x+1K9kT3aVira6scc1X9MjBdgLCHzLJeJ7iB6wydioA+kr9/qPnvmlQ==}
     engines: {node: '>=18'}
 
-  '@anthropic-ai/sdk@0.130.0':
-    resolution: {integrity: sha512-UMkwdFHvIdhYJHuPYkufmBTePKgk50RolnqZPUqyPclXp7LoVM7QgXsfQnx7KlmbkQtb+RhmUjN5ARYpbnz9YQ==}
+  '@anthropic-ai/sdk@0.133.0':
+    resolution: {integrity: sha512-jlqUN8p8ESTJj+GJnA4KjzbEfF1waEoGzRT8jwytlYGFFgv+/DUQOxlYGvYw10UzhD1kwLqYzxvA3FrTB2YWuQ==}
     hasBin: true
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
@@ -2873,7 +2873,7 @@ snapshots:
       minimatch: 3.1.5
       slash: 3.0.0
 
-  '@anthropic-ai/sdk@0.130.0(zod@4.4.3)':
+  '@anthropic-ai/sdk@0.133.0(zod@4.4.3)':
     dependencies:
       json-schema-to-ts: 3.1.1
       standardwebhooks: 1.1.1
