@@ -51,7 +51,7 @@
     "dotenv": "^16.6.1",
     "json5": "^2.2.3",
     "langfuse": "^3.39.2",
-    "openai": "7.25.0",
+    "openai": "7.32.0",
     "zod": "^4.4.3",
     "zod-openapi": "^5.4.6",
     "zod-to-json-schema": "^3.25.2"
