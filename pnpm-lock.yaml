@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: 0.130.0
-        version: 0.130.0(zod@4.4.3)
+        specifier: 0.135.0
+        version: 0.135.0(zod@4.4.3)
       '@google/genai':
         specifier: ^2.24.0
         version: 2.24.0
@@ -124,8 +124,8 @@ packages:
     resolution: {integrity: sha512-oI7m8pa7/IAU/3lqRU9vjBbs20iKFo7x+1K9kT3aVira6scc1X9MjBdgLCHzLJeJ7iB6wydioA+kr9/qPnvmlQ==}
     engines: {node: '>=18'}
 
-  '@anthropic-ai/sdk@0.130.0':
-    resolution: {integrity: sha512-UMkwdFHvIdhYJHuPYkufmBTePKgk50RolnqZPUqyPclXp7LoVM7QgXsfQnx7KlmbkQtb+RhmUjN5ARYpbnz9YQ==}
+  '@anthropic-ai/sdk@0.135.0':
+    resolution: {integrity: sha512-WWrdL57JhU5KoynpTjt9GXK6k7ud9nPw2uw/Trn+oBXh6s0KpjhAccWZm2Qxw08ARYG1UDQj5iC+JO42j1rt/g==}
     hasBin: true
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
@@ -563,6 +563,10 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@opentelemetry/api@1.9.1':
+    resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==}
+    engines: {node: '>=8.0.0'}
 
   '@pkgr/core@0.3.6':
     resolution: {integrity: sha512-SEeaJLb3qBNF/OaXnaR1NmmBbFYk1zC0ZH/52fATcRPLFg/p791YrcyFFy44Bo9sLaGuSuLp5Q6axbb/O+v/RA==}
@@ -2873,8 +2877,9 @@ snapshots:
       minimatch: 3.1.5
       slash: 3.0.0
 
-  '@anthropic-ai/sdk@0.130.0(zod@4.4.3)':
+  '@anthropic-ai/sdk@0.135.0(zod@4.4.3)':
     dependencies:
+      '@opentelemetry/api': 1.9.1
       json-schema-to-ts: 3.1.1
       standardwebhooks: 1.1.1
     optionalDependencies:
@@ -3156,6 +3161,8 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
+
+  '@opentelemetry/api@1.9.1': {}
 
   '@pkgr/core@0.3.6': {}
 
