@@ -201,7 +201,12 @@ describe("GeminiProvider", () => {
     expect((result as SuccessChatCompletion).content_object.message).toBe("Hello, world!");
   });
 
-  const stableGemini3Models = ["gemini-3.5-flash", "gemini-3.1-flash-lite"] as const;
+  const stableGemini3Models = [
+    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-3.1-flash-lite",
+  ] as const;
 
   it.each(stableGemini3Models)(
     "should return a response using stable model %s with thinking level",

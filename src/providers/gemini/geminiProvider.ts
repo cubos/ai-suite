@@ -98,7 +98,9 @@ export class GeminiProvider extends ProviderBase {
       includeThoughts: boolean;
     } | null = null;
 
-    if (useThinkingLevel.includes(this.model)) {
+    const usesThinkingLevel = useThinkingLevel.includes(this.model);
+
+    if (usesThinkingLevel) {
       thinkingConfig = {
         thinkingLevel: thinkingLevelMap[options.thinking?.level ?? "high"],
         includeThoughts: options.thinking?.output ?? false,
@@ -120,7 +122,7 @@ export class GeminiProvider extends ProviderBase {
     return {
       config: {
         tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
-        temperature: options.temperature ?? 0.7,
+        temperature: usesThinkingLevel ? undefined : (options.temperature ?? 0.7),
         thinkingConfig: thinkingConfig ?? { thinkingBudget: 0 },
         ...(systemPrompt ? { systemInstruction: { role: "user", parts: systemPrompt } } : {}),
         responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
