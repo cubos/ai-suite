@@ -135,7 +135,7 @@ describe("FireworksProvider request", () => {
                 properties: {
                   name: { type: "string" },
                   role: { type: "string", enum: ["ADMIN", "MEMBER", "GUEST"] },
-                  nickname: { anyOf: [{ type: "string" }, { type: "null" }] },
+                  nickname: { type: ["string", "null"] },
                 },
                 required: ["name", "role", "nickname"],
                 additionalProperties: false,
