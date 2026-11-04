@@ -79,7 +79,9 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
           includeThoughts: boolean;
         } | null = null;
 
-        if (useThinkingLevel.includes(this.provider.model)) {
+        const usesThinkingLevel = useThinkingLevel.includes(this.provider.model);
+
+        if (usesThinkingLevel) {
           thinkingConfig = {
             thinkingLevel: thinkingLevelMap[options.thinking?.level ?? "high"],
             includeThoughts: options.thinking?.output ?? false,
@@ -100,7 +102,7 @@ export class BatchGemini extends BatchProviderBase<GeminiProvider> {
 
         config = {
           tools: options.tools ? convertToGeminiFunctions(options.tools) : undefined,
-          temperature: options.temperature ?? 0.7,
+          temperature: usesThinkingLevel ? undefined : (options.temperature ?? 0.7),
           thinkingConfig: thinkingConfig ?? { thinkingBudget: 0 },
           responseMimeType: options.responseFormat !== "text" ? "application/json" : undefined,
           ...(options.responseFormat === "json_schema" ? { responseSchema: zod.toJSONSchema(options.zodSchema) } : {}),
