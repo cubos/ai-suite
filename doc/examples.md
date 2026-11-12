@@ -391,25 +391,29 @@ deepAnalysis().catch(console.error);
 
 ```typescript
 import { AISuite } from '@cubos/ai-suite';
-import { Langfuse } from 'langfuse';
+import { LangfuseSpanProcessor } from '@langfuse/otel';
+import { setLangfuseTracerProvider } from '@langfuse/tracing';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Initialize Langfuse
-const langfuse = new Langfuse({
+// Register the Langfuse span processor
+const langfuseProcessor = new LangfuseSpanProcessor({
   publicKey: process.env.LANGFUSE_PUBLIC_KEY,
   secretKey: process.env.LANGFUSE_SECRET_KEY,
+  baseUrl: process.env.LANGFUSE_BASEURL,
 });
+setLangfuseTracerProvider(new BasicTracerProvider({ spanProcessors: [langfuseProcessor] }));
 
-// Initialize AI-Suite with Langfuse
+// Initialize AI-Suite with Langfuse tracing
 const aiSuite = new AISuite(
   {
     openaiKey: process.env.OPENAI_API_KEY,
     anthropicKey: process.env.ANTHROPIC_API_KEY
   },
   {
-    langFuse: langfuse
+    langFuse: true
   }
 );
 
@@ -467,7 +471,7 @@ async function runAIWorkflow() {
     console.error('Error:', error);
   } finally {
     // Wait for Langfuse to finish sending data
-    await langfuse.flush();
+    await langfuseProcessor.forceFlush();
   }
 }
 
