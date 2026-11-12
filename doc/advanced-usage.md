@@ -192,17 +192,23 @@ Default retry configuration:
 
 ## Langfuse Integration
 
-AI-Suite provides built-in integration with Langfuse for tracking and monitoring AI interactions.
+AI-Suite provides built-in integration with Langfuse for tracking and monitoring AI interactions. It emits OpenTelemetry spans through `@langfuse/tracing`, and your app registers the `LangfuseSpanProcessor` that exports them.
 
 ### Setup
 
-```typescript
-import { Langfuse } from 'langfuse';
+Install `@langfuse/otel` and its OpenTelemetry peer dependencies in your app, then register the processor once at startup:
 
-const langfuse = new Langfuse({
+```typescript
+import { LangfuseSpanProcessor } from '@langfuse/otel';
+import { setLangfuseTracerProvider } from '@langfuse/tracing';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base';
+
+const langfuseProcessor = new LangfuseSpanProcessor({
   publicKey: process.env.LANGFUSE_PUBLIC_KEY,
   secretKey: process.env.LANGFUSE_SECRET_KEY,
+  baseUrl: process.env.LANGFUSE_BASEURL,
 });
+setLangfuseTracerProvider(new BasicTracerProvider({ spanProcessors: [langfuseProcessor] }));
 
 const aiSuite = new AISuite(
   {
@@ -210,10 +216,18 @@ const aiSuite = new AISuite(
     anthropicKey: process.env.ANTHROPIC_API_KEY
   },
   {
-    langFuse: langfuse
+    langFuse: true
   }
 );
 ```
+
+`langFuse: true` turns on the spans in AI-Suite. Without a registered `LangfuseSpanProcessor` nothing is exported. Before the process exits, call `await langfuseProcessor.forceFlush()`.
+
+The processor accepts a `mask` function to redact `input` and `output` before they leave your app.
+
+### Migrating from `langFuse: new Langfuse(...)`
+
+Earlier versions took a client from the `langfuse` package (`langFuse: langfuse`). That SDK sends traces through the legacy `/api/public/ingestion` endpoint, which Langfuse v4 servers in `events_only` mode reject. The `langFuse` option is now a `boolean`, and `metadata.langFuse` per request is unchanged. To migrate, replace the `Langfuse` client with the `LangfuseSpanProcessor` setup above and pass `langFuse: true`.
 
 ### Adding Metadata
 
@@ -246,10 +260,9 @@ When Langfuse is integrated, AI-Suite automatically tracks:
 - Model used for each request
 - Input messages
 - Output responses
-- Token usage (input, output, cached, reasoning, thinking)
-- Execution time
-- Success/failure status
-- Custom metadata
+- Token usage (input, output, total)
+- Trace name, tags, session, user and environment (from `metadata.langFuse`, with the environment defaulting to `default`)
+- Success/failure status (a failed call is marked with level `ERROR`)
 
 ## Comparing Multiple Providers
 

@@ -171,7 +171,7 @@ for await (const chunk of stream) {
 }
 ```
 
-> **Note:** streams are also traced in Langfuse (when a `langFuse` instance is configured), exactly like the non-streaming path — a trace and generation are created, usage and output are recorded on completion, and failures are reported to the generation. No configuration change is needed.
+> **Note:** streams are also traced in Langfuse (when `langFuse: true` is configured), exactly like the non-streaming path — a trace and generation are created, usage and output are recorded on completion, and failures are reported to the generation. No configuration change is needed.
 
 ---
 

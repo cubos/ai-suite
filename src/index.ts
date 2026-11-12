@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
-import type { Langfuse } from "langfuse";
 import { Batch } from "./batch.js";
 import { File } from "./file.js";
+import { startGenerationTrace } from "./langfuse.js";
 import { AnthropicProvider } from "./providers/anthropic/index.js";
 import { CustomLLMProvider } from "./providers/customLLM/index.js";
 import { DeepSeekProvider } from "./providers/deepSeek/index.js";
@@ -30,7 +30,7 @@ export class AISuite<S extends string = string> {
   private deepseekKey: string;
   private grokKey: string;
   private fireworksKey: string;
-  private langFuse?: Langfuse;
+  private langFuse: boolean;
   private customURL?: string;
   private customLLMKey?: string;
   public hooks?: {
@@ -66,7 +66,7 @@ export class AISuite<S extends string = string> {
         handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
         failOnError?: boolean;
       };
-      langFuse?: Langfuse;
+      langFuse?: boolean;
     },
   ) {
     this.openaiKey = keys.openaiKey || "";
@@ -77,7 +77,7 @@ export class AISuite<S extends string = string> {
     this.fireworksKey = keys.fireworksKey || "";
     this.customURL = keys.customURL || "";
     this.customLLMKey = keys.customLLMKey || "";
-    this.langFuse = options?.langFuse;
+    this.langFuse = options?.langFuse === true;
     this.hooks = options?.hooks;
 
     this.batch = new Batch(
@@ -247,38 +247,13 @@ export class AISuite<S extends string = string> {
     provider: OpenAIProvider | AnthropicProvider | GeminiProvider,
     start: number,
   ): Promise<(R & ResponseBase) | (ErrorAISuite & ResponseBase)> {
-    const trace = this.langFuse?.trace({
-      ...(langfuseOptions.langfuseData.sessionId ? { sessionId: langfuseOptions.langfuseData.sessionId } : {}),
-      name: langfuseOptions.langfuseData.name ?? "create-chat-completion",
-      tags: langfuseOptions.langfuseData.tags ?? [],
-      environment: langfuseOptions.langfuseData.environment ?? "default",
-      ...(langfuseOptions.langfuseData.userId ? { userId: langfuseOptions.langfuseData.userId } : {}),
-    });
-
-    const generation = trace?.generation({
-      environment: langfuseOptions.langfuseData.environment ?? "default",
-      name: langfuseOptions.langfuseData.name ?? "create-chat-completion",
-      model: langfuseOptions.model,
-      input: langfuseOptions.input,
-    });
+    const trace = startGenerationTrace(this.langFuse, langfuseOptions);
 
     try {
       const result = await func();
       const end = Date.now();
 
-      generation?.end({
-        usage: {
-          input: result.usage?.input_tokens ?? 0,
-          output: result.usage?.output_tokens ?? 0,
-          total: result.usage?.total_tokens ?? 0,
-        },
-        output: result,
-      });
-
-      trace?.update({
-        input: langfuseOptions.input,
-        output: result.content,
-      });
+      trace.succeed(result, result.usage);
 
       return {
         ...result,
@@ -287,14 +262,7 @@ export class AISuite<S extends string = string> {
     } catch (error) {
       const result = provider.handleError(error as Error);
       const end = Date.now();
-      generation?.end({
-        output: error,
-      });
-
-      trace?.update({
-        input: langfuseOptions.input,
-        output: error,
-      });
+      trace.fail(error);
 
       return {
         success: false,
@@ -312,20 +280,7 @@ export class AISuite<S extends string = string> {
     provider: OpenAIProvider | AnthropicProvider | GeminiProvider,
     start: number,
   ): AsyncGenerator<StreamResult> {
-    const trace = this.langFuse?.trace({
-      ...(langfuseOptions.langfuseData.sessionId ? { sessionId: langfuseOptions.langfuseData.sessionId } : {}),
-      name: langfuseOptions.langfuseData.name ?? "create-chat-completion",
-      tags: langfuseOptions.langfuseData.tags ?? [],
-      environment: langfuseOptions.langfuseData.environment ?? "default",
-      ...(langfuseOptions.langfuseData.userId ? { userId: langfuseOptions.langfuseData.userId } : {}),
-    });
-
-    const generation = trace?.generation({
-      environment: langfuseOptions.langfuseData.environment ?? "default",
-      name: langfuseOptions.langfuseData.name ?? "create-chat-completion",
-      model: langfuseOptions.model,
-      input: langfuseOptions.input,
-    });
+    const trace = startGenerationTrace(this.langFuse, langfuseOptions);
 
     let accumulated = "";
     let ended = false;
@@ -335,19 +290,7 @@ export class AISuite<S extends string = string> {
         accumulated = chunk.content;
 
         if (chunk.done) {
-          generation?.end({
-            usage: {
-              input: chunk.usage?.input_tokens ?? 0,
-              output: chunk.usage?.output_tokens ?? 0,
-              total: chunk.usage?.total_tokens ?? 0,
-            },
-            output: chunk,
-          });
-
-          trace?.update({
-            input: langfuseOptions.input,
-            output: chunk.content,
-          });
+          trace.succeed(chunk, chunk.usage);
 
           ended = true;
           yield { ...chunk, success: true as const };
@@ -359,11 +302,7 @@ export class AISuite<S extends string = string> {
       const handled = provider.handleError(error as Error);
 
       if (!ended) {
-        generation?.end({ output: error });
-        trace?.update({
-          input: langfuseOptions.input,
-          output: error,
-        });
+        trace.fail(error);
       }
 
       yield {

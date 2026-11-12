@@ -34,7 +34,7 @@ constructor(
       handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
       failOnError?: boolean;
     };
-    langFuse?: Langfuse;
+    langFuse?: boolean;
   }
 )
 ```
@@ -64,7 +64,7 @@ Parameters:
   - `customLLMKey`: API key for custom endpoints (optional)
 - `options`: Additional configuration options
   - `hooks`: Custom request/response interceptors
-  - `langFuse`: Langfuse instance for tracking
+  - `langFuse`: `true` to emit Langfuse traces as OpenTelemetry spans; the app registers the `LangfuseSpanProcessor` that exports them (see Advanced Usage)
 
 ### Methods
 

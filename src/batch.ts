@@ -1,4 +1,3 @@
-import type Langfuse from "langfuse";
 import type { AnthropicProvider } from "./providers/anthropic/anthropicProvider.js";
 import type { GeminiProvider } from "./providers/gemini/geminiProvider.js";
 import type { OpenAIProvider } from "./providers/openai/openaiProvider.js";
@@ -36,7 +35,7 @@ export class Batch<S extends string = string> {
   protected fireworksKey: string;
   protected customURL?: string;
   protected customLLMKey?: string;
-  protected langFuse?: Langfuse;
+  protected langFuse?: boolean;
   constructor(
     keys: {
       openaiKey?: string;
@@ -47,7 +46,7 @@ export class Batch<S extends string = string> {
       fireworksKey?: string;
       customURL?: string;
       customLLMKey?: string;
-      langFuse?: Langfuse;
+      langFuse?: boolean;
     },
     protected getProvider: (provider: ProviderModel<S>) => OpenAIProvider | AnthropicProvider | GeminiProvider,
     protected resultWhithObservation: <R extends ResultBase>(
