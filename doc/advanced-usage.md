@@ -196,7 +196,7 @@ AI-Suite provides built-in integration with Langfuse for tracking and monitoring
 
 ### Setup
 
-Install `@langfuse/otel` and its OpenTelemetry peer dependencies in your app, then register the processor once at startup:
+Install `@langfuse/tracing`, `@langfuse/otel` and their OpenTelemetry peer dependencies (`@opentelemetry/api`, `@opentelemetry/sdk-trace-base` and the OTLP exporter packages listed by `@langfuse/otel`) in your app. They are optional peers of AI-Suite: apps that never turn Langfuse on do not need them and do not load them. Then register the processor once at startup:
 
 ```typescript
 import { LangfuseSpanProcessor } from '@langfuse/otel';
@@ -221,13 +221,17 @@ const aiSuite = new AISuite(
 );
 ```
 
-`langFuse: true` turns on the spans in AI-Suite. Without a registered `LangfuseSpanProcessor` nothing is exported. Before the process exits, call `await langfuseProcessor.forceFlush()`.
+`langFuse: true` turns on the spans in AI-Suite. Without a registered `LangfuseSpanProcessor` nothing is exported. If `@langfuse/tracing` cannot be loaded, tracing stays off and the AI call is not affected. Before the process exits, call `await langfuseProcessor.forceFlush()`.
 
-The processor accepts a `mask` function to redact `input` and `output` before they leave your app.
+### Large payloads and masking
+
+Before a prompt or a result is attached to a span, every string longer than `maxStringChars` (default `50000`) is replaced by `[omitted: N characters]`, binary data by `[binary: N bytes]`, and the structure is cut at 10 levels, so a huge transcript costs the call almost nothing. Change the limit with `langFuse: { maxStringChars: 10000 }`.
+
+This cap only bounds the cost. It is not a privacy control: shorter strings still go out as they are. Register a `mask` function on the `LangfuseSpanProcessor` to redact `input` and `output` before they leave your app, and always set one in production. Without a mask, the spans waiting to be exported keep the full payloads in memory, up to the processor queue size, and that grows if the Langfuse server is unreachable.
 
 ### Migrating from `langFuse: new Langfuse(...)`
 
-Earlier versions took a client from the `langfuse` package (`langFuse: langfuse`). That SDK sends traces through the legacy `/api/public/ingestion` endpoint, which Langfuse v4 servers in `events_only` mode reject. The `langFuse` option is now a `boolean`, and `metadata.langFuse` per request is unchanged. To migrate, replace the `Langfuse` client with the `LangfuseSpanProcessor` setup above and pass `langFuse: true`.
+Earlier versions took a client from the `langfuse` package (`langFuse: langfuse`). That SDK sends traces through the legacy `/api/public/ingestion` endpoint, which Langfuse v4 servers in `events_only` mode reject. The `langFuse` option is now `true` or `{ maxStringChars }`, and `metadata.langFuse` per request is unchanged. To migrate, replace the `Langfuse` client with the `LangfuseSpanProcessor` setup above and pass `langFuse: true`.
 
 ### Adding Metadata
 

@@ -151,6 +151,56 @@ describe("Langfuse tracing through OpenTelemetry", () => {
     expect(parsed(spans[0], "langfuse.observation.usage_details")).toEqual({ input: 2, output: 4, total: 6 });
   });
 
+  it("replaces a string above the default cap with its size, in the input and in the output", async () => {
+    const hugeOutput = {
+      ...(successResult as object),
+      content: "o".repeat(60_000),
+    } as never;
+    vi.spyOn(OpenAIProvider.prototype, "createChatCompletion").mockResolvedValue(hugeOutput);
+    const suite = new AISuite({ openaiKey: "fake" }, { langFuse: true });
+
+    await suite.createChatCompletion("openai/gpt-4o-mini", [{ role: "user", content: "t".repeat(200_000) }]);
+
+    const [span] = await exportedSpans();
+    expect(parsed(span, "langfuse.observation.input")).toEqual([
+      { role: "user", content: "[omitted: 200000 characters]" },
+    ]);
+    expect(parsed(span, "langfuse.observation.output")).toMatchObject({ content: "[omitted: 60000 characters]" });
+  });
+
+  it("keeps a string at the cap and honours a custom maxStringChars", async () => {
+    vi.spyOn(OpenAIProvider.prototype, "createChatCompletion").mockResolvedValue(successResult);
+    const suite = new AISuite({ openaiKey: "fake" }, { langFuse: { maxStringChars: 10 } });
+
+    await suite.createChatCompletion("openai/gpt-4o-mini", [
+      { role: "user", content: "a".repeat(10) },
+      { role: "user", content: "b".repeat(11) },
+    ]);
+
+    const [span] = await exportedSpans();
+    expect(parsed(span, "langfuse.observation.input")).toEqual([
+      { role: "user", content: "a".repeat(10) },
+      { role: "user", content: "[omitted: 11 characters]" },
+    ]);
+  });
+
+  it("summarises binary data and survives circular references", async () => {
+    vi.spyOn(OpenAIProvider.prototype, "createChatCompletion").mockResolvedValue(successResult);
+    const suite = new AISuite({ openaiKey: "fake" }, { langFuse: true });
+    const circular: Record<string, unknown> = { note: "ok" };
+    circular.self = circular;
+
+    const result = await suite.createChatCompletion("openai/gpt-4o-mini", [
+      { role: "user", content: "x", file: Buffer.alloc(5000), meta: circular } as never,
+    ]);
+
+    expect(result.success).toBe(true);
+    const [span] = await exportedSpans();
+    const [message] = parsed(span, "langfuse.observation.input") as Array<Record<string, unknown>>;
+    expect(message.file).toBe("[binary: 5000 bytes]");
+    expect(message.meta).toEqual({ note: "ok", self: "[max depth]" });
+  });
+
   it("exports nothing when langFuse is not enabled", async () => {
     vi.spyOn(OpenAIProvider.prototype, "createChatCompletion").mockResolvedValue(successResult);
     const suite = new AISuite({ openaiKey: "fake" });

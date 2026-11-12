@@ -110,7 +110,7 @@ if (anthropicResponse.success) {
 
 ## Langfuse Integration
 
-To track and monitor your AI interactions, you can integrate with Langfuse. AI-Suite emits the traces through OpenTelemetry (`@langfuse/tracing`), and your app registers the `LangfuseSpanProcessor` that sends them. Install `@langfuse/otel` and its OpenTelemetry peer dependencies in your app.
+To track and monitor your AI interactions, you can integrate with Langfuse. AI-Suite emits the traces through OpenTelemetry (`@langfuse/tracing`), and your app registers the `LangfuseSpanProcessor` that sends them. Install `@langfuse/tracing`, `@langfuse/otel` and their OpenTelemetry peer dependencies in your app (they are optional peers of AI-Suite, loaded only when `langFuse` is on).
 
 ```typescript
 import { LangfuseSpanProcessor } from '@langfuse/otel';

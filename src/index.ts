@@ -1,7 +1,13 @@
 import dotenv from "dotenv";
 import { Batch } from "./batch.js";
 import { File } from "./file.js";
-import { startGenerationTrace } from "./langfuse.js";
+import {
+  type LangfuseOptions,
+  loadTracing,
+  type ResolvedLangfuseOptions,
+  resolveLangfuseOptions,
+  startGenerationTrace,
+} from "./langfuse.js";
 import { AnthropicProvider } from "./providers/anthropic/index.js";
 import { CustomLLMProvider } from "./providers/customLLM/index.js";
 import { DeepSeekProvider } from "./providers/deepSeek/index.js";
@@ -30,7 +36,7 @@ export class AISuite<S extends string = string> {
   private deepseekKey: string;
   private grokKey: string;
   private fireworksKey: string;
-  private langFuse: boolean;
+  private langFuse?: ResolvedLangfuseOptions;
   private customURL?: string;
   private customLLMKey?: string;
   public hooks?: {
@@ -66,7 +72,7 @@ export class AISuite<S extends string = string> {
         handleResponse?: (req: unknown, res: unknown, metadata: Record<string, unknown>) => Promise<void>;
         failOnError?: boolean;
       };
-      langFuse?: boolean;
+      langFuse?: boolean | LangfuseOptions;
     },
   ) {
     this.openaiKey = keys.openaiKey || "";
@@ -77,7 +83,10 @@ export class AISuite<S extends string = string> {
     this.fireworksKey = keys.fireworksKey || "";
     this.customURL = keys.customURL || "";
     this.customLLMKey = keys.customLLMKey || "";
-    this.langFuse = options?.langFuse === true;
+    this.langFuse = resolveLangfuseOptions(options?.langFuse);
+    if (this.langFuse) {
+      void loadTracing();
+    }
     this.hooks = options?.hooks;
 
     this.batch = new Batch(
@@ -247,7 +256,7 @@ export class AISuite<S extends string = string> {
     provider: OpenAIProvider | AnthropicProvider | GeminiProvider,
     start: number,
   ): Promise<(R & ResponseBase) | (ErrorAISuite & ResponseBase)> {
-    const trace = startGenerationTrace(this.langFuse, langfuseOptions);
+    const trace = await startGenerationTrace(this.langFuse, langfuseOptions);
 
     try {
       const result = await func();
@@ -280,7 +289,7 @@ export class AISuite<S extends string = string> {
     provider: OpenAIProvider | AnthropicProvider | GeminiProvider,
     start: number,
   ): AsyncGenerator<StreamResult> {
-    const trace = startGenerationTrace(this.langFuse, langfuseOptions);
+    const trace = await startGenerationTrace(this.langFuse, langfuseOptions);
 
     let accumulated = "";
     let ended = false;

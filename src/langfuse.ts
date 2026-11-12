@@ -1,11 +1,15 @@
-import { type LangfuseGeneration, LangfuseOtelSpanAttributes, startObservation } from "@langfuse/tracing";
+import type { LangfuseGeneration } from "@langfuse/tracing";
 import type { LangfuseData } from "./providers/types/optionsBase.js";
 
-const DEFAULT_TRACE_NAME = "create-chat-completion";
-const DEFAULT_ENVIRONMENT = "default";
-const MAX_IDENTIFIER_LENGTH = 200;
-const MAX_ENVIRONMENT_LENGTH = 40;
-const VALID_ENVIRONMENT = /^(?!langfuse)[a-z0-9_-]+$/;
+type TracingModule = typeof import("@langfuse/tracing");
+
+export interface LangfuseOptions {
+  maxStringChars?: number;
+}
+
+export interface ResolvedLangfuseOptions {
+  maxStringChars: number;
+}
 
 export interface GenerationTraceStart {
   langfuseData: LangfuseData;
@@ -24,10 +28,66 @@ export interface GenerationTrace {
   fail(error: unknown): void;
 }
 
+export const DEFAULT_MAX_STRING_CHARS = 50_000;
+
+const DEFAULT_TRACE_NAME = "create-chat-completion";
+const DEFAULT_ENVIRONMENT = "default";
+const MAX_IDENTIFIER_LENGTH = 200;
+const MAX_ENVIRONMENT_LENGTH = 40;
+const MAX_DEPTH = 10;
+const VALID_ENVIRONMENT = /^(?!langfuse)[a-z0-9_-]+$/;
+
 const noopTrace: GenerationTrace = {
   succeed: () => undefined,
   fail: () => undefined,
 };
+
+let tracingModule: Promise<TracingModule | undefined> | undefined;
+
+export function loadTracing(): Promise<TracingModule | undefined> {
+  tracingModule ??= import("@langfuse/tracing").catch(() => undefined);
+  return tracingModule;
+}
+
+export function resolveLangfuseOptions(
+  option: boolean | LangfuseOptions | undefined,
+): ResolvedLangfuseOptions | undefined {
+  if (!option) {
+    return undefined;
+  }
+  const requested = option === true ? undefined : option.maxStringChars;
+  const maxStringChars = requested !== undefined && requested > 0 ? requested : DEFAULT_MAX_STRING_CHARS;
+  return { maxStringChars };
+}
+
+export function capLargeStrings(value: unknown, maxChars: number, depth = 0, ancestors = new Set<object>()): unknown {
+  if (typeof value === "string") {
+    return value.length > maxChars ? `[omitted: ${value.length} characters]` : value;
+  }
+  if (value === null || typeof value !== "object") {
+    return value;
+  }
+  if (ArrayBuffer.isView(value) || value instanceof ArrayBuffer) {
+    return `[binary: ${value.byteLength} bytes]`;
+  }
+  if (value instanceof Error) {
+    return { name: value.name, message: capLargeStrings(value.message, maxChars) };
+  }
+  if (depth >= MAX_DEPTH || ancestors.has(value)) {
+    return "[max depth]";
+  }
+  ancestors.add(value);
+  const capped = Array.isArray(value)
+    ? value.map(item => capLargeStrings(item, maxChars, depth + 1, ancestors))
+    : Object.fromEntries(
+        Object.keys(value).map(key => [
+          key,
+          capLargeStrings((value as Record<string, unknown>)[key], maxChars, depth + 1, ancestors),
+        ]),
+      );
+  ancestors.delete(value);
+  return capped;
+}
 
 function describeError(error: unknown): { name: string; message: string } {
   if (error instanceof Error) {
@@ -55,30 +115,48 @@ function validEnvironment(value: string | undefined): string {
   return DEFAULT_ENVIRONMENT;
 }
 
-function traceAttributes(name: string, langfuseData: LangfuseData): Record<string, string | string[]> {
+function traceAttributes(
+  tracing: TracingModule,
+  name: string,
+  langfuseData: LangfuseData,
+): Record<string, string | string[]> {
+  const attributes = tracing.LangfuseOtelSpanAttributes;
   const sessionId = validIdentifier(langfuseData.sessionId);
   const userId = validIdentifier(langfuseData.userId);
   return {
-    [LangfuseOtelSpanAttributes.TRACE_NAME]: name,
-    [LangfuseOtelSpanAttributes.TRACE_TAGS]: langfuseData.tags ?? [],
-    [LangfuseOtelSpanAttributes.ENVIRONMENT]: validEnvironment(langfuseData.environment),
-    ...(sessionId ? { [LangfuseOtelSpanAttributes.TRACE_SESSION_ID]: sessionId } : {}),
-    ...(userId ? { [LangfuseOtelSpanAttributes.TRACE_USER_ID]: userId } : {}),
+    [attributes.TRACE_NAME]: name,
+    [attributes.TRACE_TAGS]: langfuseData.tags ?? [],
+    [attributes.ENVIRONMENT]: validEnvironment(langfuseData.environment),
+    ...(sessionId ? { [attributes.TRACE_SESSION_ID]: sessionId } : {}),
+    ...(userId ? { [attributes.TRACE_USER_ID]: userId } : {}),
   };
 }
 
-export function startGenerationTrace(enabled: boolean, params: GenerationTraceStart): GenerationTrace {
-  if (!enabled) {
+export async function startGenerationTrace(
+  options: ResolvedLangfuseOptions | undefined,
+  params: GenerationTraceStart,
+): Promise<GenerationTrace> {
+  if (!options) {
+    return noopTrace;
+  }
+
+  const tracing = await loadTracing();
+  if (!tracing) {
     return noopTrace;
   }
 
   const { langfuseData, model, input } = params;
+  const { maxStringChars } = options;
   const name = langfuseData.name ?? DEFAULT_TRACE_NAME;
 
   let generation: LangfuseGeneration;
   try {
-    generation = startObservation(name, { model, input }, { asType: "generation" });
-    generation.otelSpan.setAttributes(traceAttributes(name, langfuseData));
+    generation = tracing.startObservation(
+      name,
+      { model, input: capLargeStrings(input, maxStringChars) },
+      { asType: "generation" },
+    );
+    generation.otelSpan.setAttributes(traceAttributes(tracing, name, langfuseData));
   } catch {
     return noopTrace;
   }
@@ -87,7 +165,7 @@ export function startGenerationTrace(enabled: boolean, params: GenerationTraceSt
     succeed(output, usage) {
       withoutBreakingTheCall(() => {
         generation.update({
-          output,
+          output: capLargeStrings(output, maxStringChars),
           usageDetails: {
             input: usage?.input_tokens ?? 0,
             output: usage?.output_tokens ?? 0,
@@ -99,7 +177,7 @@ export function startGenerationTrace(enabled: boolean, params: GenerationTraceSt
     },
     fail(error) {
       withoutBreakingTheCall(() => {
-        const details = describeError(error);
+        const details = capLargeStrings(describeError(error), maxStringChars) as { name: string; message: string };
         generation.update({ level: "ERROR", statusMessage: details.message, output: details });
         generation.end();
       });
