@@ -423,6 +423,9 @@ interface ChatOptionsBase {
       sessionId?: string;
       name?: string;
       tags?: string[];
+      // Links the generation to a Langfuse Prompt Management version.
+      // Ignored when malformed or when isFallback is true.
+      prompt?: { name: string; version: number; isFallback?: boolean };
     };
   };
 }

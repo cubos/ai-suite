@@ -618,6 +618,8 @@ const response = await aiSuite.createChatCompletion(
         name: 'my-trace',
         tags: ['production'],
         environment: 'production',
+        // Optional link to a Langfuse Prompt Management version
+        prompt: { name: 'support/greeting/en', version: 3 },
       },
     },
   },
