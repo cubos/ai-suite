@@ -258,6 +258,24 @@ const response = await aiSuite.createChatCompletion(
 );
 ```
 
+### Linking a Prompt Version
+
+If the messages come from a prompt in Langfuse Prompt Management, pass its name and version so the generation shows up under that prompt version:
+
+```typescript
+const response = await aiSuite.createChatCompletion('openai/gpt-4o', messages, {
+  responseFormat: 'text',
+  metadata: {
+    langFuse: {
+      name: 'greeting-interaction',
+      prompt: { name: 'support/greeting/en', version: 3 }
+    }
+  }
+});
+```
+
+The link is recorded as the `langfuse.observation.prompt.name` and `langfuse.observation.prompt.version` attributes of the generation. A reference with an empty name, a version that is not a positive integer, or `isFallback: true` is ignored and the call is traced without the link.
+
 ### What Gets Tracked
 
 When Langfuse is integrated, AI-Suite automatically tracks:

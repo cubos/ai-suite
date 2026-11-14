@@ -96,6 +96,98 @@ describe("Langfuse tracing through OpenTelemetry", () => {
     expect(span.attributes["user.id"]).toBeUndefined();
   });
 
+  it("links the generation to a prompt version of Langfuse Prompt Management", async () => {
+    vi.spyOn(OpenAIProvider.prototype, "createChatCompletion").mockResolvedValue(successResult);
+    const suite = new AISuite({ openaiKey: "fake" }, { langFuse: true });
+
+    const result = await suite.createChatCompletion("openai/gpt-4o-mini", messages, {
+      metadata: { langFuse: { name: "EXTRACT", prompt: { name: "queues-api/meeting/overview/pt", version: 7 } } },
+    });
+
+    expect(result.success).toBe(true);
+    const [span] = await exportedSpans();
+    expect(span.attributes["langfuse.observation.prompt.name"]).toBe("queues-api/meeting/overview/pt");
+    expect(span.attributes["langfuse.observation.prompt.version"]).toBe(7);
+    expect(parsed(span, "langfuse.observation.input")).toEqual(messages);
+  });
+
+  it("records no link when there is no prompt or the prompt came from a fallback", async () => {
+    vi.spyOn(OpenAIProvider.prototype, "createChatCompletion").mockResolvedValue(successResult);
+    const suite = new AISuite({ openaiKey: "fake" }, { langFuse: true });
+
+    await suite.createChatCompletion("openai/gpt-4o-mini", messages);
+    await suite.createChatCompletion("openai/gpt-4o-mini", messages, {
+      metadata: { langFuse: { prompt: { name: "from-fallback", version: 3, isFallback: true } } },
+    });
+
+    const spans = await exportedSpans();
+    expect(spans).toHaveLength(2);
+    for (const span of spans) {
+      expect(span.attributes["langfuse.observation.prompt.name"]).toBeUndefined();
+      expect(span.attributes["langfuse.observation.prompt.version"]).toBeUndefined();
+    }
+  });
+
+  it("ignores a malformed prompt reference and still traces and resolves the call", async () => {
+    vi.spyOn(OpenAIProvider.prototype, "createChatCompletion").mockResolvedValue(successResult);
+    const suite = new AISuite({ openaiKey: "fake" }, { langFuse: true });
+    const malformed = [
+      { name: "", version: 1 },
+      { name: "ok", version: 0 },
+      { name: "ok", version: 1.5 },
+      { name: "ok", version: "2" },
+      { name: "n".repeat(501), version: 1 },
+    ];
+
+    for (const prompt of malformed) {
+      const result = await suite.createChatCompletion("openai/gpt-4o-mini", messages, {
+        metadata: { langFuse: { prompt: prompt as never } },
+      });
+      expect(result.success).toBe(true);
+    }
+
+    const spans = await exportedSpans();
+    expect(spans).toHaveLength(malformed.length);
+    for (const span of spans) {
+      expect(span.attributes["langfuse.observation.prompt.name"]).toBeUndefined();
+    }
+  });
+
+  it("links the prompt on streams too", async () => {
+    async function* stream(): AsyncGenerator<StreamChunk> {
+      yield {
+        id: "s",
+        created: 1,
+        object: "chat.completion",
+        model: "gpt-4o-mini",
+        delta: "ok",
+        content: "ok",
+        done: true,
+        usage: {
+          input_tokens: 1,
+          output_tokens: 1,
+          total_tokens: 2,
+          cached_tokens: 0,
+          reasoning_tokens: 0,
+          thoughts_tokens: 0,
+        },
+      };
+    }
+    vi.spyOn(OpenAIProvider.prototype, "createChatCompletion").mockReturnValue(stream() as never);
+    const suite = new AISuite({ openaiKey: "fake" }, { langFuse: true });
+
+    for await (const _chunk of await suite.createChatCompletion("openai/gpt-4o-mini", messages, {
+      stream: true,
+      metadata: { langFuse: { prompt: { name: "streamed", version: 2 } } },
+    })) {
+      // consume
+    }
+
+    const [span] = await exportedSpans();
+    expect(span.attributes["langfuse.observation.prompt.name"]).toBe("streamed");
+    expect(span.attributes["langfuse.observation.prompt.version"]).toBe(2);
+  });
+
   it("marks the generation as an error when the provider throws, and still resolves", async () => {
     vi.spyOn(OpenAIProvider.prototype, "createChatCompletion").mockRejectedValue(new Error("provider down"));
     const suite = new AISuite({ openaiKey: "fake" }, { langFuse: true });

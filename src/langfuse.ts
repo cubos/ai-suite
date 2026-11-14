@@ -1,5 +1,5 @@
 import type { LangfuseGeneration } from "@langfuse/tracing";
-import type { LangfuseData } from "./providers/types/optionsBase.js";
+import type { LangfuseData, LangfusePromptReference } from "./providers/types/optionsBase.js";
 
 type TracingModule = typeof import("@langfuse/tracing");
 
@@ -33,6 +33,7 @@ export const DEFAULT_MAX_STRING_CHARS = 50_000;
 const DEFAULT_TRACE_NAME = "create-chat-completion";
 const DEFAULT_ENVIRONMENT = "default";
 const MAX_IDENTIFIER_LENGTH = 200;
+const MAX_PROMPT_NAME_LENGTH = 500;
 const MAX_ENVIRONMENT_LENGTH = 40;
 const MAX_DEPTH = 10;
 const VALID_ENVIRONMENT = /^(?!langfuse)[a-z0-9_-]+$/;
@@ -115,6 +116,16 @@ function validEnvironment(value: string | undefined): string {
   return DEFAULT_ENVIRONMENT;
 }
 
+function validPrompt(prompt: LangfuseData["prompt"]): Required<LangfusePromptReference> | undefined {
+  if (!prompt || typeof prompt.name !== "string" || prompt.name.length === 0) {
+    return undefined;
+  }
+  if (prompt.name.length > MAX_PROMPT_NAME_LENGTH || !Number.isInteger(prompt.version) || prompt.version < 1) {
+    return undefined;
+  }
+  return { name: prompt.name, version: prompt.version, isFallback: prompt.isFallback === true };
+}
+
 function traceAttributes(
   tracing: TracingModule,
   name: string,
@@ -151,9 +162,10 @@ export async function startGenerationTrace(
 
   let generation: LangfuseGeneration;
   try {
+    const prompt = validPrompt(langfuseData.prompt);
     generation = tracing.startObservation(
       name,
-      { model, input: capLargeStrings(input, maxStringChars) },
+      { model, input: capLargeStrings(input, maxStringChars), prompt },
       { asType: "generation" },
     );
     generation.otelSpan.setAttributes(traceAttributes(tracing, name, langfuseData));
